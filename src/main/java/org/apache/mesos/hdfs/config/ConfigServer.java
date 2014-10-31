@@ -26,12 +26,7 @@ public class ConfigServer {
   private SchedulerConf schedulerConf;
 
   @Inject
-<<<<<<< HEAD
   public ConfigServer(SchedulerConf schedulerConf) throws Exception {
-=======
-  public ConfigServer(SchedulerConf schedulerConf, @Named("ConfigPath") String sitePath,
-      ClusterState clusterState) throws Exception {
->>>>>>> master
     this.schedulerConf = schedulerConf;
     engine = new Engine();
     server = new Server(schedulerConf.getConfigServerPort());
@@ -44,11 +39,7 @@ public class ConfigServer {
   }
 
   private class ServeHdfsConfigHandler extends AbstractHandler {
-<<<<<<< HEAD
     public synchronized void handle(String target, Request baseRequest, HttpServletRequest request,
-=======
-    public void handle(String target, Request baseRequest, HttpServletRequest request,
->>>>>>> master
         HttpServletResponse response) throws IOException {
 
       ClusterState clusterState = ClusterState.getInstance();

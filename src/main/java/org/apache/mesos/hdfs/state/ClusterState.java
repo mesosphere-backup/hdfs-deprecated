@@ -20,7 +20,6 @@ public class ClusterState {
   private final Set<String> journalnodeHosts;
   private final Set<String> namenodeHosts;
 
-<<<<<<< HEAD
   private static ClusterState instance = null;
 
   public static ClusterState getInstance() {
@@ -31,10 +30,6 @@ public class ClusterState {
   }
 
   private ClusterState() {
-=======
-  public ClusterState(State state) {
-    this.state = state;
->>>>>>> master
     tasks = new HashMap<>();
     journalnodes = new HashSet<>();
     namenodes = new HashSet<>();

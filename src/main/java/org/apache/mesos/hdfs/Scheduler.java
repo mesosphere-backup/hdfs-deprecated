@@ -107,11 +107,7 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
   }
 
   private void launchNode(SchedulerDriver driver, Offer offer, ResourceRoles roles,
-<<<<<<< HEAD
       String nodeName, List<String> taskNames, String executorName) {
-=======
-      String nodeName, List<String> taskNames) {
->>>>>>> master
     log.info(String.format("Launching node of type %s with tasks %s", nodeName,
         taskNames.toString()));
     int confServerPort = conf.getConfigServerPort();
@@ -168,13 +164,9 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
                                 .setValue("-Xmx" + conf.getDatanodeHeapSize() + "m").build(),
                             Environment.Variable.newBuilder().setName("EXECUTOR_OPTS")
                                 .setValue("-Xmx" + conf.getExecutorHeap() + "m").build())))
-<<<<<<< HEAD
                 .setValue(
                     "env ; cd hadoop-2.* && exec java $HADOOP_OPTS $EXECUTOR_OPTS -cp lib/*.jar org.apache.mesos.hdfs.executor."
                         + executorName).build()).build();
-=======
-                .setValue("env ; cd hadoop-2.* && bin/mesos-executor").build()).build();
->>>>>>> master
 
     List<TaskInfo> tasks = new ArrayList<>();
     for (String taskName : taskNames) {
@@ -324,28 +316,7 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
       remainingOffers.addAll(offers);
     }
 
-<<<<<<< HEAD
     if (!frameworkInitialized) {
-=======
-    offers = remainingOffers;
-    remainingOffers = new ArrayList<>();
-
-    // If we need to launch some journals, do so now
-    if (clusterState.getJournalnodes().size() - 2 < conf.getJournalnodeCount()) {
-      for (Offer offer : offers) {
-        ResourceRoles roles = resourceUtils.sufficientRolesForJournalnode(offer);
-        if (roles != null && clusterState.notInDfsHosts(offer.getSlaveId().getValue())) {
-          launchJournalnode(driver, offer, roles);
-        } else {
-          remainingOffers.add(offer);
-        }
-      }
-    } else {
-      remainingOffers.addAll(offers);
-    }
-
-    if (initializingCluster) {
->>>>>>> master
       log.info(String.format("Declining remaining %d offers pending initialization",
           remainingOffers.size()));
       for (Offer offer : remainingOffers) {
@@ -414,67 +385,11 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
     } else if (status.getState().equals(TaskState.TASK_RUNNING)) {
       stagingTasks.remove(status.getTaskId());
       clusterState.updateTask(status);
-<<<<<<< HEAD
       log.info("Received status update during cluster initialization");
       if (dfsTask.type == DfsTask.Type.NN) {
         nameNodesInitialized++;
         if (nameNodesInitialized == 2) {
           frameworkInitialized = true;
-=======
-
-      if (dfsTask.type == DfsTask.Type.DN) {
-        sendMessageTo(driver, status.getTaskId(), "reload");
-        sendMessageTo(driver, status.getTaskId(), "start");
-        return;
-      }
-
-      if (initializingCluster) {
-        log.info("Received status update during cluster initialization");
-        if (dfsTask.type == DfsTask.Type.NN && status.getMessage().equals("initialized")) {
-          // Time to bootstrap the other namenode.
-          for (TaskID taskId : clusterState.getNamenodes()) {
-            if (!taskId.equals(status.getTaskId())) {
-              log.info("Reloading namenade taskId=" + status.getTaskId().getValue());
-              sendMessageTo(driver, status.getTaskId(), "reload");
-              sendMessageTo(driver, status.getTaskId(), "start");
-              log.info("Bootstrapping namenade taskId=" + taskId.getValue());
-              sendMessageTo(driver, taskId, "bootstrap");
-              break;
-            }
-          }
-          // Finished!
-          initializingCluster = false;
-        } else if ((dfsTask.type == DfsTask.Type.JN || dfsTask.type == DfsTask.Type.NN)
-            && clusterState.getJournalnodes().size() - 2 == conf.getJournalnodeCount()
-            && clusterState.getNamenodes().size() == 2) {
-          log.info("All name/journalnodes now ready for initialization");
-          // All instances are up. Tell journals to reload, and one namenode to
-          // init.
-          for (TaskID taskId : clusterState.getJournalnodes()) {
-            log.info("Reloading config for taskId=" + taskId.getValue());
-            sendMessageTo(driver, taskId, "reload");
-            sendMessageTo(driver, taskId, "start_journalnode");
-          }
-          // Pick a namenode, initialize it.
-          Iterator<TaskID> iter = clusterState.getNamenodes().iterator();
-          TaskID namenode1 = iter.next();
-          sendMessageTo(driver, namenode1, "initialize");
-        }
-      }
-    } else if (dfsTask.type == DfsTask.Type.JN) {
-      for (TaskID taskID : clusterState.getNamenodes()) {
-        sendMessageTo(driver, taskID, "reload");
-      }
-      // Pick a namenode, ask it it initialized shared edits
-      TaskID namenode = clusterState.getNamenodes().iterator().next();
-      sendMessageTo(driver, namenode, "initializeSharedEdits");
-    } else if (dfsTask.type == DfsTask.Type.NN) {
-      if (status.getMessage().contains("bootstrapped")) {
-        sendMessageTo(driver, status.getTaskId(), "start");
-      } else {
-        for (TaskID task : clusterState.getTasks().keySet()) {
-          sendMessageTo(driver, task, "reload");
->>>>>>> master
         }
       }
     }

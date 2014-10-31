@@ -43,19 +43,9 @@ public class ProdConfigModule extends AbstractModule {
         schedulerConf.getStateZkTimeout(), TimeUnit.MILLISECONDS, "/hdfs-mesos/"
             + schedulerConf.getClusterName());
     State state = new State(zkState);
-<<<<<<< HEAD
     ClusterState clusterState = ClusterState.getInstance();
     clusterState.init(state);
     return clusterState;
-=======
-    return new ClusterState(state);
-  }
-
-  @Provides
-  BackupService providesBackupService(SchedulerConf schedulerConf) throws Exception {
-    return (BackupService) Class.forName(schedulerConf.getStorageProvider())
-        .getDeclaredConstructor(SchedulerConf.class).newInstance(schedulerConf);
->>>>>>> master
   }
 
   @Override
