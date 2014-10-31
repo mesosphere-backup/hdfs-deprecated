@@ -18,11 +18,9 @@ public class StateMachine {
   enum States {
     Start,
 
-    New,
-    Bootstrapped,
+    New, Bootstrapped,
 
-    NeedNamenode,
-    NeedJournalnode,
+    NeedNamenode, NeedJournalnode,
 
     Normal,
   }
@@ -30,20 +28,11 @@ public class StateMachine {
   enum Events {
     ReceivedOffers,
 
-    NamenodeReady,
-    JournalnodeReady,
-    ZkfcReady,
-    DatanodeReady,
+    NamenodeReady, JournalnodeReady, ZkfcReady, DatanodeReady,
 
-    NamenodeRunning,
-    JournalnodeRunning,
-    ZkfcRunning,
-    DatanodeRunning,
+    NamenodeRunning, JournalnodeRunning, ZkfcRunning, DatanodeRunning,
 
-    NamenodeStopped,
-    JournalnodeStopped,
-    ZkfcStopped,
-    DatanodeStopped,
+    NamenodeStopped, JournalnodeStopped, ZkfcStopped, DatanodeStopped,
   }
 
   // 2. Define State Machine Class

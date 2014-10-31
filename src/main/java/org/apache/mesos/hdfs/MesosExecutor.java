@@ -23,7 +23,9 @@ public class MesosExecutor implements Executor {
   public static final Log log = LogFactory.getLog(MesosExecutor.class);
   private Map<TaskID, Task> tasks = new ConcurrentHashMap<>();
   private ExecutorInfo executorInfo;
-  private RateLimiter reloadLimiter = RateLimiter.create(1 / 60.); // no more than once every 60s
+  private RateLimiter reloadLimiter = RateLimiter.create(1 / 60.); // no more
+                                                                   // than once
+                                                                   // every 60s
   private BackupService backupService;
   private SchedulerConf schedulerConf;
 
@@ -36,14 +38,13 @@ public class MesosExecutor implements Executor {
   public static void main(String[] args) {
     Injector injector = Guice.createInjector(new ProdConfigModule());
 
-    MesosExecutorDriver driver =
-        new MesosExecutorDriver(injector.getInstance(MesosExecutor.class));
+    MesosExecutorDriver driver = new MesosExecutorDriver(injector.getInstance(MesosExecutor.class));
     System.exit(driver.run() == Status.DRIVER_STOPPED ? 0 : 1);
   }
 
   @Override
   public void registered(ExecutorDriver driver, ExecutorInfo executorInfo,
-                         FrameworkInfo frameworkInfo, SlaveInfo slaveInfo) {
+      FrameworkInfo frameworkInfo, SlaveInfo slaveInfo) {
     log.info("Executor registered with the slave");
 
     // Make sure data dir exists
@@ -59,19 +60,16 @@ public class MesosExecutor implements Executor {
     executorInfo = task.getExecutor();
     tasks.put(task.getTaskId(), new Task(task));
 
-    driver.sendStatusUpdate(TaskStatus.newBuilder()
-        .setTaskId(task.getTaskId())
+    driver.sendStatusUpdate(TaskStatus.newBuilder().setTaskId(task.getTaskId())
         .setState(TaskState.TASK_RUNNING).build());
 
     // Check if we have a namenode.
-    // If so, report back to scheduler whether or not there's a backup archive available.
+    // If so, report back to scheduler whether or not there's a backup archive
+    // available.
     if (task.getTaskId().getValue().contains("namenode.namenode")) {
       if (backupService.checkForBackup()) {
-        driver.sendStatusUpdate(TaskStatus.newBuilder()
-            .setTaskId(task.getTaskId())
-            .setState(TaskState.TASK_RUNNING)
-            .setMessage("backup-archive-available")
-            .build());
+        driver.sendStatusUpdate(TaskStatus.newBuilder().setTaskId(task.getTaskId())
+            .setState(TaskState.TASK_RUNNING).setMessage("backup-archive-available").build());
       }
     }
   }
@@ -96,10 +94,8 @@ public class MesosExecutor implements Executor {
   }
 
   private void sendTaskFailed(ExecutorDriver driver, Task task) {
-    driver.sendStatusUpdate(TaskStatus.newBuilder()
-        .setTaskId(task.taskInfo.getTaskId())
-        .setState(TaskState.TASK_FAILED)
-        .build());
+    driver.sendStatusUpdate(TaskStatus.newBuilder().setTaskId(task.taskInfo.getTaskId())
+        .setState(TaskState.TASK_FAILED).build());
   }
 
   private void startProcesses(ExecutorDriver driver) {
@@ -144,10 +140,8 @@ public class MesosExecutor implements Executor {
     }
     try {
       log.info(String.format("Reloading hdfs-site.xml from %s", configUri));
-      String cfgCmd[] = new String[]{
-          "sh", "-c",
-          String.format("curl -o hdfs-site.xml %s ; cp hdfs-site.xml etc/hadoop/", configUri)
-      };
+      String cfgCmd[] = new String[]{"sh", "-c",
+          String.format("curl -o hdfs-site.xml %s ; cp hdfs-site.xml etc/hadoop/", configUri)};
       Process process = Runtime.getRuntime().exec(cfgCmd);
       redirectProcess(process);
       int exitCode = process.waitFor();
@@ -186,11 +180,8 @@ public class MesosExecutor implements Executor {
         System.exit(1);
       } else {
         startProcess(driver, task);
-        driver.sendStatusUpdate(TaskStatus.newBuilder()
-            .setTaskId(task.taskInfo.getTaskId())
-            .setState(TaskState.TASK_RUNNING)
-            .setMessage(message)
-            .build());
+        driver.sendStatusUpdate(TaskStatus.newBuilder().setTaskId(task.taskInfo.getTaskId())
+            .setState(TaskState.TASK_RUNNING).setMessage(message).build());
       }
     } catch (InterruptedException | IOException e) {
       log.fatal(e);
@@ -201,18 +192,17 @@ public class MesosExecutor implements Executor {
 
   @Override
   public void frameworkMessage(ExecutorDriver driver, byte[] msg) {
-    log.info("Executor received framework message of length: " + msg.length
-        + " bytes");
+    log.info("Executor received framework message of length: " + msg.length + " bytes");
     String command;
     try {
       command = new String(msg, "UTF-8");
 
       switch (command) {
-        case "start":
+        case "start" :
           log.info("Starting all processes");
           startProcesses(driver);
           break;
-        case "start_journalnode":
+        case "start_journalnode" :
           log.info("Starting journalnode");
           for (TaskID taskId : tasks.keySet()) {
             if (taskId.getValue().contains(".journalnode.")) {
@@ -221,7 +211,7 @@ public class MesosExecutor implements Executor {
             }
           }
           break;
-        case "reload":
+        case "reload" :
           log.info("Asked to reload config");
           reloadConfig();
           for (Task task : tasks.values()) {
@@ -232,22 +222,22 @@ public class MesosExecutor implements Executor {
             }
           }
           break;
-        case "initialize":
+        case "initialize" :
           log.info("Asked to initialize");
           namenodeInit(driver, "-i", "initialized");
           break;
-        case "bootstrap":
+        case "bootstrap" :
           log.info("Asked to bootstrap");
           namenodeInit(driver, "-b", "bootstrapped");
           break;
-        case "initializeSharedEdits":
+        case "initializeSharedEdits" :
           log.info("Asked to initializeSharedEdits");
           namenodeInit(driver, "-s", "initialized");
           break;
-        case "backup":
+        case "backup" :
           log.info("Asked to perform backup");
           backupService.createAndStoreArchive();
-        default:
+        default :
           throw new RuntimeException("Unknown command: " + command);
       }
     } catch (UnsupportedEncodingException e) {
@@ -273,7 +263,8 @@ public class MesosExecutor implements Executor {
     Task(TaskInfo taskInfo) {
       this.taskInfo = taskInfo;
       this.cmd = taskInfo.getData().toStringUtf8();
-      log.info(String.format("Launching task, taskId=%s cmd='%s'", taskInfo.getTaskId().getValue(), cmd));
+      log.info(String.format("Launching task, taskId=%s cmd='%s'", taskInfo.getTaskId().getValue(),
+          cmd));
     }
   }
 

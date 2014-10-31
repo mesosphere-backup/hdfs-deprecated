@@ -20,7 +20,6 @@ public class ClusterState {
   private final Set<String> journalnodeHosts;
   private final Set<String> namenodeHosts;
 
-
   public ClusterState(State state) {
     this.state = state;
     tasks = new HashMap<>();
@@ -67,13 +66,13 @@ public class ClusterState {
     tasks.put(taskId, dfsTask);
     Scheduler.DfsTask.Type type = dfsTask.type;
     switch (type) {
-      case NN:
+      case NN :
         namenodeHosts.add(dfsTask.hostname);
         break;
-      case JN:
+      case JN :
         journalnodeHosts.add(dfsTask.hostname);
         break;
-      default:
+      default :
         break;
     }
   }
@@ -83,16 +82,16 @@ public class ClusterState {
       tasks.get(taskStatus.getTaskId()).taskStatus = taskStatus;
       Scheduler.DfsTask.Type type = tasks.get(taskStatus.getTaskId()).type;
       switch (type) {
-        case DN:
-        case ZKFC:
+        case DN :
+        case ZKFC :
           break;
-        case NN:
+        case NN :
           namenodes.add(taskStatus.getTaskId());
           break;
-        case JN:
+        case JN :
           journalnodes.add(taskStatus.getTaskId());
           break;
-        default:
+        default :
           Scheduler.log.error("Unknown task type: " + type);
           break;
       }

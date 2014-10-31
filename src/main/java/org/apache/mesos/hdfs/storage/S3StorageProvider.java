@@ -29,26 +29,21 @@ public class S3StorageProvider implements StorageProvider {
 
     ObjectMapper mapper = new ObjectMapper();
     S3Credentials s3Credentials = mapper.readValue(
-        new File(schedulerConf.getStorageCredentialsPath()),
-        S3Credentials.class
-    );
+        new File(schedulerConf.getStorageCredentialsPath()), S3Credentials.class);
 
-    s3Client = new AmazonS3Client(
-        new BasicAWSCredentials(s3Credentials.accessKey, s3Credentials.secretKey)
-    );
+    s3Client = new AmazonS3Client(new BasicAWSCredentials(s3Credentials.accessKey,
+        s3Credentials.secretKey));
   }
 
-  static public void storeObject(AmazonS3Client s3Client, SchedulerConf schedulerConf, String sourcePath,
-                                 String destinationObject) throws
-      IOException {
+  static public void storeObject(AmazonS3Client s3Client, SchedulerConf schedulerConf,
+      String sourcePath, String destinationObject) throws IOException {
     final String existingBucketName = schedulerConf.getStorageBucket();
     final String keyName = schedulerConf.getStoragePrefix() + destinationObject;
     List<PartETag> partETags = new ArrayList<>();
 
-    InitiateMultipartUploadRequest initRequest = new
-        InitiateMultipartUploadRequest(existingBucketName, keyName);
-    InitiateMultipartUploadResult initResponse =
-        s3Client.initiateMultipartUpload(initRequest);
+    InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(
+        existingBucketName, keyName);
+    InitiateMultipartUploadResult initResponse = s3Client.initiateMultipartUpload(initRequest);
 
     File file = new File(sourcePath);
     final long contentLength = file.length();
@@ -64,38 +59,31 @@ public class S3StorageProvider implements StorageProvider {
         UploadPartRequest uploadRequest = new UploadPartRequest()
             .withBucketName(existingBucketName).withKey(keyName)
             .withUploadId(initResponse.getUploadId()).withPartNumber(i)
-            .withFileOffset(filePosition)
-            .withFile(file)
-            .withPartSize(bytesToRead);
+            .withFileOffset(filePosition).withFile(file).withPartSize(bytesToRead);
 
         // Upload part and add response to our list.
-        partETags.add(
-            s3Client.uploadPart(uploadRequest).getPartETag());
+        partETags.add(s3Client.uploadPart(uploadRequest).getPartETag());
 
         filePosition += partSize;
       }
 
-      CompleteMultipartUploadRequest compRequest = new
-          CompleteMultipartUploadRequest(
-          existingBucketName,
-          keyName,
-          initResponse.getUploadId(),
-          partETags);
+      CompleteMultipartUploadRequest compRequest = new CompleteMultipartUploadRequest(
+          existingBucketName, keyName, initResponse.getUploadId(), partETags);
 
       s3Client.completeMultipartUpload(compRequest);
     } catch (Exception e) {
       log.error(e);
-      s3Client.abortMultipartUpload(new AbortMultipartUploadRequest(
-          existingBucketName, keyName, initResponse.getUploadId()));
+      s3Client.abortMultipartUpload(new AbortMultipartUploadRequest(existingBucketName, keyName,
+          initResponse.getUploadId()));
     }
 
   }
 
-  static public List<String> listStoredObjects(AmazonS3Client s3Client, SchedulerConf schedulerConf) throws IOException {
+  static public List<String> listStoredObjects(AmazonS3Client s3Client, SchedulerConf schedulerConf)
+      throws IOException {
     List<String> result = new ArrayList<>();
-    ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
-        .withBucketName(schedulerConf.getStorageBucket())
-        .withPrefix(schedulerConf.getStoragePrefix());
+    ListObjectsRequest listObjectsRequest = new ListObjectsRequest().withBucketName(
+        schedulerConf.getStorageBucket()).withPrefix(schedulerConf.getStoragePrefix());
     ObjectListing objectListing;
 
     do {
@@ -126,27 +114,22 @@ public class S3StorageProvider implements StorageProvider {
   }
 
   public void retrieveObject(AmazonS3Client s3Client, SchedulerConf schedulerConf, String object,
-                             String destinationPath) throws IOException {
-    BufferedOutputStream bufferedOutputStream =
-        new BufferedOutputStream(new FileOutputStream(destinationPath));
+      String destinationPath) throws IOException {
+    BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(
+        destinationPath));
     try {
       final String bucketName = schedulerConf.getStorageBucket();
       final String key = schedulerConf.getStoragePrefix() + object;
 
-      S3Object s3object = s3Client.getObject(new GetObjectRequest(
-          bucketName, key));
+      S3Object s3object = s3Client.getObject(new GetObjectRequest(bucketName, key));
 
       final long contentLength = s3object.getObjectMetadata().getContentLength();
       final long partSize = 5242880; // Set part size to 5 MB.
       long bytesRead = 0;
       while (bytesRead < contentLength) {
-        GetObjectRequest rangeObjectRequest = new GetObjectRequest(
-            bucketName, key);
+        GetObjectRequest rangeObjectRequest = new GetObjectRequest(bucketName, key);
 
-        long bytesToRead = Math.min(
-            bytesRead + partSize,
-            contentLength
-        );
+        long bytesToRead = Math.min(bytesRead + partSize, contentLength);
 
         rangeObjectRequest.setRange(bytesRead, bytesToRead);
         S3Object objectPortion = s3Client.getObject(rangeObjectRequest);

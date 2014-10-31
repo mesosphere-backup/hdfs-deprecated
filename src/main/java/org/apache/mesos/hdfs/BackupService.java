@@ -29,7 +29,8 @@ class BackupService {
   void addPathsToZip(ZipOutputStream zos, String path) throws IOException {
     File start = new File(path);
     File[] listing = start.listFiles();
-    if (listing == null) return;
+    if (listing == null)
+      return;
 
     for (File file : listing) {
       if (!file.isDirectory()) {
@@ -38,12 +39,10 @@ class BackupService {
           // skip lock files
           continue;
         }
-        BufferedInputStream bufferedInputStream =
-            new BufferedInputStream(new FileInputStream(file.getPath()));
+        BufferedInputStream bufferedInputStream = new BufferedInputStream(new FileInputStream(
+            file.getPath()));
 
-        String entryPath = file
-            .getAbsolutePath()
-            .replaceFirst(schedulerConf.getDataDir(), "")
+        String entryPath = file.getAbsolutePath().replaceFirst(schedulerConf.getDataDir(), "")
             .replaceFirst("^/", ""); // remove leading '/', if needed
         log.debug("Entry path is: " + entryPath);
 
@@ -104,8 +103,8 @@ class BackupService {
 
   void generateArchive(String filename) {
     try {
-      BufferedOutputStream bufferedOutputStream =
-          new BufferedOutputStream(new FileOutputStream(filename));
+      BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(
+          filename));
 
       ZipOutputStream zipOutputStream = new ZipOutputStream(bufferedOutputStream);
 
@@ -119,8 +118,7 @@ class BackupService {
   }
 
   void restoreArchive(String filename) throws IOException {
-    BufferedInputStream bufferedInputStream =
-        new BufferedInputStream(new FileInputStream(filename));
+    BufferedInputStream bufferedInputStream = new BufferedInputStream(new FileInputStream(filename));
 
     ZipInputStream zipInputStream = new ZipInputStream(bufferedInputStream);
 
@@ -132,8 +130,8 @@ class BackupService {
       log.debug("Parent is " + output.getParent());
       new File(output.getParent()).mkdirs();
 
-      BufferedOutputStream bufferedOutputStream =
-          new BufferedOutputStream(new FileOutputStream(output));
+      BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(
+          output));
 
       IOUtils.copy(zipInputStream, bufferedOutputStream);
 

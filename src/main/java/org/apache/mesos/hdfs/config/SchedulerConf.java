@@ -32,19 +32,12 @@ public class SchedulerConf extends MainConf {
   }
 
   public String getJvmOpts() {
-    return getConf().get("mesos.hdfs.jvm.opts", "" +
-            "-XX:+UseConcMarkSweepGC " +
-            "-XX:+CMSClassUnloadingEnabled " +
-            "-XX:+UseTLAB " +
-            "-XX:+AggressiveOpts " +
-            "-XX:+UseCompressedOops " +
-            "-XX:+UseFastEmptyMethods " +
-            "-XX:+UseFastAccessorMethods " +
-            "-Xss256k " +
-            "-XX:+AlwaysPreTouch " +
-            "-XX:+UseParNewGC " +
-            "-Djava.library.path=/usr/lib:/usr/local/lib:lib/native"
-    );
+    return getConf().get(
+        "mesos.hdfs.jvm.opts",
+        "" + "-XX:+UseConcMarkSweepGC " + "-XX:+CMSClassUnloadingEnabled " + "-XX:+UseTLAB "
+            + "-XX:+AggressiveOpts " + "-XX:+UseCompressedOops " + "-XX:+UseFastEmptyMethods "
+            + "-XX:+UseFastAccessorMethods " + "-Xss256k " + "-XX:+AlwaysPreTouch "
+            + "-XX:+UseParNewGC " + "-Djava.library.path=/usr/lib:/usr/local/lib:lib/native");
   }
 
   public double getExecutorCpus() {
@@ -73,30 +66,30 @@ public class SchedulerConf extends MainConf {
 
   public int getTaskHeapSize(String taskName) {
     switch (taskName) {
-      case "zkfc":
+      case "zkfc" :
         return getZkfcHeapSize();
-      case "namenode":
+      case "namenode" :
         return getNamenodeHeapSize();
-      case "datanode":
+      case "datanode" :
         return getDatanodeHeapSize();
-      case "journalnode":
+      case "journalnode" :
         return getJournalnodeHeapSize();
-      default:
+      default :
         throw new RuntimeException("Invalid taskName=" + taskName);
     }
   }
 
   public double getTaskCpus(String taskName) {
     switch (taskName) {
-      case "zkfc":
+      case "zkfc" :
         return getZkfcCpus();
-      case "namenode":
+      case "namenode" :
         return getNamenodeCpus();
-      case "datanode":
+      case "datanode" :
         return getDatanodeCpus();
-      case "journalnode":
+      case "journalnode" :
         return getJournalnodeCpus();
-      default:
+      default :
         throw new RuntimeException("Invalid taskName=" + taskName);
     }
   }

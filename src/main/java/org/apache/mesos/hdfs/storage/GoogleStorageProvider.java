@@ -42,41 +42,34 @@ public class GoogleStorageProvider implements StorageProvider {
       Credential credential = authorize();
 
       // Set up global Storage instance.
-      client = new Storage.Builder(httpTransport, JSON_FACTORY, credential)
-          .setApplicationName("hdfs-on-mesos").build();
+      client = new Storage.Builder(httpTransport, JSON_FACTORY, credential).setApplicationName(
+          "hdfs-on-mesos").build();
     }
   }
 
   static public void storeObject(Storage client, SchedulerConf schedulerConf, String sourcePath,
-                                 String destinationObject) throws
-      IOException {
+      String destinationObject) throws IOException {
     File input = new File(sourcePath);
-    BufferedInputStream bufferedInputStream =
-        new BufferedInputStream(new FileInputStream(input));
+    BufferedInputStream bufferedInputStream = new BufferedInputStream(new FileInputStream(input));
 
-    StorageObject object = new StorageObject()
-        .setBucket(schedulerConf.getStorageBucket())
-        .setName(PathUtil.combine(schedulerConf.getStoragePrefix(), destinationObject));
+    StorageObject object = new StorageObject().setBucket(schedulerConf.getStorageBucket()).setName(
+        PathUtil.combine(schedulerConf.getStoragePrefix(), destinationObject));
 
-    InputStreamContent mediaContent =
-        new InputStreamContent("application/octet-stream", bufferedInputStream);
+    InputStreamContent mediaContent = new InputStreamContent("application/octet-stream",
+        bufferedInputStream);
     mediaContent.setLength(input.length());
 
-    Storage.Objects.Insert insert = client.objects().insert(
-        schedulerConf.getStorageBucket(),
-        object,
-        mediaContent
-    );
+    Storage.Objects.Insert insert = client.objects().insert(schedulerConf.getStorageBucket(),
+        object, mediaContent);
 
     insert.execute();
   }
 
-  static public List<String> listStoredObjects(Storage client, SchedulerConf schedulerConf) throws IOException {
+  static public List<String> listStoredObjects(Storage client, SchedulerConf schedulerConf)
+      throws IOException {
     // List the contents of the bucket.
-    Storage.Objects.List listObjects =
-        client.objects().list(
-            PathUtil.combine(schedulerConf.getStorageBucket(), schedulerConf.getStoragePrefix())
-        );
+    Storage.Objects.List listObjects = client.objects().list(
+        PathUtil.combine(schedulerConf.getStorageBucket(), schedulerConf.getStoragePrefix()));
 
     com.google.api.services.storage.model.Objects objects;
     List<String> result = new ArrayList<>();
@@ -90,11 +83,8 @@ public class GoogleStorageProvider implements StorageProvider {
         if (!object.getName().startsWith(schedulerConf.getStoragePrefix())) {
           continue;
         }
-        result.add(
-            object.getName()
-                .replaceFirst(schedulerConf.getStoragePrefix(), "")
-                .replaceFirst("^/", "")
-        );
+        result.add(object.getName().replaceFirst(schedulerConf.getStoragePrefix(), "")
+            .replaceFirst("^/", ""));
       }
       listObjects.setPageToken(objects.getNextPageToken());
     } while (null != objects.getNextPageToken());
@@ -103,14 +93,13 @@ public class GoogleStorageProvider implements StorageProvider {
   }
 
   static public void retrieveObject(Storage client, SchedulerConf schedulerConf, String object,
-                                    String destinationPath) throws IOException {
-    BufferedOutputStream bufferedOutputStream =
-        new BufferedOutputStream(new FileOutputStream(destinationPath));
+      String destinationPath) throws IOException {
+    BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(
+        destinationPath));
 
     Storage.Objects.Get get = client.objects().get(
         PathUtil.combine(schedulerConf.getStorageBucket(), schedulerConf.getStoragePrefix()),
-        object
-    );
+        object);
 
     get.executeMediaAndDownloadTo(bufferedOutputStream);
   }
@@ -120,9 +109,7 @@ public class GoogleStorageProvider implements StorageProvider {
     log.info(schedulerConf.getStorageCredentialsPath());
     ObjectMapper mapper = new ObjectMapper();
     GoogleCredentials credentials = mapper.readValue(
-        new File(schedulerConf.getStorageCredentialsPath()),
-        GoogleCredentials.class
-    );
+        new File(schedulerConf.getStorageCredentialsPath()), GoogleCredentials.class);
 
     File pem = File.createTempFile("lol", "pem");
     FileOutputStream fileOutputStream = new FileOutputStream(pem);
@@ -135,14 +122,11 @@ public class GoogleStorageProvider implements StorageProvider {
     scopes.add(StorageScopes.DEVSTORAGE_READ_ONLY);
     scopes.add(StorageScopes.DEVSTORAGE_READ_WRITE);
 
-    return new GoogleCredential.Builder()
-        .setTransport(httpTransport)
-        .setJsonFactory(JSON_FACTORY)
+    return new GoogleCredential.Builder().setTransport(httpTransport).setJsonFactory(JSON_FACTORY)
         .setServiceAccountId(credentials.client_email)
         .setServiceAccountPrivateKeyId(credentials.private_key_id)
         .setServiceAccountPrivateKeyFromPemFile(pem.getAbsoluteFile())
-        .setServiceAccountScopes(scopes)
-        .build();
+        .setServiceAccountScopes(scopes).build();
   }
 
   public void storeObject(String sourcePath, String destinationObject) throws IOException {

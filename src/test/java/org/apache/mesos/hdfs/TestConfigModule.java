@@ -38,16 +38,14 @@ public class TestConfigModule extends AbstractModule {
   @Named("ConfigPath")
   String providesConfigPath(Properties props) {
     String sitePath = props.getProperty("mesos.site.path", "etc/hadoop");
-    return new Path(props.getProperty(
-        "mesos.conf.path",
-        sitePath + "/mesos-site.xml")).toString();
+    return new Path(props.getProperty("mesos.conf.path", sitePath + "/mesos-site.xml")).toString();
   }
 
   @Provides
   SchedulerConf providesSchedulerConfig(Properties props, @Named("ConfigPath") String configPath) {
     Configuration conf = new Configuration();
-    int configServerPort = Integer.valueOf(
-        props.getProperty("mesos.hdfs.config.server.port", "8765"));
+    int configServerPort = Integer.valueOf(props.getProperty("mesos.hdfs.config.server.port",
+        "8765"));
 
     conf.set("mesos.hdfs.data.dir", dataDir);
     conf.set("mesos.hdfs.backup.storage.credentials.path", credentialsPath);
@@ -56,7 +54,6 @@ public class TestConfigModule extends AbstractModule {
 
     return new SchedulerConf(conf, configServerPort);
   }
-
 
   @Provides
   ClusterState providesClusterState(SchedulerConf schedulerConf) {
