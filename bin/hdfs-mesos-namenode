@@ -6,8 +6,8 @@ export JAVA_HOME=$(dirname $(readlink -f $(which java)))/../..
 trap "{ $DIR/mesos-killtree "$$" ; exit 0; }" EXIT
 
 function bootstrap_standby() {
-  echo "Pausing for 40s before bootstrapping standby namenode"
-  sleep 40
+  echo "Pausing for 10s before bootstrapping standby namenode"
+  sleep 10
   exec $DIR/hdfs namenode -bootstrapStandby -force
 }
 

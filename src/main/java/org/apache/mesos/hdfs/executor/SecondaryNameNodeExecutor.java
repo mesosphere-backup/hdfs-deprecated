@@ -61,8 +61,12 @@ public class SecondaryNameNodeExecutor extends AbstractNodeExecutor {
       for (TaskID taskId : tasks.keySet()) {
         if (taskId.getValue().contains(".namenode.namenode.")) {
           // TODO add trigger for this event after other events have
-          // completed.
+          // completed. Remove the sleep code at that time.
           // Boostrap the secondary name node
+          try {
+            Thread.sleep(30000);
+          } catch (InterruptedException ex) {
+          }
           runCommand(driver, tasks.get(taskId), "bin/hdfs-mesos-namenode -b");
           startProcess(driver, tasks.get(taskId));
         }
