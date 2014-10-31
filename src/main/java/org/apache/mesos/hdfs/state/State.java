@@ -22,12 +22,13 @@ public class State {
 
   /**
    * return null if no frameworkId found
-   *
+   * 
    * @throws ExecutionException
    * @throws InterruptedException
    * @throws InvalidProtocolBufferException
    */
-  public FrameworkID getFrameworkID() throws InterruptedException, ExecutionException, InvalidProtocolBufferException {
+  public FrameworkID getFrameworkID() throws InterruptedException, ExecutionException,
+      InvalidProtocolBufferException {
     byte[] existingFrameworkId = zkState.fetch(FRAMEWORK_ID_KEY).get().value();
     if (existingFrameworkId.length > 0) {
       return FrameworkID.parseFrom(existingFrameworkId);
@@ -36,13 +37,15 @@ public class State {
     }
   }
 
-  public void setFrameworkId(FrameworkID frameworkId) throws InterruptedException, ExecutionException {
+  public void setFrameworkId(FrameworkID frameworkId) throws InterruptedException,
+      ExecutionException {
     Variable value = zkState.fetch(FRAMEWORK_ID_KEY).get();
     value = value.mutate(frameworkId.toByteArray());
     zkState.store(value).get();
   }
 
-  public Node getNamenode() throws ClassNotFoundException, InterruptedException, ExecutionException, IOException {
+  public Node getNamenode() throws ClassNotFoundException, InterruptedException,
+      ExecutionException, IOException {
     return get(NAMENODE_KEY);
   }
 
@@ -50,21 +53,22 @@ public class State {
     set(NAMENODE_KEY, node);
   }
 
-  public Set<Node> getNodes() throws InterruptedException, ExecutionException, IOException, ClassNotFoundException {
+  public Set<Node> getNodes() throws InterruptedException, ExecutionException, IOException,
+      ClassNotFoundException {
     Set<Node> nodes = get(NODES_KEY);
     if (nodes == null)
       nodes = new HashSet<Node>();
     return nodes;
   }
 
-  public void setNodes(Set<Node> nodes) throws InterruptedException, ExecutionException, IOException {
+  public void setNodes(Set<Node> nodes) throws InterruptedException, ExecutionException,
+      IOException {
     set(NODES_KEY, nodes);
   }
 
   /**
-   * Get serializable object from store
-   * null if none
-   *
+   * Get serializable object from store null if none
+   * 
    * @return Object
    * @throws ExecutionException
    * @throws InterruptedException
@@ -72,7 +76,8 @@ public class State {
    * @throws ClassNotFoundException
    */
   @SuppressWarnings("unchecked")
-  private <T extends Object> T get(String key) throws InterruptedException, ExecutionException, IOException, ClassNotFoundException {
+  private <T extends Object> T get(String key) throws InterruptedException, ExecutionException,
+      IOException, ClassNotFoundException {
     byte[] existingNodes = zkState.fetch(key).get().value();
     if (existingNodes.length > 0) {
       ByteArrayInputStream bis = new ByteArrayInputStream(existingNodes);
@@ -96,12 +101,13 @@ public class State {
 
   /**
    * Set serializable object in store
-   *
+   * 
    * @throws ExecutionException
    * @throws InterruptedException
    * @throws IOException
    */
-  private <T extends Object> void set(String key, T object) throws InterruptedException, ExecutionException, IOException {
+  private <T extends Object> void set(String key, T object) throws InterruptedException,
+      ExecutionException, IOException {
     Variable value = zkState.fetch(key).get();
     ByteArrayOutputStream bos = new ByteArrayOutputStream();
     ObjectOutputStream out = null;

@@ -16,7 +16,7 @@ public class MainConf extends Configured {
   }
 
   public String getStateZkServers() {
-    return getConf().get("mesos.hdfs.state.zk");
+    return getConf().get("mesos.hdfs.state.zk", "localhost:2181");
   }
 
   public int getStateZkTimeout() {
@@ -24,7 +24,7 @@ public class MainConf extends Configured {
   }
 
   public String getNativeLibrary() {
-    return getConf().get("mesos.native.library", "/usr/lib/libmesos.so");
+    return getConf().get("mesos.native.library", "/usr/local/lib/libmesos.so");
   }
 
   public int getConfigServerPort() {

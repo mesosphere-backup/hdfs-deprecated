@@ -12,7 +12,7 @@ import java.util.Set;
 
 public class ClusterState {
   private static final Log log = LogFactory.getLog(ClusterState.class);
-  private final State state;
+  private State state;
   private final Map<Protos.TaskID, Scheduler.DfsTask> tasks;
   private final Set<Protos.TaskID> journalnodes;
   private final Set<Protos.TaskID> namenodes;
@@ -20,15 +20,26 @@ public class ClusterState {
   private final Set<String> journalnodeHosts;
   private final Set<String> namenodeHosts;
 
+  private static ClusterState instance = null;
 
-  public ClusterState(State state) {
-    this.state = state;
+  public static ClusterState getInstance() {
+    if (instance == null) {
+      instance = new ClusterState();
+    }
+    return instance;
+  }
+
+  private ClusterState() {
     tasks = new HashMap<>();
     journalnodes = new HashSet<>();
     namenodes = new HashSet<>();
     dfsHosts = new HashSet<>();
     journalnodeHosts = new HashSet<>();
     namenodeHosts = new HashSet<>();
+  }
+
+  public void init(State state) {
+    this.state = state;
   }
 
   public State getState() {
@@ -67,13 +78,13 @@ public class ClusterState {
     tasks.put(taskId, dfsTask);
     Scheduler.DfsTask.Type type = dfsTask.type;
     switch (type) {
-      case NN:
+      case NN :
         namenodeHosts.add(dfsTask.hostname);
         break;
-      case JN:
+      case JN :
         journalnodeHosts.add(dfsTask.hostname);
         break;
-      default:
+      default :
         break;
     }
   }
@@ -83,16 +94,16 @@ public class ClusterState {
       tasks.get(taskStatus.getTaskId()).taskStatus = taskStatus;
       Scheduler.DfsTask.Type type = tasks.get(taskStatus.getTaskId()).type;
       switch (type) {
-        case DN:
-        case ZKFC:
+        case DN :
+        case ZKFC :
           break;
-        case NN:
+        case NN :
           namenodes.add(taskStatus.getTaskId());
           break;
-        case JN:
+        case JN :
           journalnodes.add(taskStatus.getTaskId());
           break;
-        default:
+        default :
           Scheduler.log.error("Unknown task type: " + type);
           break;
       }

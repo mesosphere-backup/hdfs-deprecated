@@ -22,7 +22,7 @@ cp Impala-cdh5-1.4_5.1.0/thirdparty/hadoop-2.3.0-cdh5.1.0/lib/native/lib* lib/na
 rm -rf cdh5-1* Impala*
 
 # Copy scripts to bin
-cp ../bin/hdfs-mesos* bin/
+cp ../bin/* bin/
 cp ../target/*-uber.jar lib/
 cp ../conf/* etc/hadoop/
 
