@@ -22,8 +22,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
-public class Scheduler implements org.apache.mesos.Scheduler,
-    Runnable {
+public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
   public static final Log log = LogFactory.getLog(Scheduler.class);
   private final SchedulerConf conf;
   private final String localhost;
@@ -63,16 +62,17 @@ public class Scheduler implements org.apache.mesos.Scheduler,
   }
 
   @Override
-  public void executorLost(SchedulerDriver driver, ExecutorID executorID,
-                           SlaveID slaveID, int status) {
-    log.info("Executor lost: executorId=" + executorID.getValue() + " slaveId=" + slaveID.getValue() + " status=" + status);
+  public void executorLost(SchedulerDriver driver, ExecutorID executorID, SlaveID slaveID,
+      int status) {
+    log.info("Executor lost: executorId=" + executorID.getValue() + " slaveId="
+        + slaveID.getValue() + " status=" + status);
   }
 
   @Override
-  public void frameworkMessage(SchedulerDriver driver, ExecutorID executorID,
-                               SlaveID slaveID, byte[] data) {
-    log.info("Framework message: executorId=" + executorID.getValue() + " slaveId=" + slaveID.getValue() +
-        " data='" + Arrays.toString(data) + "'");
+  public void frameworkMessage(SchedulerDriver driver, ExecutorID executorID, SlaveID slaveID,
+      byte[] data) {
+    log.info("Framework message: executorId=" + executorID.getValue() + " slaveId="
+        + slaveID.getValue() + " data='" + Arrays.toString(data) + "'");
   }
 
   @Override
@@ -81,8 +81,7 @@ public class Scheduler implements org.apache.mesos.Scheduler,
   }
 
   @Override
-  public void registered(SchedulerDriver driver, FrameworkID frameworkId,
-                         MasterInfo masterInfo) {
+  public void registered(SchedulerDriver driver, FrameworkID frameworkId, MasterInfo masterInfo) {
     try {
       clusterState.getState().setFrameworkId(frameworkId);
     } catch (InterruptedException | ExecutionException e) {
@@ -105,89 +104,80 @@ public class Scheduler implements org.apache.mesos.Scheduler,
     reconciledAt = new DateTime();
   }
 
-
-  private void launchNode(SchedulerDriver driver, Offer offer, ResourceRoles roles, String nodeName,
-                          List<String> taskNames) {
-    log.info(String.format("Launching node of type %s with tasks %s", nodeName, taskNames.toString()));
+  private void launchNode(SchedulerDriver driver, Offer offer, ResourceRoles roles,
+      String nodeName, List<String> taskNames) {
+    log.info(String.format("Launching node of type %s with tasks %s", nodeName,
+        taskNames.toString()));
     int confServerPort = conf.getConfigServerPort();
 
     String taskIdName = String.format("%s.%d", nodeName, System.currentTimeMillis());
-    ExecutorInfo executorInfo = ExecutorInfo.newBuilder()
+    ExecutorInfo executorInfo = ExecutorInfo
+        .newBuilder()
         .setName(nodeName + " executor")
         .setExecutorId(ExecutorID.newBuilder().setValue("executor." + taskIdName).build())
-        .addAllResources(Arrays.asList(
-            Resource.newBuilder()
-                .setName("cpus")
-                .setType(Value.Type.SCALAR)
-                .setScalar(Value.Scalar.newBuilder().setValue(conf.getExecutorCpus()).build())
-                .setRole(roles.cpuRole)
-                .build(),
-            Resource.newBuilder()
-                .setName("mem")
-                .setType(Value.Type.SCALAR)
-                .setScalar(Value.Scalar.newBuilder().setValue(conf.getExecutorHeap() * conf.getJvmOverhead()).build())
-                .setRole(roles.memRole)
-                .build(),
-            Resource.newBuilder()
-                .setType(Value.Type.RANGES)
-                .setName("ports")
-                .setRole(roles.portsRole)
-                .setRanges(
-                    Value.Ranges.newBuilder()
-                        .addRange(Value.Range.newBuilder()
-                            .setBegin(roles.portsBegin)
-                            .setEnd(roles.portsEnd))
-                )
-                .build()))
-        .setCommand(CommandInfo.newBuilder()
-            .addAllUris(Arrays.asList(
-                CommandInfo.URI.newBuilder().setValue(conf.getExecUri()).build(),
-                CommandInfo.URI.newBuilder().setValue(
-                    String.format("http://%s:%d/hdfs-site.xml", localhost, confServerPort)
-                ).build()
-            ))
-            .setEnvironment(Environment.newBuilder()
-                .addAllVariables(Arrays.asList(
-                    Environment.Variable.newBuilder()
-                        .setName("HADOOP_OPTS")
-                        .setValue(conf.getJvmOpts()).build(),
-                    Environment.Variable.newBuilder()
-                        .setName("HADOOP_HEAPSIZE")
-                        .setValue(String.format("%d", conf.getHadoopHeapSize())).build(),
-                    Environment.Variable.newBuilder()
-                        .setName("HADOOP_NAMENODE_OPTS")
-                        .setValue("-Xmx" + conf.getNamenodeHeapSize() + "m").build(),
-                    Environment.Variable.newBuilder()
-                        .setName("HADOOP_DATANODE_OPTS")
-                        .setValue("-Xmx" + conf.getDatanodeHeapSize() + "m").build(),
-                    Environment.Variable.newBuilder()
-                        .setName("EXECUTOR_OPTS")
-                        .setValue("-Xmx" + conf.getExecutorHeap() + "m").build()
-                )))
-            .setValue("env ; cd hadoop-2.* && bin/mesos-executor")
-            .build())
-        .build();
+        .addAllResources(
+            Arrays.asList(
+                Resource.newBuilder().setName("cpus").setType(Value.Type.SCALAR)
+                    .setScalar(Value.Scalar.newBuilder().setValue(conf.getExecutorCpus()).build())
+                    .setRole(roles.cpuRole).build(),
+                Resource
+                    .newBuilder()
+                    .setName("mem")
+                    .setType(Value.Type.SCALAR)
+                    .setScalar(
+                        Value.Scalar.newBuilder()
+                            .setValue(conf.getExecutorHeap() * conf.getJvmOverhead()).build())
+                    .setRole(roles.memRole).build(),
+                Resource
+                    .newBuilder()
+                    .setType(Value.Type.RANGES)
+                    .setName("ports")
+                    .setRole(roles.portsRole)
+                    .setRanges(
+                        Value.Ranges.newBuilder().addRange(
+                            Value.Range.newBuilder().setBegin(roles.portsBegin)
+                                .setEnd(roles.portsEnd))).build()))
+        .setCommand(
+            CommandInfo
+                .newBuilder()
+                .addAllUris(
+                    Arrays.asList(
+                        CommandInfo.URI.newBuilder().setValue(conf.getExecUri()).build(),
+                        CommandInfo.URI
+                            .newBuilder()
+                            .setValue(
+                                String.format("http://%s:%d/hdfs-site.xml", localhost,
+                                    confServerPort)).build()))
+                .setEnvironment(
+                    Environment.newBuilder().addAllVariables(
+                        Arrays.asList(
+                            Environment.Variable.newBuilder().setName("HADOOP_OPTS")
+                                .setValue(conf.getJvmOpts()).build(),
+                            Environment.Variable.newBuilder().setName("HADOOP_HEAPSIZE")
+                                .setValue(String.format("%d", conf.getHadoopHeapSize())).build(),
+                            Environment.Variable.newBuilder().setName("HADOOP_NAMENODE_OPTS")
+                                .setValue("-Xmx" + conf.getNamenodeHeapSize() + "m").build(),
+                            Environment.Variable.newBuilder().setName("HADOOP_DATANODE_OPTS")
+                                .setValue("-Xmx" + conf.getDatanodeHeapSize() + "m").build(),
+                            Environment.Variable.newBuilder().setName("EXECUTOR_OPTS")
+                                .setValue("-Xmx" + conf.getExecutorHeap() + "m").build())))
+                .setValue("env ; cd hadoop-2.* && bin/mesos-executor").build()).build();
 
     List<TaskInfo> tasks = new ArrayList<>();
     for (String taskName : taskNames) {
       List<Resource> resources = resourceUtils.buildResources(roles, conf.getTaskCpus(taskName),
           conf.getTaskHeapSize(taskName));
 
-      TaskID taskId =
-          TaskID.newBuilder().setValue(String.format("task.%s.%s", taskName, taskIdName)).build();
-      TaskInfo task = TaskInfo.newBuilder()
-          .setExecutor(executorInfo)
-          .setName(taskName)
-          .setTaskId(taskId)
-          .setSlaveId(offer.getSlaveId())
-          .addAllResources(resources)
-          .setData(ByteString.copyFromUtf8(
-              String.format("bin/hdfs-mesos-%s", taskName)))
-          .build();
+      TaskID taskId = TaskID.newBuilder()
+          .setValue(String.format("task.%s.%s", taskName, taskIdName)).build();
+      TaskInfo task = TaskInfo.newBuilder().setExecutor(executorInfo).setName(taskName)
+          .setTaskId(taskId).setSlaveId(offer.getSlaveId()).addAllResources(resources)
+          .setData(ByteString.copyFromUtf8(String.format("bin/hdfs-mesos-%s", taskName))).build();
       tasks.add(task);
 
       stagingTasks.add(taskId);
-      clusterState.addTask(taskId, new DfsTask(taskName, offer.getSlaveId().getValue(), offer.getHostname()));
+      clusterState.addTask(taskId,
+          new DfsTask(taskName, offer.getSlaveId().getValue(), offer.getHostname()));
     }
 
     driver.launchTasks(Arrays.asList(offer.getId()), tasks);
@@ -254,7 +244,7 @@ public class Scheduler implements org.apache.mesos.Scheduler,
     }
 
     if (clusterState.getNamenodes().size() == 0 && clusterState.getJournalnodes().size() == 0) {
-      // Cluster must be formatted!  Looks like we're starting fresh?
+      // Cluster must be formatted! Looks like we're starting fresh?
       log.info("No namenodes or journalnodes found.  Collecting offers until we have sufficient capacity to launch.");
 
       int namenodes = 0;
@@ -263,19 +253,21 @@ public class Scheduler implements org.apache.mesos.Scheduler,
       incomingOffers.addAll(offers);
       incomingOffers.addAll(pendingOffers.values());
       for (Offer offer : incomingOffers) {
-        if (namenodes < 2 && resourceUtils.sufficientRolesForNamenode(offer) != null && clusterState.notInDfsHosts(offer
-            .getSlaveId().getValue())) {
+        if (namenodes < 2 && resourceUtils.sufficientRolesForNamenode(offer) != null
+            && clusterState.notInDfsHosts(offer.getSlaveId().getValue())) {
           namenodes++;
           pendingOffers.put(offer.getId(), offer);
-        } else if (journalnodes < conf.getJournalnodeCount() && resourceUtils.sufficientRolesForJournalnode(offer) !=
-            null && clusterState.notInDfsHosts(offer.getSlaveId().getValue())) {
+        } else if (journalnodes < conf.getJournalnodeCount()
+            && resourceUtils.sufficientRolesForJournalnode(offer) != null
+            && clusterState.notInDfsHosts(offer.getSlaveId().getValue())) {
           journalnodes++;
           pendingOffers.put(offer.getId(), offer);
         } else {
           driver.declineOffer(offer.getId());
         }
       }
-      log.info(String.format("Currently have %d pending offers, with journalnodes=%d and namenodes=%d",
+      log.info(String.format(
+          "Currently have %d pending offers, with journalnodes=%d and namenodes=%d",
           pendingOffers.size(), journalnodes, namenodes));
       if (!initializingCluster && namenodes == 2 && journalnodes >= conf.getJournalnodeCount()) {
         log.info("Launching initial nodes with pending offers");
@@ -293,7 +285,8 @@ public class Scheduler implements org.apache.mesos.Scheduler,
 
     List<Offer> remainingOffers = new ArrayList<>();
 
-    // We need to start another namenode.  Do so now, and temporarily store the remaining offers.
+    // We need to start another namenode. Do so now, and temporarily store the
+    // remaining offers.
     if (clusterState.getNamenodes().size() < 2 && clusterState.getNamenodeHosts().size() < 2) {
       // Combine pending offers + current offers
       List<Offer> allOffers = new ArrayList<>();
@@ -302,7 +295,8 @@ public class Scheduler implements org.apache.mesos.Scheduler,
         ResourceRoles roles = resourceUtils.sufficientRolesForNamenode(offer);
         if (roles != null && clusterState.notInDfsHosts(offer.getSlaveId().getValue())) {
           launchNamenode(driver, offer, roles);
-          break; // Never start more than 1 at a time to prevent a race condition.
+          break; // Never start more than 1 at a time to prevent a race
+                 // condition.
         } else {
           remainingOffers.add(offer);
         }
@@ -329,7 +323,8 @@ public class Scheduler implements org.apache.mesos.Scheduler,
     }
 
     if (initializingCluster) {
-      log.info(String.format("Declining remaining %d offers pending initialization", remainingOffers.size()));
+      log.info(String.format("Declining remaining %d offers pending initialization",
+          remainingOffers.size()));
       for (Offer offer : remainingOffers) {
         driver.declineOffer(offer.getId());
       }
@@ -368,11 +363,8 @@ public class Scheduler implements org.apache.mesos.Scheduler,
       String postfix = taskId.getValue();
       postfix = postfix.substring(postfix.indexOf(".") + 1, postfix.length());
       postfix = postfix.substring(postfix.indexOf(".") + 1, postfix.length());
-      driver.sendFrameworkMessage(
-          ExecutorID.newBuilder().setValue("executor." + postfix).build(),
-          SlaveID.newBuilder().setValue(dfsTask.slaveId).build(),
-          message.getBytes("UTF-8")
-      );
+      driver.sendFrameworkMessage(ExecutorID.newBuilder().setValue("executor." + postfix).build(),
+          SlaveID.newBuilder().setValue(dfsTask.slaveId).build(), message.getBytes("UTF-8"));
       return;
     } catch (UnsupportedEncodingException e) {
       log.error(e);
@@ -383,12 +375,10 @@ public class Scheduler implements org.apache.mesos.Scheduler,
   @Override
   public void statusUpdate(SchedulerDriver driver, TaskStatus status) {
     // Nice!
-    log.info(
-        String.format("Received status update for taskId=%s state=%s message='%s' stagingTasks.size=%d",
-            status.getTaskId().getValue(),
-            status.getState().toString(),
-            status.getMessage(),
-            stagingTasks.size()));
+    log.info(String.format(
+        "Received status update for taskId=%s state=%s message='%s' stagingTasks.size=%d", status
+            .getTaskId().getValue(), status.getState().toString(), status.getMessage(),
+        stagingTasks.size()));
 
     DfsTask dfsTask = clusterState.getDfsTask(status.getTaskId());
 
@@ -410,8 +400,7 @@ public class Scheduler implements org.apache.mesos.Scheduler,
 
       if (initializingCluster) {
         log.info("Received status update during cluster initialization");
-        if (dfsTask.type == DfsTask.Type.NN &&
-            status.getMessage().equals("initialized")) {
+        if (dfsTask.type == DfsTask.Type.NN && status.getMessage().equals("initialized")) {
           // Time to bootstrap the other namenode.
           for (TaskID taskId : clusterState.getNamenodes()) {
             if (!taskId.equals(status.getTaskId())) {
@@ -425,11 +414,12 @@ public class Scheduler implements org.apache.mesos.Scheduler,
           }
           // Finished!
           initializingCluster = false;
-        } else if ((dfsTask.type == DfsTask.Type.JN || dfsTask.type == DfsTask.Type.NN) &&
-            clusterState.getJournalnodes().size() - 2 == conf.getJournalnodeCount() &&
-            clusterState.getNamenodes().size() == 2) {
+        } else if ((dfsTask.type == DfsTask.Type.JN || dfsTask.type == DfsTask.Type.NN)
+            && clusterState.getJournalnodes().size() - 2 == conf.getJournalnodeCount()
+            && clusterState.getNamenodes().size() == 2) {
           log.info("All name/journalnodes now ready for initialization");
-          // All instances are up.  Tell journals to reload, and one namenode to init.
+          // All instances are up. Tell journals to reload, and one namenode to
+          // init.
           for (TaskID taskId : clusterState.getJournalnodes()) {
             log.info("Reloading config for taskId=" + taskId.getValue());
             sendMessageTo(driver, taskId, "reload");
@@ -464,11 +454,8 @@ public class Scheduler implements org.apache.mesos.Scheduler,
   @Override
   public void run() {
     FrameworkInfo.Builder frameworkInfo = FrameworkInfo.newBuilder()
-        .setName("HDFS " + conf.getClusterName())
-        .setFailoverTimeout(conf.getFailoverTimeout())
-        .setUser(conf.getHdfsUser())
-        .setRole(conf.getHdfsRole())
-        .setCheckpoint(true);
+        .setName("HDFS " + conf.getClusterName()).setFailoverTimeout(conf.getFailoverTimeout())
+        .setUser(conf.getHdfsUser()).setRole(conf.getHdfsRole()).setCheckpoint(true);
 
     try {
       FrameworkID frameworkID = clusterState.getState().getFrameworkID();
@@ -476,13 +463,12 @@ public class Scheduler implements org.apache.mesos.Scheduler,
         frameworkInfo.setId(frameworkID);
         frameworkInitialized = true;
       }
-    } catch (InterruptedException | ExecutionException
-        | InvalidProtocolBufferException e) {
+    } catch (InterruptedException | ExecutionException | InvalidProtocolBufferException e) {
       throw new RuntimeException(e);
     }
 
-    MesosSchedulerDriver driver = new MesosSchedulerDriver(this,
-        frameworkInfo.build(), conf.getMesosMasterUri());
+    MesosSchedulerDriver driver = new MesosSchedulerDriver(this, frameworkInfo.build(),
+        conf.getMesosMasterUri());
     driver.run().getValueDescriptor().getFullName();
   }
 
@@ -494,19 +480,19 @@ public class Scheduler implements org.apache.mesos.Scheduler,
 
     public DfsTask(String type, String slaveId, String hostname) {
       switch (type) {
-        case "namenode":
+        case "namenode" :
           this.type = Type.NN;
           break;
-        case "journalnode":
+        case "journalnode" :
           this.type = Type.JN;
           break;
-        case "datanode":
+        case "datanode" :
           this.type = Type.DN;
           break;
-        case "zkfc":
+        case "zkfc" :
           this.type = Type.ZKFC;
           break;
-        default:
+        default :
           throw new RuntimeException("Invalid type: " + type);
       }
       this.slaveId = slaveId;
@@ -522,10 +508,7 @@ public class Scheduler implements org.apache.mesos.Scheduler,
     }
 
     public enum Type {
-      NN,
-      DN,
-      JN,
-      ZKFC,
+      NN, DN, JN, ZKFC,
     }
   }
 

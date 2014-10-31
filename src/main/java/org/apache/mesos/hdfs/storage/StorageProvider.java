@@ -10,4 +10,3 @@ public interface StorageProvider {
 
   public void retrieveObject(String object, String destinationPath) throws IOException;
 }
-

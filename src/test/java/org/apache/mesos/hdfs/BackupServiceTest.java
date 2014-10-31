@@ -27,16 +27,10 @@ public class BackupServiceTest {
 
   @Before
   public void setUp() throws Exception {
-    datadir = TestUtils.computeTestDataRoot(BackupServiceTest.class).getPath() +
-        "/" +
-        UUID.randomUUID().toString();
-    String[] paths = {
-        "name/current/fsimage",
-        "name/current/fstime",
-        "name/current/VERSION",
-        "name/current/edits",
-        "name/image/fsimage"
-    };
+    datadir = TestUtils.computeTestDataRoot(BackupServiceTest.class).getPath() + "/"
+        + UUID.randomUUID().toString();
+    String[] paths = {"name/current/fsimage", "name/current/fstime", "name/current/VERSION",
+        "name/current/edits", "name/image/fsimage"};
 
     for (String path : paths) {
       File file = new File(PathUtil.combine(datadir, path));
@@ -69,8 +63,9 @@ public class BackupServiceTest {
     backupService.generateArchive(archive1);
     backupService.generateArchive(archive2);
 
-    String fsimageContents1 = Files.readAllLines(Paths.get(PathUtil.combine(datadir, "/name/current", "fsimage")),
-        StandardCharsets.UTF_8).toString();
+    String fsimageContents1 = Files.readAllLines(
+        Paths.get(PathUtil.combine(datadir, "/name/current", "fsimage")), StandardCharsets.UTF_8)
+        .toString();
 
     FileInputStream fis = new FileInputStream(new File(archive1));
     String archive1_md5 = DigestUtils.md5Hex(fis);
@@ -88,8 +83,9 @@ public class BackupServiceTest {
     // Extract
     backupService.restoreArchive(archive1);
 
-    String fsimageContents2 = Files.readAllLines(Paths.get(PathUtil.combine(datadir, "/name/current", "fsimage")),
-        StandardCharsets.UTF_8).toString();
+    String fsimageContents2 = Files.readAllLines(
+        Paths.get(PathUtil.combine(datadir, "/name/current", "fsimage")), StandardCharsets.UTF_8)
+        .toString();
 
     assertEquals(fsimageContents1, fsimageContents2);
 
