@@ -4,9 +4,12 @@ import com.floreysoft.jmte.Engine;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.apache.mesos.hdfs.state.ClusterState;
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.eclipse.jetty.server.handler.HandlerList;
+import org.eclipse.jetty.server.handler.ResourceHandler;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -30,7 +33,15 @@ public class ConfigServer {
     this.schedulerConf = schedulerConf;
     engine = new Engine();
     server = new Server(schedulerConf.getConfigServerPort());
-    server.setHandler(new ServeHdfsConfigHandler());
+
+    ResourceHandler resource_handler = new ResourceHandler();
+    resource_handler.setResourceBase(schedulerConf.getResourceBase());
+
+    HandlerList handlers = new HandlerList();
+    handlers.setHandlers(new Handler[]{
+        resource_handler, new ServeHdfsConfigHandler()});
+    server.setHandler(handlers);
+
     server.start();
   }
 
