@@ -104,10 +104,13 @@ public class SchedulerConf extends MainConf {
     return getConf().getInt("mesos.hdfs.journalnode.count", 1);
   }
 
-  // TODO(elingg) use different path for executor
   public String getExecUri() {
     return getConf().get("mesos.hdfs.executor.uri",
-        "https://s3-us-west-1.amazonaws.com/mesosphere-executors-public/hdfs-mesos-0.0.2.tgz");
+        "hdfs-mesos-0.0.2.tgz");
+  }
+
+  public String getResourceBase() {
+    return getConf().get("mesos.hdfs.resource.base", "/tmp/resources");
   }
 
   public String getClusterName() {

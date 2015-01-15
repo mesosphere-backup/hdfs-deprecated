@@ -121,14 +121,18 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
     String taskIdName = String.format("%s.%s.%d", nodeName, executorName,
         System.currentTimeMillis());
 
+    String executorUri = conf.getExecUri();
+    if (!executorUri.contains("://")) {
+      executorUri = String.format("http://%s:%d/%s", localhost, confServerPort, executorUri);
+    }
+
     ExecutorInfo executorInfo = ExecutorInfo.newBuilder()
         .setName(nodeName + " executor")
         .setExecutorId(ExecutorID.newBuilder().setValue("executor." + taskIdName).build())
         .addAllResources(resources)
         .setCommand(CommandInfo.newBuilder()
             .addAllUris(Arrays.asList(
-                CommandInfo.URI.newBuilder().setValue(conf.getExecUri())
-                    .build(),
+                CommandInfo.URI.newBuilder().setValue(executorUri).build(),
                 CommandInfo.URI.newBuilder().setValue(
                     String.format("http://%s:%d/hdfs-site.xml", localhost, confServerPort))
                     .build()))
@@ -394,7 +398,12 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
       throw new RuntimeException(e);
     }
 
-    MesosSchedulerDriver driver = new MesosSchedulerDriver(this, frameworkInfo.build(),
+    FrameworkInfo fInfo = frameworkInfo.build();
+    log.info("Registering with " + conf.getMesosMasterUri()
+        + " with frameworkInfo: " + fInfo);
+
+
+    MesosSchedulerDriver driver = new MesosSchedulerDriver(this, fInfo,
         conf.getMesosMasterUri());
     driver.run().getValueDescriptor().getFullName();
   }
