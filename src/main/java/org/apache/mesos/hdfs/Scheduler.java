@@ -251,7 +251,7 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
           pendingOffers.put(offer.getId(), offer);
       }
         
-      if (!initializingCluster) {
+      if (!initializingCluster && pendingOffers.size() >= 3) {
         log.info(String.format("Launching initial nodes with %d pending offers",
             pendingOffers.size()));
         initializingCluster = true;
@@ -352,7 +352,7 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
   @Override
   public void run() {
     FrameworkInfo.Builder frameworkInfo = FrameworkInfo.newBuilder()
-        .setName("HDFS " + conf.getClusterName())
+        .setName(conf.getClusterName())
         .setFailoverTimeout(conf.getFailoverTimeout())
         .setUser(conf.getHdfsUser())
         .setRole(conf.getHdfsRole())

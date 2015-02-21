@@ -104,7 +104,12 @@
 
   <property>
     <name>dfs.datanode.dns.interface</name>
-    <value>eth0</value>
+    <value>br1</value>
+  </property>
+
+  <property>
+    <name>dfs.datanode.dns.nameserver</name>
+    <value>mesos-dns.mesos</value>
   </property>
 
   <property>
