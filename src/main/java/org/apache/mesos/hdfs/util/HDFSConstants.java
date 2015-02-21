@@ -24,11 +24,11 @@ public class HDFSConstants {
 
   // Path to Store HDFS Binary
   public static final String HDFS_BINARY_DIR = "hdfs";
-    
+
   // Current HDFS Binary File Name
   public static final String HDFS_BINARY_FILE_NAME = "hdfs-mesos-0.0.2.tgz";
-    
-  //HDFS Config File Name
+
+  // HDFS Config File Name
   public static final String HDFS_CONFIG_FILE_NAME = "hdfs-site.xml";
 
 }

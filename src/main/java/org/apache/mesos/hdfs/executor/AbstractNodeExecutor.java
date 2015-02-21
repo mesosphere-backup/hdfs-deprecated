@@ -15,8 +15,11 @@ import org.apache.mesos.hdfs.util.HDFSConstants;
 import org.apache.mesos.hdfs.util.StreamRedirect;
 
 import java.io.File;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
@@ -231,15 +234,47 @@ public abstract class AbstractNodeExecutor implements Executor {
       System.exit(1);
     }
   }
+  protected void runHealthChecks(ExecutorDriver driver, Task task) {
+    Process process = null;
+    String nodeName = null;
+
+    try {
+      if (task.taskInfo.getTaskId().getValue().contains(HDFSConstants.DATA_NODE_ID)) {
+        nodeName = HDFSConstants.DATA_NODE_ID;
+        process = Runtime.getRuntime().exec("netstat -plnat | grep 50075");
+      } else if (task.taskInfo.getTaskId().getValue().contains(HDFSConstants.JOURNAL_NODE_ID)) {
+        nodeName = HDFSConstants.JOURNAL_NODE_ID;
+        process = Runtime.getRuntime().exec("netstat -plnat | grep 8480");
+      }
+
+      if (process != null) {
+        InputStream inputStream = process.getInputStream();
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream), 1);
+        String line = bufferedReader.readLine();
+        if (line == null || !line.contains(nodeName)) {
+          killTask(driver, task.taskInfo.getTaskId());
+        }
+        inputStream.close();
+        bufferedReader.close();
+      }
+    } catch (IOException e) {
+      log.error("Error in the health check: ", e);
+    }
+  }
   /**
    * Abstract method to launch a task.
    **/
   public abstract void launchTask(final ExecutorDriver driver, final TaskInfo taskInfo);
 
   /**
+   * Abstract method to kill a task.
+   **/
+  public abstract void killTask(final ExecutorDriver driver, final TaskID taskId);
+
+  /**
    * Let the scheduler know that the task has failed.
    **/
-  private void sendTaskFailed(ExecutorDriver driver, Task task) {
+  protected void sendTaskFailed(ExecutorDriver driver, Task task) {
     driver.sendStatusUpdate(TaskStatus.newBuilder()
         .setTaskId(task.taskInfo.getTaskId())
         .setState(TaskState.TASK_FAILED)

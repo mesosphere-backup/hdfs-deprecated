@@ -79,6 +79,7 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
     if (task != null && task.process != null) {
       task.process.destroy();
       task.process = null;
+      sendTaskFailed(driver, task);
     }
   }
 

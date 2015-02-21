@@ -9,6 +9,7 @@ import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.MesosExecutorDriver;
 import org.apache.mesos.Protos.*;
 import org.apache.mesos.hdfs.config.SchedulerConf;
+import org.apache.mesos.hdfs.util.HDFSConstants;
 
 /**
  * The executor for a Basic Node (either a Journal Node or Data Node).
@@ -58,6 +59,7 @@ public class NodeExecutor extends AbstractNodeExecutor {
     if (task.process != null && taskId.equals(task.taskInfo.getTaskId())) {
       task.process.destroy();
       task.process = null;
+      sendTaskFailed(driver, task);
     }
   }
 }
