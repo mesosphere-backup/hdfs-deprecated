@@ -1,0 +1,13 @@
+{
+    "id": "hdfs",
+    "container": {
+        "docker": {
+            "image": ""
+        },
+        "type": "DOCKER",
+        "volumes": []
+    },
+    "cpus": 0.1,
+    "mem": 128.0,
+    "instances": 1
+}

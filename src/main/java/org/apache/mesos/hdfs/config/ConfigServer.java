@@ -86,7 +86,7 @@ public class ConfigServer {
 
       model.put("journalnodes", journalNodeString);
 
-      model.put("clusterName", schedulerConf.getClusterName());
+      model.put("frameworkName", schedulerConf.getFrameworkName());
       model.put("dataDir", schedulerConf.getDataDir());
       model.put("haZookeeperQuorum", schedulerConf.getHaZookeeperQuorum());
 

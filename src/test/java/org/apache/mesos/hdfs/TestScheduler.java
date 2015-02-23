@@ -93,11 +93,13 @@ public class TestScheduler {
 
     scheduler.resourceOffers(driver,
         Lists.newArrayList(
-            createTestOffer(0)
+            createTestOffer(0),
+            createTestOffer(1),
+            createTestOffer(2)
             )
         );
 
-    verify(liveState, times(1)).addTask(any(Protos.TaskID.class),
+    verify(liveState, times(3)).addTask(any(Protos.TaskID.class),
         eq(createTestOffer(0).getHostname()), eq(createTestOffer(0).getSlaveId().getValue()));
   }
 

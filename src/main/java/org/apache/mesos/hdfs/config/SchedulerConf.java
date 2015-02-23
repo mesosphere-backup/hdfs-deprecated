@@ -131,8 +131,8 @@ public class SchedulerConf extends Configured {
     return getConf().getInt("mesos.hdfs.journalnode.count", 1);
   }
 
-  public String getClusterName() {
-    return getConf().get("mesos.hdfs.cluster.name", "mesos-ha");
+  public String getFrameworkName() {
+    return getConf().get("mesos.hdfs.framework.name", "hdfs");
   }
 
   // TODO(elingg) This needs to be increased.

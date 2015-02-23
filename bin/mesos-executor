@@ -1,3 +1,9 @@
 #!/bin/bash
 
-exec java $HADOOP_OPTS $EXECUTOR_OPTS -cp lib/*.jar org.apache.mesos.hdfs.MesosExecutor
+if [ -z "$JAVA_HOME" ]; then
+  JAVA_CMD=java
+else
+  JAVA_CMD=$JAVA_HOME/bin/java
+fi
+
+exec $JAVA_CMD $HADOOP_OPTS $EXECUTOR_OPTS -cp lib/*.jar org.apache.mesos.hdfs.MesosExecutor

@@ -49,7 +49,7 @@
 
   <property>
     <name>mesos.hdfs.cluster.name</name>
-    <value>hdfs-super-available</value>
+    <value>hdfs</value>
   </property>
 
   <property>
