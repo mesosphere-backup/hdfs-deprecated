@@ -25,8 +25,9 @@ import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
+import java.util.TimerTask;
 
 public abstract class AbstractNodeExecutor implements Executor {
 
@@ -235,16 +236,25 @@ public abstract class AbstractNodeExecutor implements Executor {
     }
   }
   protected void runHealthChecks(ExecutorDriver driver, Task task) {
+    log.info("Performing health check for task: " + task.toString());
+
     Process process = null;
     String nodeName = null;
+    String healthCheckCmd = "netstat -plnat | grep ";
 
     try {
       if (task.taskInfo.getTaskId().getValue().contains(HDFSConstants.DATA_NODE_ID)) {
         nodeName = HDFSConstants.DATA_NODE_ID;
-        process = Runtime.getRuntime().exec("netstat -plnat | grep 50075");
+        process = Runtime.getRuntime().exec(healthCheckCmd + "50075");
       } else if (task.taskInfo.getTaskId().getValue().contains(HDFSConstants.JOURNAL_NODE_ID)) {
         nodeName = HDFSConstants.JOURNAL_NODE_ID;
-        process = Runtime.getRuntime().exec("netstat -plnat | grep 8480");
+        process = Runtime.getRuntime().exec(healthCheckCmd + "8480");
+      } else if (task.taskInfo.getTaskId().getValue().contains(HDFSConstants.ZKFC_NODE_ID)) {
+        nodeName = HDFSConstants.ZKFC_NODE_ID;
+        process = Runtime.getRuntime().exec(healthCheckCmd + "50071");
+      } else if (task.taskInfo.getTaskId().getValue().contains(HDFSConstants.NAME_NODE_ID)) {
+        nodeName = HDFSConstants.NAME_NODE_ID;
+        process = Runtime.getRuntime().exec(healthCheckCmd + "50070");
       }
 
       if (process != null) {
@@ -305,6 +315,21 @@ public abstract class AbstractNodeExecutor implements Executor {
   public void shutdown(ExecutorDriver d) {
     // TODO(elingg) let's shut down the driver more gracefully
     log.info("Executor asked to shutdown");
+  }
+
+  public class TimedHealthCheckTask extends TimerTask {
+    Task task;
+    ExecutorDriver driver;
+
+    public TimedHealthCheckTask(ExecutorDriver driver, Task task) {
+      this.driver = driver;
+      this.task = task;
+    }
+
+    @Override
+    public void run() {
+      runHealthChecks(driver, task);
+    }
   }
 
   /**
