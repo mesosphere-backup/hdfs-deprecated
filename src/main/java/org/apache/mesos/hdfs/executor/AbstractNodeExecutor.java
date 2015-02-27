@@ -152,6 +152,7 @@ public abstract class AbstractNodeExecutor implements Executor {
     bufferedWriter.close();
     Runtime.getRuntime().exec("chmod a+x " + pathEnvVarLocation);
   }
+
   /**
    * Starts a task's process so it goes into running state.
    **/
@@ -317,11 +318,11 @@ public abstract class AbstractNodeExecutor implements Executor {
     log.info("Executor asked to shutdown");
   }
 
-  public class TimedHealthCheckTask extends TimerTask {
+  public class TimedHealthCheck extends TimerTask {
     Task task;
     ExecutorDriver driver;
 
-    public TimedHealthCheckTask(ExecutorDriver driver, Task task) {
+    public TimedHealthCheck(ExecutorDriver driver, Task task) {
       this.driver = driver;
       this.task = task;
     }
