@@ -237,12 +237,12 @@ public abstract class AbstractNodeExecutor implements Executor {
     }
   }
   protected void runHealthChecks(ExecutorDriver driver, Task task) {
-    log.info("Performing health check for task: " + task.toString());
+    log.info("Performing health check for task: " + task.taskInfo.getTaskId().getValue());
 
     Process healthCmd = null;
     String nodeName = null;
     String healthCheckCmd = "netstat -plnat | grep ";
-    // TODO this code is a mess/ refactor and use utility methods
+    // TODO this code is working, but it is a mess/ refactor and use utility methods
     try {
       if (task.taskInfo.getTaskId().getValue().contains(HDFSConstants.DATA_NODE_ID)) {
         nodeName = HDFSConstants.DATA_NODE_ID;
@@ -273,11 +273,8 @@ public abstract class AbstractNodeExecutor implements Executor {
               BufferedReader bufferedReaderPS =
                   new BufferedReader(new InputStreamReader(psCmd.getInputStream()));
               String psCmdOutput = bufferedReaderPS.readLine();
-
-              log.info("HEALTH CHECK RESULT IS: " + psCmdOutput); // TODO remove this
-              if (psCmdOutput != null && psCmdOutput.contains(nodeName)) {
-                log.info("Health check succeeded!"); // TODO need a better print statement here or
-                                                     // print nothing
+              while ((psCmdOutput = bufferedReaderPS.readLine()) != null
+                  && psCmdOutput.contains(nodeName)) {
                 nodeRegistered = true;
               }
               psCmd.getInputStream().close();
@@ -289,6 +286,7 @@ public abstract class AbstractNodeExecutor implements Executor {
         inputStream.close();
         bufferedReader.close();
         if (!nodeRegistered) {
+          log.error("Node health check failed for task: " + task.taskInfo.getTaskId().getValue());
           killTask(driver, task.taskInfo.getTaskId());
         }
       }
