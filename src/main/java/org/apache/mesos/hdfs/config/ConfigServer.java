@@ -24,8 +24,8 @@ public class ConfigServer {
 
   private Server server;
   private Engine engine;
-  private SchedulerConf schedulerConf;
-  private LiveState liveState;
+  private final SchedulerConf schedulerConf;
+  private final LiveState liveState;
 
   @Inject
   public ConfigServer(SchedulerConf schedulerConf, LiveState liveState) throws Exception {
@@ -58,33 +58,40 @@ public class ConfigServer {
       }
 
       String content = new String(Files.readAllBytes(Paths.get(confFile.getPath())));
+      Map<String, Object> model = new HashMap<>();
 
       Set<String> nameNodes = new TreeSet<>();
-      nameNodes.addAll(liveState.getNameNodeHosts());
-
       Set<String> journalNodes = new TreeSet<>();
-      journalNodes.addAll(nameNodes);
-      journalNodes.addAll(liveState.getJournalNodeHosts());
 
-      Map<String, Object> model = new HashMap<>();
+      if (schedulerConf.usingMesosDns()) { //we can just use the default name scheme
+        for (int i = HDFSConstants.TOTAL_NAME_NODES; i > 0; i--)
+          nameNodes.add(HDFSConstants.NAME_NODE_ID + i + 
+              "." + schedulerConf.getFrameworkName() + 
+              "." + schedulerConf.getMesosDnsDomain());
+        for (int i = schedulerConf.getJournalNodeCount() + HDFSConstants.TOTAL_NAME_NODES; i > 0; i--)
+          journalNodes.add(HDFSConstants.JOURNAL_NODE_ID + i + 
+              "." + schedulerConf.getFrameworkName() + 
+              "." + schedulerConf.getMesosDnsDomain());
+      } else {
+        nameNodes.addAll(liveState.getNameNodeHosts());
+        journalNodes.addAll(liveState.getNameNodeHosts());
+        journalNodes.addAll(liveState.getJournalNodeHosts());
+      }
+
+      //add namenodes to hdfs schedulerConf
       Iterator<String> iter = nameNodes.iterator();
-      if (iter.hasNext()) {
-        model.put("nn1Hostname", iter.next());
-      }
-      if (iter.hasNext()) {
-        model.put("nn2Hostname", iter.next());
+      for (int i = nameNodes.size(); i > 0; i--) {
+        model.put("nn" + i + "Hostname", iter.next());
       }
 
-      String journalNodeString = "";
-      for (String jn : journalNodes) {
-        journalNodeString += jn + ":8485;";
+      //add journal nodes to hdfs schedulerConf
+      Iterator<String> jiter = journalNodes.iterator();
+      String jNodeString = "";
+      while (jiter.hasNext()) {
+        jNodeString += jiter.next() + ":8485";
+        if (jiter.hasNext()) jNodeString += ";";
       }
-      if (!journalNodeString.isEmpty()) {
-        // Chop the trailing ,
-        journalNodeString = journalNodeString.substring(0, journalNodeString.length() - 1);
-      }
-
-      model.put("journalnodes", journalNodeString);
+      model.put("journalnodes", jNodeString);
 
       model.put("frameworkName", schedulerConf.getFrameworkName());
       model.put("dataDir", schedulerConf.getDataDir());
