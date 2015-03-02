@@ -68,12 +68,28 @@ public class LiveState {
     return secondaryNameNodes;
   }
 
-  public Set<String> getJournalNodeHosts() {
-    return journalNodeHosts;
+  public Set<String> getJournalNodeDomainNames() {
+    //without mesos dns we have to accumulate the hosts as we find them
+    if (!conf.usingMesosDns()) return journalNodeHosts;
+    //otherwise we can just use our task names
+    Set<String> nodes = new TreeSet<>();
+    for (int i = conf.getJournalNodeCount() + HDFSConstants.TOTAL_NAME_NODES; i > 0; i--)
+      nodes.add(HDFSConstants.JOURNAL_NODE_ID + i +
+          "." + conf.getFrameworkName() +
+          "." + conf.getMesosDnsDomain());
+    return nodes;
   }
-
-  public Set<String> getNameNodeHosts() {
-    return nameNodeHosts;
+  
+  public Set<String> getNameNodeDomainNames() {
+    //without mesos dns we have to accumulate the hosts as we find them
+    if (!conf.usingMesosDns()) return nameNodeHosts;
+    //otherwise we can just use our task names
+    Set<String> nodes = new TreeSet<>();
+    for (int i = HDFSConstants.TOTAL_NAME_NODES; i > 0; i--)
+      nodes.add(HDFSConstants.NAME_NODE_ID + i +
+          "." + conf.getFrameworkName() +
+          "." + conf.getMesosDnsDomain());
+    return nodes;
   }
 
   public Set<Protos.TaskID> getStagingTasks() {
@@ -108,6 +124,7 @@ public class LiveState {
     taskNameMap.put(taskId, taskName);
     if (taskId.getValue().contains(HDFSConstants.NAME_NODE_TASKID)) {
       nameNodeHosts.add(hostname);
+      journalNodeHosts.add(hostname);
     } else if (taskId.getValue().contains(HDFSConstants.JOURNAL_NODE_ID)) {
       journalNodeHosts.add(hostname);
     }

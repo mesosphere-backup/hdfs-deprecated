@@ -45,7 +45,7 @@ public class TestLiveState {
 
     assertTrue(clusterState.getNameNodes().contains(taskId));
     assertFalse(clusterState.notInDfsHosts(slaveId.getValue()));
-    assertTrue(clusterState.getNameNodeHosts().contains("10.19.15.1"));
+    assertTrue(clusterState.getNameNodeDomainNames().contains("10.19.15.1"));
   }
 
   @Test
@@ -74,13 +74,13 @@ public class TestLiveState {
 
     assertTrue(clusterState.getJournalNodes().contains(taskId));
     assertFalse(clusterState.notInDfsHosts(slaveId.getValue()));
-    assertTrue(clusterState.getJournalNodeHosts().contains("10.80.16.2"));
+    assertTrue(clusterState.getJournalNodeDomainNames().contains("10.80.16.2"));
 
     // Remove task
     clusterState.removeTask(taskStatus);
 
     assertFalse(clusterState.getJournalNodes().contains(taskId));
     assertTrue(clusterState.notInDfsHosts(slaveId.getValue()));
-    assertFalse(clusterState.getJournalNodeHosts().contains("10.80.16.2"));
+    assertFalse(clusterState.getJournalNodeDomainNames().contains("10.80.16.2"));
   }
 }

@@ -39,22 +39,22 @@
 
   <property>
     <name>dfs.namenode.rpc-address.${frameworkName}.nn1</name>
-    <value>${nn1Hostname}:50071</value>
+    <value>${nn1Hostname}:${nnRpcPort}</value>
   </property>
 
   <property>
     <name>dfs.namenode.http-address.${frameworkName}.nn1</name>
-    <value>${nn1Hostname}:50070</value>
+    <value>${nn1Hostname}:${nnHttpPort}</value>
   </property>
 
   <property>
     <name>dfs.namenode.rpc-address.${frameworkName}.nn2</name>
-    <value>${nn2Hostname}:50071</value>
+    <value>${nn2Hostname}:${nnRpcPort}</value>
   </property>
 
   <property>
     <name>dfs.namenode.http-address.${frameworkName}.nn2</name>
-    <value>${nn2Hostname}:50070</value>
+    <value>${nn2Hostname}:${nnHttpPort}</value>
   </property>
 
   <property>
