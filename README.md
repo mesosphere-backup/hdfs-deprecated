@@ -16,6 +16,10 @@ Installing HDFS-Mesos on your Cluster
 3. Customize configuration in `hdfs-mesos-*/etc/hadoop/*-site.xml`
 4. Check that `hostname` on that node resolves to a non-localhost IP; update /etc/hosts if necessary
 
+### Mesos DNS compatibility
+1. Set `mesos.hdfs.mesosdns.domain` in `mesos-site.xml` to your configured mesos-dns top-level domain (default: mesos).
+2. Set `dfs.datanode.dns.nameserver` in `hdfs-site.xml` to your mesos-dns nameserver (default: mesos-dns.mesos)
+
 Starting HDFS-Mesos
 --------------------------
 1. `cd hdfs-mesos-*`

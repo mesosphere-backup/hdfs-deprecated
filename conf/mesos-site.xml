@@ -39,7 +39,7 @@
 
   <property>
     <name>mesos.hdfs.mesosdns.domain</name>
-    <value>mesos</value>
+    <value></value>
   </property>
 
   <property>
