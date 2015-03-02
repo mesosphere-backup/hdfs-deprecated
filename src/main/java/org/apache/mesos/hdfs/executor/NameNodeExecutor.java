@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.mesos.Executor;
 import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.MesosExecutorDriver;
 import org.apache.mesos.Protos.*;
@@ -14,7 +15,10 @@ import org.apache.mesos.hdfs.util.HDFSConstants;
 
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 
@@ -111,84 +115,11 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
           .setState(TaskState.TASK_RUNNING)
           .build());
     }
-    if (messageStr.equals(HDFSConstants.NAME_NODE_INIT_MESSAGE)) {
-      waitUntilJournalNodesAvailable();
+    if (messageStr.equals(HDFSConstants.NAME_NODE_INIT_MESSAGE)
+        || messageStr.equals(HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE)) {
       runCommand(driver, nameNodeTask, "bin/hdfs-mesos-namenode " + messageStr);
       startProcess(driver, nameNodeTask);
       startProcess(driver, zkfcNodeTask);
-    }
-    // send init message (primary NN), send bootstrap message (secondary NN)
-    if (messageStr.equals(HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE)) {
-      waitUntilNameNodesAvailable();
-      runCommand(driver, nameNodeTask, "bin/hdfs-mesos-namenode " + messageStr);
-      startProcess(driver, nameNodeTask);
-      startProcess(driver, zkfcNodeTask);
-    }
-  }
-
-  private void waitUntilJournalNodesAvailable() {
-    Set<String> hosts = new TreeSet<>();
-    if (schedulerConf.usingMesosDns()) {
-      for (int i = schedulerConf.getJournalNodeCount() + HDFSConstants.TOTAL_NAME_NODES; i > 0; i--)
-        hosts.add(HDFSConstants.JOURNAL_NODE_ID + i +
-            "." + schedulerConf.getFrameworkName() +
-            "." + schedulerConf.getMesosDnsDomain());
-    } else {
-      hosts.addAll(liveState.getJournalNodeHosts());
-      hosts.addAll(liveState.getNameNodeHosts());
-    }
-    boolean failed = true;
-    while (failed) {
-      failed = false;
-      for (String host : hosts) {
-        try {
-          InetAddress.getByName(host);
-        } catch (Exception e) {
-          log.info("Couldn't resolve host " + host);
-          failed = true;
-          break;
-        }
-      }
-      if (failed) {
-        try {
-          log.info("Sleeping for 30 seconds.. zzzz");
-          Thread.sleep(30000);
-        } catch (Exception e) {
-          log.info("Sleep interrupted");
-        }
-      }
-    }
-  }
-  private void waitUntilNameNodesAvailable() {
-    Set<String> hosts = new TreeSet<>();
-    if (schedulerConf.usingMesosDns()) {
-      for (int i = HDFSConstants.TOTAL_NAME_NODES; i > 0; i--)
-        hosts.add(HDFSConstants.NAME_NODE_ID + i +
-            "." + schedulerConf.getFrameworkName() +
-            "." + schedulerConf.getMesosDnsDomain());
-    } else {
-      hosts.addAll(liveState.getNameNodeHosts());
-    }
-    boolean failed = true;
-    while (failed) {
-      failed = false;
-      for (String host : hosts) {
-        try {
-          InetAddress.getByName(host);
-        } catch (Exception e) {
-          log.info("Couldn't resolve host " + host);
-          failed = true;
-          break;
-        }
-      }
-      if (failed) {
-        try {
-          log.info("Sleeping for 30 seconds.. zzzz");
-          Thread.sleep(30000);
-        } catch (Exception e) {
-          log.info("Sleep interrupted");
-        }
-      }
     }
   }
 }
