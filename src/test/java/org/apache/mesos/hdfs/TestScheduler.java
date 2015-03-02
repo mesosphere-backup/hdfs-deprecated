@@ -8,6 +8,7 @@ import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.hdfs.config.SchedulerConf;
 import org.apache.mesos.hdfs.state.LiveState;
 import org.apache.mesos.hdfs.state.PersistentState;
+import org.apache.mesos.hdfs.util.HDFSConstants;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -38,7 +39,8 @@ public class TestScheduler {
 
   @Test
   public void acceptsAllTheResourceOffersItCanUntilItHasEnoughToStart() {
-    Scheduler scheduler = new Scheduler(schedulerConf, new LiveState(), persistentState);
+    Scheduler scheduler = new Scheduler(schedulerConf, new LiveState(schedulerConf),
+        persistentState);
 
     scheduler.resourceOffers(driver,
         Lists.newArrayList(
@@ -53,7 +55,11 @@ public class TestScheduler {
 
   @Test
   public void declinesAnyOffersPastWhatItNeeds() {
-    Scheduler scheduler = new Scheduler(schedulerConf, new LiveState(), persistentState);
+    LiveState state = mock(LiveState.class);
+    Scheduler scheduler = new Scheduler(schedulerConf, state,
+        persistentState);
+
+    when(state.getUnusedNameFor(anyString())).thenReturn("test");
 
     scheduler.resourceOffers(driver,
         Lists.newArrayList(
@@ -69,10 +75,16 @@ public class TestScheduler {
   @Test
   public void acceptsTasksForDataNodesIfClusterInitialized() {
     LiveState state = mock(LiveState.class);
-    Scheduler scheduler = new Scheduler(schedulerConf, state, persistentState);
+    Scheduler scheduler = new Scheduler(schedulerConf, state,
+        persistentState);
 
-    when(state.getNameNodes()).thenReturn(Sets.newHashSet(createTaskId("1")));
-    when(state.getJournalNodes()).thenReturn(Sets.newHashSet(createTaskId("2")));
+    when(state.getUnusedNameFor(HDFSConstants.NAME_NODE_ID)).thenReturn("test");
+    when(state.getUnusedNameFor(HDFSConstants.JOURNAL_NODE_ID)).thenReturn("test");
+    when(state.getUnusedNameFor(HDFSConstants.DATA_NODE_ID)).thenReturn("datanode");
+
+    when(state.getNameNodes()).thenReturn(Sets.newHashSet(createTaskId("1"), createTaskId("2")));
+    when(state.getJournalNodes()).thenReturn(
+        Sets.newHashSet(createTaskId("3"), createTaskId("4"), createTaskId("5")));
     when(state.notInDfsHosts(anyString())).thenReturn(true);
 
     scheduler.resourceOffers(driver,
@@ -89,7 +101,10 @@ public class TestScheduler {
   @Test
   public void putsRunningTasksInLiveState() {
     LiveState liveState = mock(LiveState.class);
-    Scheduler scheduler = new Scheduler(schedulerConf, liveState, persistentState);
+    Scheduler scheduler = new Scheduler(schedulerConf, liveState,
+        persistentState);
+
+    when(liveState.getUnusedNameFor(anyString())).thenReturn("test");
 
     scheduler.resourceOffers(driver,
         Lists.newArrayList(
@@ -97,7 +112,7 @@ public class TestScheduler {
             )
         );
 
-    verify(liveState, times(1)).addTask(any(Protos.TaskID.class),
+    verify(liveState, times(3)).addTask(any(Protos.TaskID.class), anyString(),
         eq(createTestOffer(0).getHostname()), eq(createTestOffer(0).getSlaveId().getValue()));
   }
 
