@@ -262,7 +262,7 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
           uniquePendingOffers.add(offer.getSlaveId());
         }
       }
-
+      
       if (!initializingCluster && pendingOffers.size() >= (HDFSConstants.TOTAL_NAME_NODES + conf.getJournalNodeCount())) {
         log.info(String.format("Launching initial nodes with %d pending offers",
             uniquePendingOffers.size()));
