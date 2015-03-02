@@ -38,6 +38,11 @@
   </property>
 
   <property>
+    <name>mesos.hdfs.mesosdns.domain</name>
+    <value>mesos</value>
+  </property>
+
+  <property>
     <name>mesos.master.uri</name>
     <value>zk://localhost:2181/mesos</value>
   </property>
@@ -48,8 +53,8 @@
   </property>
 
   <property>
-    <name>mesos.hdfs.cluster.name</name>
-    <value>hdfs-super-available</value>
+    <name>mesos.hdfs.framework.name</name>
+    <value>hdfs</value>
   </property>
 
   <property>

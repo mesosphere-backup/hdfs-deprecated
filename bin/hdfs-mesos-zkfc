@@ -2,17 +2,16 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-JAVA_HOME_DIR=$(dirname $(readlink -f $(which java)))
-
-if [ -f $JAVA_HOME_DIR/../../bin/java ];
-then
-  export JAVA_HOME=$JAVA_HOME_DIR/../..
-elif [ -f $JAVA_HOME_DIR/../bin/java ];
-then
-  export JAVA_HOME=$JAVA_HOME_DIR/..
-else 
-  echo “Error JAVA_HOME cannot be determined from the registry”
-  exit 1;
+if [ -z "$JAVA_HOME" ]; then
+  JAVA_HOME_DIR=$(dirname $(readlink -f $(which java)))
+  if [ -f $JAVA_HOME_DIR/../../bin/java ]; then
+    export JAVA_HOME=$JAVA_HOME_DIR/../..
+  elif [ -f $JAVA_HOME_DIR/../bin/java ]; then
+    export JAVA_HOME=$JAVA_HOME_DIR/..
+  else 
+    echo “Error: Could not determine JAVA_HOME”
+    exit 1;
+  fi
 fi
 
 trap "{ $DIR/mesos-killtree "$$" ; exit 0; }" EXIT

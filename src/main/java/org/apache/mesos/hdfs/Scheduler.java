@@ -84,18 +84,19 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
   }
 
   private void launchNode(SchedulerDriver driver, Offer offer,
-      String nodeName, List<String> taskNames, String executorName) {
+      String nodeName, List<String> taskTypes, String executorName) {
     log.info(String.format("Launching node of type %s with tasks %s", nodeName,
-        taskNames.toString()));
+        taskTypes.toString()));
     String taskIdName = String.format("%s.%s.%d", nodeName, executorName,
         System.currentTimeMillis());
     List<Resource> resources = getExecutorResources();
     ExecutorInfo executorInfo = createExecutor(taskIdName, nodeName, executorName, resources);
     List<TaskInfo> tasks = new ArrayList<>();
-    for (String taskName : taskNames) {
-      List<Resource> taskResources = getTaskResources(taskName);
+    for (String taskType : taskTypes) {
+      List<Resource> taskResources = getTaskResources(taskType);
+      String taskName = liveState.getUnusedNameFor(taskType);
       TaskID taskId = TaskID.newBuilder()
-          .setValue(String.format("task.%s.%s", taskName, taskIdName))
+          .setValue(String.format("task.%s.%s", taskType, taskIdName))
           .build();
       TaskInfo task = TaskInfo.newBuilder()
           .setExecutor(executorInfo)
@@ -104,12 +105,12 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
           .setSlaveId(offer.getSlaveId())
           .addAllResources(taskResources)
           .setData(ByteString.copyFromUtf8(
-              String.format("bin/hdfs-mesos-%s", taskName)))
+              String.format("bin/hdfs-mesos-%s", taskType)))
           .build();
       tasks.add(task);
 
       liveState.addStagingTask(taskId);
-      liveState.addTask(taskId, offer.getHostname(), offer.getSlaveId().getValue());
+      liveState.addTask(taskId, taskName, offer.getHostname(), offer.getSlaveId().getValue());
     }
     driver.launchTasks(Arrays.asList(offer.getId()), tasks);
   }
@@ -149,9 +150,11 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
                     .setName("EXECUTOR_OPTS")
                     .setValue("-Xmx" + conf.getExecutorHeap() + "m -Xms" + conf.getExecutorHeap() + "m").build())))
                     .setValue(
-                        "env ; cd hdfs-mesos-* && exec java $HADOOP_OPTS $EXECUTOR_OPTS " +
-                        "-cp lib/*.jar org.apache.mesos.hdfs.executor." + executorName)
-                        .build())
+                        "env ; cd hdfs-mesos-* && " +
+                          "exec `if [ -z \"$JAVA_HOME\" ]; then echo java; else echo $JAVA_HOME/bin/java; fi` " +
+                            "$HADOOP_OPTS " +
+                            "$EXECUTOR_OPTS " +
+                            "-cp lib/*.jar org.apache.mesos.hdfs.executor." + executorName).build())
                     .build();
     }
     
@@ -244,16 +247,24 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
       return;
     }
 
+//    int maxNameNodes = HDFSConstants.TOTAL_NAME_NODES;
+//    int maxJournalNodes = maxNameNodes + conf.getJournalNodeCount();
+
     if (liveState.getNameNodes().size() == 0 && liveState.getJournalNodes().size() == 0) {
       log.info("No NameNodes or JournalNodes found.  Collecting offers until we have sufficient "
           + "capacity to launch.");
+      Set<SlaveID> uniquePendingOffers = new HashSet<>();
       for (Offer offer: offers) {
+        if (uniquePendingOffers.contains(offer.getSlaveId())) {
+          driver.declineOffer(offer.getId());
+        } else {
           pendingOffers.put(offer.getId(), offer);
+          uniquePendingOffers.add(offer.getSlaveId());
+        }
       }
-        
-      if (!initializingCluster) {
+      if (!initializingCluster && pendingOffers.size() >= (HDFSConstants.TOTAL_NAME_NODES + conf.getJournalNodeCount())) {
         log.info(String.format("Launching initial nodes with %d pending offers",
-            pendingOffers.size()));
+            uniquePendingOffers.size()));
         initializingCluster = true;
         launchInitialJournalNodes(driver, pendingOffers.values());
         launchInitialNameNodes(driver, pendingOffers.values());
@@ -325,12 +336,18 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
         if (status.getTaskId().getValue().contains(HDFSConstants.NAME_NODE_TASKID)) {
           if (liveState.getNameNodes().size() == HDFSConstants.TOTAL_NAME_NODES) {
             //Finished initializing cluster after both name nodes are initialized
+            //send the standby nodes the bootstrap message.
             initializingCluster = false;
+            for (TaskID taskId : liveState.getSecondaryNameNodes()) {
+              sendMessageTo(driver, taskId, HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE);
+            }
           } else {
             //Activate secondary name node after first name node is activated
             for (TaskID taskId : liveState.getStagingTasks()) {
               if (taskId.getValue().contains(HDFSConstants.NAME_NODE_TASKID)) {
-                sendMessageTo(driver, taskId, HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE);
+                //add task to get bootstrapped later
+                liveState.addSecondaryNameNode(taskId);
+                sendMessageTo(driver, taskId, HDFSConstants.NAME_NODE_RUN_MESSAGE);
                 break;
               }
             }
@@ -352,7 +369,7 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
   @Override
   public void run() {
     FrameworkInfo.Builder frameworkInfo = FrameworkInfo.newBuilder()
-        .setName("HDFS " + conf.getClusterName())
+        .setName(conf.getFrameworkName())
         .setFailoverTimeout(conf.getFailoverTimeout())
         .setUser(conf.getHdfsUser())
         .setRole(conf.getHdfsRole())

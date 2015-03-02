@@ -1,3 +1,13 @@
 #!/bin/bash
 
-exec java $HADOOP_OPTS $EXECUTOR_OPTS -cp lib/*.jar org.apache.mesos.hdfs.MesosExecutor
+if [ -z "$JAVA_HOME" ]; then
+  JAVA_CMD=$(readlink -f $(which java))
+  if [ -z "$JAVA_CMD" ]; then
+    echo “Error: java not found and JAVA_HOME not set”
+    exit 1;
+  fi
+else
+  JAVA_CMD=$JAVA_HOME/bin/java
+fi
+
+exec $JAVA_CMD $HADOOP_OPTS $EXECUTOR_OPTS -cp lib/*.jar org.apache.mesos.hdfs.MesosExecutor

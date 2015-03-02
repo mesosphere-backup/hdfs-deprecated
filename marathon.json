@@ -1,0 +1,10 @@
+{
+    "id": "hdfs",
+    "cmd": "cd hdfs* && ./bin/hdfs-mesos",
+    "uris": [
+        ""
+    ],
+    "cpus": 0.1,
+    "mem": 128.0,
+    "instances": 1
+}

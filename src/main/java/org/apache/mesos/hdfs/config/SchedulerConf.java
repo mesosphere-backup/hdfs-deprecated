@@ -26,6 +26,20 @@ public class SchedulerConf extends Configured {
     setConf(configuration);
   }
 
+  /*
+   * <property> <name>mesos.hdfs.dns.mesosnds</name> <value>true</value> </property>
+   * 
+   * <property> <name>mesos.hdfs.dns.nameserver</name> <value>mesos-dns.mesos</value> </property>
+   */
+
+  public boolean usingMesosDns() {
+    return getConf().get("mesos.hdfs.mesosdns.domain", "") != "";
+  }
+
+  public String getMesosDnsDomain() {
+    return getConf().get("mesos.hdfs.mesosdns.domain");
+  }
+
   public String getExecutorPath() {
     return getConf().get("mesos.hdfs.executor.config.path", "..");
   }
@@ -131,8 +145,8 @@ public class SchedulerConf extends Configured {
     return getConf().getInt("mesos.hdfs.journalnode.count", 1);
   }
 
-  public String getClusterName() {
-    return getConf().get("mesos.hdfs.cluster.name", "mesos-ha");
+  public String getFrameworkName() {
+    return getConf().get("mesos.hdfs.framework.name", "hdfs");
   }
 
   // TODO(elingg) This needs to be increased.
