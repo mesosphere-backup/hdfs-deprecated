@@ -7,6 +7,7 @@ public class HDFSConstants {
 
   // Messages
   public static final String NAME_NODE_INIT_MESSAGE = "-i";
+  public static final String NAME_NODE_RUN_MESSAGE = "RUN";
   public static final String NAME_NODE_BOOTSTRAP_MESSAGE = "-b";
 
   // NodeIds
