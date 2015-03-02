@@ -4,4 +4,14 @@ if [ -z "$PORT0" ] ; then
   PORT0="8765"
 fi
 
-exec java -cp lib/*.jar -Dmesos.conf.path=etc/hadoop/mesos-site.xml -Dmesos.hdfs.config.server.port=$PORT0 org.apache.mesos.hdfs.Main
+if [ -z "$JAVA_HOME" ]; then
+  JAVA_CMD=$(readlink -f $(which java))
+  if [ -z "$JAVA_CMD" ]; then
+    echo “Error: java not found and JAVA_HOME not set”
+    exit 1;
+  fi
+else
+  JAVA_CMD=$JAVA_HOME/bin/java
+fi
+
+exec $JAVA_CMD -cp lib/*.jar -Dmesos.conf.path=etc/hadoop/mesos-site.xml -Dmesos.hdfs.config.server.port=$PORT0 org.apache.mesos.hdfs.Main

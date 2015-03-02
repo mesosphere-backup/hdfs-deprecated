@@ -74,6 +74,7 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
     }
     log.info("Registered framework frameworkId=" + frameworkId.getValue());
   }
+  
   @Override
   public void reregistered(SchedulerDriver driver, MasterInfo masterInfo) {
     log.info("Reregistered framework.");
@@ -201,7 +202,7 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
   @Override
   public void run() {
     FrameworkInfo.Builder frameworkInfo = FrameworkInfo.newBuilder()
-        .setName("HDFS " + conf.getClusterName())
+        .setName("HDFS " + conf.getFrameworkName())
         .setFailoverTimeout(conf.getFailoverTimeout())
         .setUser(conf.getHdfsUser())
         .setRole(conf.getHdfsRole())
@@ -278,17 +279,19 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
                     .setValue(String.format("%d", conf.getHadoopHeapSize())).build(),
                 Environment.Variable.newBuilder()
                     .setName("HADOOP_NAMENODE_OPTS")
-                    .setValue("-Xmx" + conf.getNameNodeHeapSize() + "m").build(),
+                    .setValue("-Xmx" + conf.getNameNodeHeapSize() + "m -Xms" + conf.getNameNodeHeapSize() + "m").build(),
                 Environment.Variable.newBuilder()
                     .setName("HADOOP_DATANODE_OPTS")
-                    .setValue("-Xmx" + conf.getDataNodeHeapSize() + "m").build(),
+                    .setValue("-Xmx" + conf.getDataNodeHeapSize() + "m -Xms" + conf.getDataNodeHeapSize() + "m").build(),
                 Environment.Variable.newBuilder()
                     .setName("EXECUTOR_OPTS")
-                    .setValue("-Xmx" + conf.getExecutorHeap() + "m").build())))
+                    .setValue("-Xmx" + conf.getExecutorHeap() + "m -Xms" + conf.getExecutorHeap() + "m").build())))
                     .setValue(
-                        "env ; cd hdfs-mesos-* && exec java $HADOOP_OPTS $EXECUTOR_OPTS " +
-                        "-cp lib/*.jar org.apache.mesos.hdfs.executor." + executorName)
-                        .build())
+                        "env ; cd hdfs-mesos-* && " +
+                          "exec `if [ -z \"$JAVA_HOME\" ]; then echo java; else echo $JAVA_HOME/bin/java; fi` " +
+                            "$HADOOP_OPTS " +
+                            "$EXECUTOR_OPTS " +
+                            "-cp lib/*.jar org.apache.mesos.hdfs.executor." + executorName).build())
                     .build();
     }
     

@@ -48,8 +48,8 @@
   </property>
 
   <property>
-    <name>mesos.hdfs.cluster.name</name>
-    <value>hdfs-super-available</value>
+    <name>mesos.hdfs.framework.name</name>
+    <value>hdfs</value>
   </property>
 
   <property>

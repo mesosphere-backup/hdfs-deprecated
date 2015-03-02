@@ -24,52 +24,52 @@
 
   <property>
     <name>dfs.nameservice.id</name>
-    <value>${clusterName}</value>
+    <value>${frameworkName}</value>
   </property>
 
   <property>
     <name>dfs.nameservices</name>
-    <value>${clusterName}</value>
+    <value>${frameworkName}</value>
   </property>
 
   <property>
-    <name>dfs.ha.namenodes.${clusterName}</name>
+    <name>dfs.ha.namenodes.${frameworkName}</name>
     <value>nn1,nn2</value>
   </property>
 
   <property>
-    <name>dfs.namenode.rpc-address.${clusterName}.nn1</name>
+    <name>dfs.namenode.rpc-address.${frameworkName}.nn1</name>
     <value>${nn1Hostname}:50071</value>
   </property>
 
   <property>
-    <name>dfs.namenode.http-address.${clusterName}.nn1</name>
+    <name>dfs.namenode.http-address.${frameworkName}.nn1</name>
     <value>${nn1Hostname}:50070</value>
   </property>
 
   <property>
-    <name>dfs.namenode.rpc-address.${clusterName}.nn2</name>
+    <name>dfs.namenode.rpc-address.${frameworkName}.nn2</name>
     <value>${nn2Hostname}:50071</value>
   </property>
 
   <property>
-    <name>dfs.namenode.http-address.${clusterName}.nn2</name>
+    <name>dfs.namenode.http-address.${frameworkName}.nn2</name>
     <value>${nn2Hostname}:50070</value>
   </property>
 
   <property>
-    <name>dfs.ha.automatic-failover.enabled.${clusterName}</name>
+    <name>dfs.ha.automatic-failover.enabled.${frameworkName}</name>
     <value>true</value>
   </property>
 
   <property>
-    <name>dfs.client.failover.proxy.provider.${clusterName}</name>
+    <name>dfs.client.failover.proxy.provider.${frameworkName}</name>
     <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
   </property>
 
   <property>
     <name>dfs.namenode.shared.edits.dir</name>
-    <value>qjournal://${journalnodes}/${clusterName}</value>
+    <value>qjournal://${journalnodes}/${frameworkName}</value>
   </property>
 
   <property>
@@ -104,7 +104,12 @@
 
   <property>
     <name>dfs.datanode.dns.interface</name>
-    <value>eth0</value>
+    <value>default</value>
+  </property>
+
+  <property>
+    <name>dfs.datanode.dns.nameserver</name>
+    <value>default</value>
   </property>
 
   <property>
