@@ -107,12 +107,8 @@ public class LiveState {
     taskSlaveMap.put(taskId, slaveId);
     taskNameMap.put(taskId, taskName);
     if (taskId.getValue().contains(HDFSConstants.NAME_NODE_TASKID)) {
-      System.out.println("Registering name node host:");
-      System.out.println(hostname);
       nameNodeHosts.add(hostname);
     } else if (taskId.getValue().contains(HDFSConstants.JOURNAL_NODE_ID)) {
-      System.out.println("Registering journal node host:");
-      System.out.println(hostname);
       journalNodeHosts.add(hostname);
     }
   }
