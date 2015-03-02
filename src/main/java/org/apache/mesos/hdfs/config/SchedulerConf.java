@@ -140,7 +140,7 @@ public class SchedulerConf extends Configured {
   }
 
   public String getFrameworkName() {
-    return getConf().get("mesos.hdfs.cluster.name", "mesos-ha");
+    return getConf().get("mesos.hdfs.framework.name", "hdfs");
   }
 
   // TODO(elingg) This needs to be increased.

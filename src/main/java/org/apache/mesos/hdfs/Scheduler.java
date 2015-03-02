@@ -150,9 +150,11 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
                     .setName("EXECUTOR_OPTS")
                     .setValue("-Xmx" + conf.getExecutorHeap() + "m -Xms" + conf.getExecutorHeap() + "m").build())))
                     .setValue(
-                        "env ; cd hdfs-mesos-* && exec java $HADOOP_OPTS $EXECUTOR_OPTS " +
-                        "-cp lib/*.jar org.apache.mesos.hdfs.executor." + executorName)
-                        .build())
+                        "env ; cd hdfs-mesos-* && " +
+                          "exec `if [ -z \"$JAVA_HOME\" ]; then echo java; else echo $JAVA_HOME/bin/java; fi` " +
+                            "$HADOOP_OPTS " +
+                            "$EXECUTOR_OPTS " +
+                            "-cp lib/*.jar org.apache.mesos.hdfs.executor." + executorName).build())
                     .build();
     }
     
@@ -260,6 +262,7 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
           uniquePendingOffers.add(offer.getSlaveId());
         }
       }
+      
       if (!initializingCluster && pendingOffers.size() >= (HDFSConstants.TOTAL_NAME_NODES + conf.getJournalNodeCount())) {
         log.info(String.format("Launching initial nodes with %d pending offers",
             uniquePendingOffers.size()));
@@ -367,7 +370,7 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
   @Override
   public void run() {
     FrameworkInfo.Builder frameworkInfo = FrameworkInfo.newBuilder()
-        .setName("HDFS " + conf.getClusterName())
+        .setName(conf.getFrameworkName())
         .setFailoverTimeout(conf.getFailoverTimeout())
         .setUser(conf.getHdfsUser())
         .setRole(conf.getHdfsRole())
