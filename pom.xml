@@ -20,7 +20,7 @@
     <encoding>UTF-8</encoding>
 
     <java.abi>1.7</java.abi>
-    <mesos.version>0.20.0</mesos.version>
+    <mesos.version>0.21.1</mesos.version>
     <slf4j.version>1.7.10</slf4j.version>
     <logback-classic.version>1.1.2</logback-classic.version>
     <hadoop.version>2.4.0</hadoop.version>

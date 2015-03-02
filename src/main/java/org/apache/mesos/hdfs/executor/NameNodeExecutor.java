@@ -56,11 +56,19 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
           .setState(TaskState.TASK_RUNNING)
           .build());
     } else if (taskInfo.getTaskId().getValue().contains(HDFSConstants.NAME_NODE_TASKID)) {
-      // Add the name node task and wait for activate message
       nameNodeTask = task;
+      startProcess(driver, nameNodeTask);
+      driver.sendStatusUpdate(TaskStatus.newBuilder()
+          .setTaskId(nameNodeTask.taskInfo.getTaskId())
+          .setState(TaskState.TASK_RUNNING)
+          .build());
     } else if (taskInfo.getTaskId().getValue().contains(HDFSConstants.ZKFC_NODE_ID)) {
-      // Add the zkfc node task and wait for activate message
       zkfcNodeTask = task;
+      startProcess(driver, zkfcNodeTask);
+      driver.sendStatusUpdate(TaskStatus.newBuilder()
+          .setTaskId(zkfcNodeTask.taskInfo.getTaskId())
+          .setState(TaskState.TASK_RUNNING)
+          .build());
     }
   }
 
@@ -84,25 +92,11 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
 
   @Override
   public void frameworkMessage(ExecutorDriver driver, byte[] msg) {
-    log.info("Executor received framework message of length: " + msg.length + " bytes");
+    super.frameworkMessage(driver, msg);
     String messageStr = new String(msg);
     if (messageStr.equals(HDFSConstants.NAME_NODE_INIT_MESSAGE)
         || messageStr.equals(HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE)) {
-      // Initialize the journal node and name node
       runCommand(driver, nameNodeTask, "bin/hdfs-mesos-namenode " + messageStr);
-      // Start the name node
-      startProcess(driver, nameNodeTask);
-      driver.sendStatusUpdate(TaskStatus.newBuilder()
-          .setTaskId(nameNodeTask.taskInfo.getTaskId())
-          .setState(TaskState.TASK_RUNNING)
-          .build());
-      // Start the zkfc node
-      startProcess(driver, zkfcNodeTask);
-      driver.sendStatusUpdate(TaskStatus.newBuilder()
-          .setTaskId(zkfcNodeTask.taskInfo.getTaskId())
-          .setState(TaskState.TASK_RUNNING)
-          .build());
     }
   }
-
 }

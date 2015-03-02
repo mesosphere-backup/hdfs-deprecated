@@ -1,103 +1,123 @@
 package org.apache.mesos.hdfs.state;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Sets;
 import com.google.inject.Singleton;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.Protos;
 import org.apache.mesos.hdfs.util.HDFSConstants;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Singleton
 public class LiveState {
-  private static final Log log = LogFactory.getLog(LiveState.class);
-  private final Map<Protos.TaskID, String> taskHostMap;
-  private final Set<Protos.TaskID> journalNodes;
-  private final Set<Protos.TaskID> nameNodes;
-  private final Map<Protos.TaskID, String> taskSlaveMap;
-  private final Set<String> journalNodeHosts;
-  private final Set<String> nameNodeHosts;
-  private final HashSet<Protos.TaskID> stagingTasks;
+  private Set<Protos.TaskInfo> stagingTasks = new HashSet<>();
+  private AcquisitionPhase currentAcquisitionPhase = AcquisitionPhase.JOURNAL_NODES;
+  private LinkedHashMap<Protos.TaskID, Protos.TaskStatus> runningTasks = new LinkedHashMap<>();
 
-  public LiveState() {
-    taskHostMap = new HashMap<>();
-    taskSlaveMap = new HashMap<>();
-    journalNodes = new HashSet<>();
-    nameNodes = new HashSet<>();
-    journalNodeHosts = new HashSet<>();
-    nameNodeHosts = new HashSet<>();
-    stagingTasks = new HashSet<>();
-  }
-  
-  public Map<Protos.TaskID, String> getTaskHostMap() {
-    return taskHostMap;
+  public void addStagingTask(Protos.TaskInfo taskInfo) {
+    stagingTasks.add(taskInfo);
   }
 
-  public Map<Protos.TaskID, String> getTaskSlaveMap() {
-    return taskSlaveMap;
+  public int getStagingTasksSize() {
+    return stagingTasks.size();
   }
 
-  public Set<Protos.TaskID> getJournalNodes() {
-    return journalNodes;
+  public void removeStagingTask(final Protos.TaskID taskID) {
+    Set<Protos.TaskInfo> toRemove = new HashSet<>();
+    for (Protos.TaskInfo taskInfo : stagingTasks ) {
+      if (taskInfo.getTaskId().equals(taskID)) {
+        toRemove.add(taskInfo);
+      }
+    }
+    stagingTasks.removeAll(toRemove);
   }
 
-  public Set<Protos.TaskID> getNameNodes() {
-    return nameNodes;
+  public LinkedHashMap<Protos.TaskID, Protos.TaskStatus> getRunningTasks() {
+    return runningTasks;
   }
 
-  public Set<String> getJournalNodeHosts() {
-    return journalNodeHosts;
+  public void removeTask(Protos.TaskID taskId) {
+    runningTasks.remove(taskId);
   }
 
-  public Set<String> getNameNodeHosts() {
-    return nameNodeHosts;
+  public void updateTaskForStatus(Protos.TaskStatus status) {
+    runningTasks.put(status.getTaskId(), status);
   }
 
-  public Set<Protos.TaskID> getStagingTasks() {
-    return stagingTasks;
+  public AcquisitionPhase getCurrentAcquisitionPhase() {
+    return currentAcquisitionPhase;
   }
 
-  public boolean notInDfsHosts(String slaveId) {
-    return !taskSlaveMap.values().contains(slaveId);
+  public void transitionTo(AcquisitionPhase phase) {
+    this.currentAcquisitionPhase = phase;
   }
 
-  public void addTask(Protos.TaskID taskId, String hostname, String slaveId) {
-    taskHostMap.put(taskId, hostname);
-    taskSlaveMap.put(taskId, slaveId);
-    if (taskId.getValue().contains(HDFSConstants.NAME_NODE_TASKID)) {
-      nameNodeHosts.add(hostname);
-    } else if (taskId.getValue().contains(HDFSConstants.JOURNAL_NODE_ID)) {
-      journalNodeHosts.add(hostname);
+  public int getJournalNodeSize() {
+    return countOfRunningTasksWith(HDFSConstants.JOURNAL_NODE_ID);
+  }
+
+  public int getNameNodeSize() {
+    return countOfRunningTasksWith(HDFSConstants.NAME_NODE_TASKID);
+  }
+
+  public Protos.TaskID getFirstNameNodeTaskId() {
+    if (getNameNodeSize() >= 1) {
+      return getNamenodeTaskIds().get(0);
+    } else {
+      return null;
     }
   }
 
-  public void updateTask(Protos.TaskStatus taskStatus) {
-    if (taskStatus.getTaskId().getValue().contains(HDFSConstants.NAME_NODE_TASKID)) {
-      nameNodes.add(taskStatus.getTaskId());
-    } else if (taskStatus.getTaskId().getValue()
-        .contains(HDFSConstants.JOURNAL_NODE_ID)) {
-      journalNodes.add(taskStatus.getTaskId());
+  public Protos.TaskID getSecondNameNodeTaskId() {
+    if (getNameNodeSize() == HDFSConstants.TOTAL_NAME_NODES) {
+      return getNamenodeTaskIds().get(1);
+    } else {
+      return null;
     }
   }
 
-  public void removeTask(Protos.TaskStatus taskStatus) {
-    Protos.TaskID taskId = taskStatus.getTaskId();
-    journalNodeHosts.remove(taskHostMap.get(taskId));
-    nameNodeHosts.remove(taskHostMap.get(taskId));
-    taskHostMap.remove(taskId);
-    nameNodes.remove(taskId);
-    journalNodes.remove(taskId);
-    taskSlaveMap.remove(taskId);
+  public Protos.SlaveID getFirstNameNodeSlaveId() {
+    if (getNameNodeSize() >= 1) {
+      return getNamenodeSlaveIds().get(0);
+    } else {
+      return null;
+    }
   }
 
-  public void addStagingTask(Protos.TaskID taskId) {
-    stagingTasks.add(taskId);
+  public Protos.SlaveID getSecondNameNodeSlaveId() {
+    if (getNameNodeSize() == HDFSConstants.TOTAL_NAME_NODES) {
+      return getNamenodeSlaveIds().get(1);
+    } else {
+      return null;
+    }
   }
 
-  public void removeStagingTask(Protos.TaskID taskId) {
-    stagingTasks.remove(taskId);
+  private ArrayList<Protos.TaskID> getNamenodeTaskIds() {
+    ArrayList<Protos.TaskID> namenodes = new ArrayList();
+    for (Protos.TaskStatus taskStatus : runningTasks.values()) {
+      if (taskStatus.getTaskId().getValue().contains(HDFSConstants.NAME_NODE_TASKID)) {
+        namenodes.add(taskStatus.getTaskId());
+      }
+    }
+    return namenodes;
+  }
+
+  private ArrayList<Protos.SlaveID> getNamenodeSlaveIds() {
+    ArrayList<Protos.SlaveID> namenodes = new ArrayList();
+    for (Protos.TaskStatus taskStatus : runningTasks.values()) {
+      if (taskStatus.getTaskId().getValue().contains(HDFSConstants.NAME_NODE_ID)) {
+        namenodes.add(taskStatus.getSlaveId());
+      }
+    }
+    return namenodes;
+  }
+
+  private int countOfRunningTasksWith(final String nodeId) {
+    return Sets.filter(runningTasks.keySet(), new Predicate<Protos.TaskID>() {
+      @Override
+      public boolean apply(Protos.TaskID taskID) {
+        return taskID.getValue().contains(nodeId);
+      }
+    }).size();
   }
 }

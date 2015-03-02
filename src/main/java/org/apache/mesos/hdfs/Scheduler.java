@@ -6,27 +6,24 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.MesosSchedulerDriver;
+import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.*;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.hdfs.config.SchedulerConf;
+import org.apache.mesos.hdfs.state.AcquisitionPhase;
 import org.apache.mesos.hdfs.state.LiveState;
 import org.apache.mesos.hdfs.state.PersistentState;
 import org.apache.mesos.hdfs.util.HDFSConstants;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
-
 public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
-    
+
   public static final Log log = LogFactory.getLog(Scheduler.class);
   private final SchedulerConf conf;
   private final LiveState liveState;
   private PersistentState persistentState;
-
-  private Map<OfferID, Offer> pendingOffers = new ConcurrentHashMap<>();
-  private boolean initializingCluster = false;
 
   @Inject
   public Scheduler(SchedulerConf conf, LiveState liveState) {
@@ -77,14 +74,155 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
     }
     log.info("Registered framework frameworkId=" + frameworkId.getValue());
   }
-
+  
   @Override
   public void reregistered(SchedulerDriver driver, MasterInfo masterInfo) {
     log.info("Reregistered framework.");
   }
 
+  @Override
+  public void statusUpdate(SchedulerDriver driver, TaskStatus status) {
+    log.info(String.format(
+        "Received status update for taskId=%s state=%s message='%s' stagingTasks.size=%d",
+        status.getTaskId().getValue(),
+        status.getState().toString(),
+        status.getMessage(),
+        liveState.getStagingTasksSize()));
+
+    if (!isStagingState(status)) {
+      liveState.removeStagingTask(status.getTaskId());
+    }
+
+    if (isTerminalState(status)) {
+      liveState.removeTask(status.getTaskId());
+    } else if (isRunningState(status)) {
+      liveState.updateTaskForStatus(status); // TODO(rubbish) could terminal/running get pushed to
+                                             // this
+
+      log.info(String.format("Current Acquisition Phase: %s", liveState
+          .getCurrentAcquisitionPhase().toString()));
+
+      switch (liveState.getCurrentAcquisitionPhase()) {
+        case JOURNAL_NODES :
+          if (liveState.getJournalNodeSize() == conf.getJournalNodeCount()) {
+            liveState.transitionTo(AcquisitionPhase.NAME_NODE_1);
+          }
+          break;
+        case NAME_NODE_1 :
+          if (liveState.getNameNodeSize() == 1 && liveState.getFirstNameNodeTaskId() != null) {
+            liveState.transitionTo(AcquisitionPhase.NAME_NODE_2);
+          } else {
+            log.info("Cannot locate first namenode task id");
+          }
+          break;
+        case NAME_NODE_2 :
+          if (liveState.getNameNodeSize() == HDFSConstants.TOTAL_NAME_NODES
+              && liveState.getSecondNameNodeTaskId() != null) {
+            reloadConfigsOnAllRunningTasks(driver);
+            sendMessageTo(
+                driver,
+                liveState.getFirstNameNodeTaskId(), liveState.getFirstNameNodeSlaveId(),
+                HDFSConstants.NAME_NODE_INIT_MESSAGE);
+            blockUntilNameNode1Healthy();
+            sendMessageTo(
+                driver,
+                liveState.getSecondNameNodeTaskId(), liveState.getSecondNameNodeSlaveId(),
+                HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE);
+            liveState.transitionTo(AcquisitionPhase.DATA_NODES);
+          } else {
+            log.info("Cannot locate second namenode task id");
+          }
+          break;
+        case DATA_NODES :
+          break;
+      }
+    } else {
+      log.warn(String.format("Don't know how to handle state=%s for taskId=%s",
+          status.getState(), status.getTaskId().getValue()));
+    }
+  }
+
+  @Override
+  synchronized public void resourceOffers(SchedulerDriver driver, List<Offer> offers) {
+    log.info(String.format("Received %d offers", offers.size()));
+
+    if (liveState.getStagingTasksSize() != 0) {
+      log.info("Declining offers because tasks are currently staging");
+      for (Offer offer : offers) {
+        driver.declineOffer(offer.getId());
+      }
+    } else {
+      boolean acceptedOffer = false;
+      for (Offer offer : offers) {
+        if (acceptedOffer) {
+          driver.declineOffer(offer.getId());
+        } else {
+          switch (liveState.getCurrentAcquisitionPhase()) {
+            case JOURNAL_NODES :
+              if (liveState.getJournalNodeSize() < conf.getJournalNodeCount()) {
+                if (maybeLaunchJournalNode(driver, offer)) {
+                  acceptedOffer = true;
+                } else {
+                  driver.declineOffer(offer.getId());
+                }
+              }
+              break;
+            case NAME_NODE_1 :
+              if (maybeLaunchNameNode(driver, offer)) {
+                acceptedOffer = true;
+              } else {
+                driver.declineOffer(offer.getId());
+              }
+              break;
+            case NAME_NODE_2 :
+              if (maybeLaunchNameNode(driver, offer)) {
+                acceptedOffer = true;
+              } else {
+                driver.declineOffer(offer.getId());
+              }
+              break;
+            case DATA_NODES :
+              if (maybeLaunchDataNode(driver, offer)) {
+                acceptedOffer = true;
+              } else {
+                driver.declineOffer(offer.getId());
+              }
+              break;
+          }
+        }
+      }
+    }
+  }
+
+  @Override
+  public void slaveLost(SchedulerDriver driver, SlaveID slaveId) {
+    log.info("Slave lost slaveId=" + slaveId.getValue());
+  }
+
+  @Override
+  public void run() {
+    FrameworkInfo.Builder frameworkInfo = FrameworkInfo.newBuilder()
+        .setName("HDFS " + conf.getFrameworkName())
+        .setFailoverTimeout(conf.getFailoverTimeout())
+        .setUser(conf.getHdfsUser())
+        .setRole(conf.getHdfsRole())
+        .setCheckpoint(true);
+
+    try {
+      FrameworkID frameworkID = persistentState.getFrameworkID();
+      if (frameworkID != null) {
+        frameworkInfo.setId(frameworkID);
+      }
+    } catch (InterruptedException | ExecutionException | InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
+
+    MesosSchedulerDriver driver = new MesosSchedulerDriver(this, frameworkInfo.build(),
+        conf.getMesosMasterUri());
+    driver.run().getValueDescriptor().getFullName();
+  }
   private void launchNode(SchedulerDriver driver, Offer offer,
-      String nodeName, List<String> taskNames, String executorName) {
+        String nodeName, List<String> taskNames, String executorName) {
     log.info(String.format("Launching node of type %s with tasks %s", nodeName,
         taskNames.toString()));
     String taskIdName = String.format("%s.%s.%d", nodeName, executorName,
@@ -108,16 +246,16 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
           .build();
       tasks.add(task);
 
-      liveState.addStagingTask(taskId);
-      liveState.addTask(taskId, offer.getHostname(), offer.getSlaveId().getValue());
+      liveState.addStagingTask(task);
+      persistentState.addNode(taskId, offer.getHostname(), taskName);
     }
     driver.launchTasks(Arrays.asList(offer.getId()), tasks);
   }
-    
   private ExecutorInfo createExecutor(String taskIdName, String nodeName, String executorName,
-    List<Resource> resources) {
+        List<Resource> resources) {
     int confServerPort = conf.getConfigServerPort();
-    return ExecutorInfo.newBuilder()
+    return ExecutorInfo
+        .newBuilder()
         .setName(nodeName + " executor")
         .setExecutorId(ExecutorID.newBuilder().setValue("executor." + taskIdName).build())
         .addAllResources(resources)
@@ -193,197 +331,93 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
             .build());
   }
 
-  private void launchDataNode(SchedulerDriver driver, Offer offer) {
-    launchNode(
-        driver,
-        offer,
-        HDFSConstants.DATA_NODE_ID,
-        Arrays.asList(HDFSConstants.DATA_NODE_ID),
-        HDFSConstants.NODE_EXECUTOR_ID);
-  }
-
-  private void launchInitialJournalNodes(SchedulerDriver driver, Collection<Offer> offers) {
-    for (int i = 0; i < conf.getJournalNodeCount(); i++) {
-      if (offers.size() > 0) {
-        Offer offer = offers.iterator().next();
-        pendingOffers.remove(offer.getId());
-        launchNode(
-            driver,
-            offer,
-            HDFSConstants.JOURNAL_NODE_ID,
-            Arrays.asList(HDFSConstants.JOURNAL_NODE_ID),
-            HDFSConstants.NODE_EXECUTOR_ID);
-      }
+  private boolean maybeLaunchJournalNode(SchedulerDriver driver, Offer offer) {
+    if (persistentState.journalNodeRunningOnSlave(offer.getHostname())) {
+      log.info(String.format("Already running journalnode on %s", offer.getHostname()));
+      return false;
+    } else {
+      launchNode(
+          driver,
+          offer,
+          HDFSConstants.JOURNAL_NODE_ID,
+          Arrays.asList(HDFSConstants.JOURNAL_NODE_ID),
+          HDFSConstants.NODE_EXECUTOR_ID);
+      return true;
     }
   }
 
-  private void launchInitialNameNodes(SchedulerDriver driver, Collection<Offer> offers) {
-    for (int i = 0; i < HDFSConstants.TOTAL_NAME_NODES; i++) {
-      if (offers.size() > 0) {
-        Offer offer = offers.iterator().next();
-        pendingOffers.remove(offer.getId());
-        launchNode(
-            driver,
-            offer,
-            HDFSConstants.NAME_NODE_ID,
-            Arrays.asList(HDFSConstants.NAME_NODE_ID, HDFSConstants.ZKFC_NODE_ID,
-                HDFSConstants.JOURNAL_NODE_ID),
-            HDFSConstants.NAME_NODE_EXECUTOR_ID);
-      }
+  private boolean maybeLaunchNameNode(SchedulerDriver driver, Offer offer) {
+    if (persistentState.nameNodeRunningOnSlave(offer.getHostname())) {
+      log.info(String.format("Already running namenode on %s", offer.getHostname()));
+      return false;
+    } else {
+      launchNode(
+          driver,
+          offer,
+          HDFSConstants.NAME_NODE_ID,
+          Arrays.asList(HDFSConstants.NAME_NODE_ID, HDFSConstants.ZKFC_NODE_ID),
+          HDFSConstants.NAME_NODE_EXECUTOR_ID);
+      return true;
     }
   }
 
-  @Override
-  synchronized public void resourceOffers(SchedulerDriver driver, List<Offer> offers) {
-    log.info(String.format("Received %d offers", offers.size()));
-    //TODO(elingg) all datanodes can be launched together after the other nodes have initialized.
-    //Remove this waiting period for datanodes.
-    if (!liveState.getStagingTasks().isEmpty()) {
-      log.info("Declining offers because tasks are currently staging");
-      for (Offer offer : offers) {
-        driver.declineOffer(offer.getId());
-      }
-      return;
-    }
-
-    if (liveState.getNameNodes().size() == 0 && liveState.getJournalNodes().size() == 0) {
-      log.info("No NameNodes or JournalNodes found.  Collecting offers until we have sufficient "
-          + "capacity to launch.");
-      for (Offer offer: offers) {
-          pendingOffers.put(offer.getId(), offer);
-      }
-        
-      if (!initializingCluster && pendingOffers.size() >= (HDFSConstants.TOTAL_NAME_NODES + conf.getJournalNodeCount())) {
-        log.info(String.format("Launching initial nodes with %d pending offers",
-            pendingOffers.size()));
-        initializingCluster = true;
-        launchInitialJournalNodes(driver, pendingOffers.values());
-        launchInitialNameNodes(driver, pendingOffers.values());
-        // Decline any remaining offer
-        for (OfferID offerID : pendingOffers.keySet()) {
-          driver.declineOffer(offerID);
-        }
-        pendingOffers.clear();
-      }
-      return;
-    }
-
-    List<Offer> remainingOffers = new ArrayList<>();
-    remainingOffers.addAll(offers);
-
-    if (initializingCluster) {
-      log.info(String.format("Declining remaining %d offers pending initialization",
-          remainingOffers.size()));
-      for (Offer offer : remainingOffers) {
-        driver.declineOffer(offer.getId());
-      }
-      return;
-    }
-
-    offers = remainingOffers;
-    remainingOffers = new ArrayList<>();
-
-    // Check to see if we can launch some DataNodes
-    for (Offer offer : offers) {
-      if (liveState.notInDfsHosts(offer.getSlaveId().getValue())) {
-        launchDataNode(driver, offer);
-      } else {
-        remainingOffers.add(offer);
-      }
-    }
-
-    // Decline remaining offers
-    log.info(String.format("Declining %d offers", remainingOffers.size()));
-    for (Offer offer : remainingOffers) {
-      driver.declineOffer(offer.getId());
+  private boolean maybeLaunchDataNode(SchedulerDriver driver, Offer offer) {
+    if (persistentState.dataNodeRunningOnSlave(offer.getHostname()) ||
+        persistentState.nameNodeRunningOnSlave(offer.getHostname()) ||
+        persistentState.journalNodeRunningOnSlave(offer.getHostname())) {
+      log.info(String.format("Already running hdfs task on %s", offer.getHostname()));
+      return false;
+    } else {
+      launchNode(
+          driver,
+          offer,
+          HDFSConstants.DATA_NODE_ID,
+          Arrays.asList(HDFSConstants.DATA_NODE_ID),
+          HDFSConstants.NODE_EXECUTOR_ID);
+      return true;
     }
   }
 
-  @Override
-  public void slaveLost(SchedulerDriver driver, SlaveID slaveId) {
-    log.info("Slave lost slaveId=" + slaveId.getValue());
-  }
-
-
-  @Override
-  public void statusUpdate(SchedulerDriver driver, TaskStatus status) {
-    log.info(String.format(
-        "Received status update for taskId=%s state=%s message='%s' stagingTasks.size=%d",
-        status.getTaskId().getValue(),
-        status.getState().toString(),
-        status.getMessage(),
-        liveState.getStagingTasks().size()));
-
-    if (status.getState().equals(TaskState.TASK_FAILED)
-        || status.getState().equals(TaskState.TASK_FINISHED)
-        || status.getState().equals(TaskState.TASK_KILLED)
-        || status.getState().equals(TaskState.TASK_LOST)) {
-      liveState.removeStagingTask(status.getTaskId());
-      liveState.removeTask(status);
-    } else if (status.getState().equals(TaskState.TASK_RUNNING)) {
-        liveState.removeStagingTask(status.getTaskId());
-        liveState.updateTask(status);
-
-        if (status.getTaskId().getValue().contains(HDFSConstants.NAME_NODE_TASKID)) {
-          if (liveState.getNameNodes().size() == HDFSConstants.TOTAL_NAME_NODES) {
-            //Finished initializing cluster after both name nodes are initialized
-            initializingCluster = false;
-          } else {
-            //Activate secondary name node after first name node is activated
-            for (TaskID taskId : liveState.getStagingTasks()) {
-              if (taskId.getValue().contains(HDFSConstants.NAME_NODE_TASKID)) {
-                sendMessageTo(driver, taskId, HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE);
-                break;
-              }
-            }
-          }
-        } else if (status.getTaskId().getValue().contains(HDFSConstants.JOURNAL_NODE_ID) &&
-              (liveState.getJournalNodes().size() ==
-              (HDFSConstants.TOTAL_NAME_NODES + conf.getJournalNodeCount()))) {
-            //Activate primary name node after all journal nodes are activated
-            for (TaskID taskId : liveState.getStagingTasks()) {
-              if (taskId.getValue().contains(HDFSConstants.NAME_NODE_TASKID)) {
-                sendMessageTo(driver, taskId, HDFSConstants.NAME_NODE_INIT_MESSAGE);
-                break;
-              }
-            }
-         }
-      }
-  }
-
-  @Override
-  public void run() {
-    FrameworkInfo.Builder frameworkInfo = FrameworkInfo.newBuilder()
-        .setName(conf.getFrameworkName())
-        .setFailoverTimeout(conf.getFailoverTimeout())
-        .setUser(conf.getHdfsUser())
-        .setRole(conf.getHdfsRole())
-        .setCheckpoint(true);
-
-    try {
-      FrameworkID frameworkID = persistentState.getFrameworkID();
-      if (frameworkID != null) {
-        frameworkInfo.setId(frameworkID);
-      }
-    } catch (InterruptedException | ExecutionException | InvalidProtocolBufferException e) {
-      throw new RuntimeException(e);
-    }
-
-    MesosSchedulerDriver driver = new MesosSchedulerDriver(this, frameworkInfo.build(),
-        conf.getMesosMasterUri());
-    driver.run().getValueDescriptor().getFullName();
-  }
-    
-  private void sendMessageTo(SchedulerDriver driver, TaskID taskId, String message) {
-    log.info(String.format("Sending message '%s' to taskId=%s", message, taskId.getValue()));
-    String slaveId = liveState.getTaskSlaveMap().get(taskId);
+  private void sendMessageTo(SchedulerDriver driver, TaskID taskId, SlaveID slaveID, String message) {
+    log.info(String.format("Sending message '%s' to taskId=%s, slaveId=%s", message,
+        taskId.getValue(), slaveID.getValue()));
     String postfix = taskId.getValue();
     postfix = postfix.substring(postfix.indexOf(".") + 1, postfix.length());
     postfix = postfix.substring(postfix.indexOf(".") + 1, postfix.length());
     driver.sendFrameworkMessage(
         ExecutorID.newBuilder().setValue("executor." + postfix).build(),
-        SlaveID.newBuilder().setValue(slaveId).build(),
+        slaveID,
         message.getBytes());
   }
 
+  private boolean isTerminalState(TaskStatus taskStatus) {
+    return (taskStatus.getState().equals(TaskState.TASK_FAILED)
+        || taskStatus.getState().equals(TaskState.TASK_FINISHED)
+        || taskStatus.getState().equals(TaskState.TASK_KILLED)
+        || taskStatus.getState().equals(TaskState.TASK_LOST));
+  }
+
+  private boolean isRunningState(TaskStatus taskStatus) {
+    return (taskStatus.getState().equals(TaskState.TASK_RUNNING));
+  }
+
+  private boolean isStagingState(TaskStatus taskStatus) {
+    return (taskStatus.getState().equals(TaskState.TASK_STAGING));
+  }
+
+  private void reloadConfigsOnAllRunningTasks(SchedulerDriver driver) {
+    for (Protos.TaskStatus taskStatus : liveState.getRunningTasks().values()) {
+      sendMessageTo(driver, taskStatus.getTaskId(), taskStatus.getSlaveId(),
+          HDFSConstants.RELOAD_CONFIG);
+    }
+  }
+
+  private void blockUntilNameNode1Healthy() {
+    //TODO need to implement this method
+    try {
+      Thread.sleep(30000L);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
 }
