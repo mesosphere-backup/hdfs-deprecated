@@ -59,9 +59,9 @@ public class ConfigServer {
 
       String content = new String(Files.readAllBytes(Paths.get(confFile.getPath())));
       Map<String, Object> model = new HashMap<>();
-      
-      Set<String> nameNodes = liveState.getNameNodeDomainNames();
+
       //add namenodes to hdfs schedulerConf
+      Set<String> nameNodes = liveState.getNameNodeDomainNames();
       Iterator<String> iter = nameNodes.iterator();
       for (int i = nameNodes.size(); i > 0; i--) {
         model.put("nn" + i + "Hostname", iter.next());
@@ -69,8 +69,8 @@ public class ConfigServer {
       model.put("nnHttpPort", HDFSConstants.NAME_NODE_HTTP_PORT);
       model.put("nnRpcPort", HDFSConstants.NAME_NODE_RPC_PORT);
 
-      Set<String> journalNodes = liveState.getJournalNodeDomainNames();
       //add journal nodes to hdfs schedulerConf
+      Set<String> journalNodes = liveState.getJournalNodeDomainNames();
       Iterator<String> jiter = journalNodes.iterator();
       String jNodeString = "";
       while (jiter.hasNext()) {
