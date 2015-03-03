@@ -5,14 +5,13 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.mesos.Executor;
-import org.apache.mesos.ExecutorDriver;
-import org.apache.mesos.MesosExecutorDriver;
+import org.apache.mesos.*;
 import org.apache.mesos.Protos.*;
 import org.apache.mesos.hdfs.config.SchedulerConf;
 import org.apache.mesos.hdfs.state.LiveState;
 import org.apache.mesos.hdfs.util.HDFSConstants;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -39,8 +38,7 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
    **/
   @Inject
   NameNodeExecutor(SchedulerConf schedulerConf, LiveState liveState) {
-    super(schedulerConf);
-    this.liveState = liveState;
+    super(schedulerConf, liveState);
   }
 
   /**
@@ -115,11 +113,93 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
           .setState(TaskState.TASK_RUNNING)
           .build());
     }
-    if (messageStr.equals(HDFSConstants.NAME_NODE_INIT_MESSAGE)
-        || messageStr.equals(HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE)) {
-      runCommand(driver, nameNodeTask, "bin/hdfs-mesos-namenode " + messageStr);
-      startProcess(driver, nameNodeTask);
-      startProcess(driver, zkfcNodeTask);
+    if (messageStr.equals(HDFSConstants.NAME_NODE_INIT_MESSAGE)) {
+      Timer timer = new Timer(true);
+      TimerTask waitForJournalNodes = new JNPortCheckTask(
+          driver,
+          liveState.getJournalNodeDomainNames(),
+          HDFSConstants.JOURNAL_NODE_LISTEN_PORT,
+          "bin/hdfs-mesos-namenode " + messageStr);
+      timer.scheduleAtFixedRate(waitForJournalNodes, 0, 15000);
+    }
+    if (messageStr.equals(HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE)) {
+      Timer timer = new Timer(true);
+      TimerTask waitForNameNodes = new NNDnsCheckTask(
+          driver,
+          liveState.getNameNodeDomainNames(),
+          "bin/hdfs-mesos-namenode " + messageStr);
+      timer.scheduleAtFixedRate(waitForNameNodes, 0, 15000);
+    }
+  }
+
+  private class JNPortCheckTask extends TimerTask {
+    ExecutorDriver driver;
+    Set<String> hosts;
+    int port;
+    String message;
+
+    public JNPortCheckTask(ExecutorDriver driver, Set<String> hosts, int port, String message) {
+      this.driver = driver;
+      this.hosts = hosts;
+      this.port = port;
+      this.message = message;
+    }
+
+    @Override
+    public void run() {
+      boolean success = true;
+      for (String host : hosts) {
+        log.info("Checking for " + host + " at port " + port);
+        try (Socket connected = new Socket(host, port)) {
+          log.info("Successfully found " + host + " at port " + port);
+        } catch (SecurityException | IOException e) {
+          log.info("Couldn't resolve host " + host + " at port " + port);
+          success = false;
+          break;
+        }
+      }
+      if (success) {
+        log.info("Successfully found all nodes needed to continue. Sending message: " + message);
+        runCommand(driver, nameNodeTask, message);
+        startProcess(driver, nameNodeTask);
+        startProcess(driver, zkfcNodeTask);
+        this.cancel();
+      }
+    }
+  }
+
+  private class NNDnsCheckTask extends TimerTask {
+    ExecutorDriver driver;
+    Set<String> hosts;
+    String message;
+
+    public NNDnsCheckTask(ExecutorDriver driver, Set<String> hosts, String message) {
+      this.driver = driver;
+      this.hosts = hosts;
+      this.message = message;
+    }
+
+    @Override
+    public void run() {
+      boolean success = true;
+      for (String host : hosts) {
+        log.info("Checking for " + host);
+        try {
+          InetAddress.getByName(host);
+          log.info("Successfully found " + host);
+        } catch (SecurityException | IOException e) {
+          log.info("Couldn't resolve host " + host);
+          success = false;
+          break;
+        }
+      }
+      if (success) {
+        log.info("Successfully found all nodes needed to continue. Sending message: " + message);
+        runCommand(driver, nameNodeTask, message);
+        startProcess(driver, nameNodeTask);
+        startProcess(driver, zkfcNodeTask);
+        this.cancel();
+      }
     }
   }
 }

@@ -346,13 +346,7 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
           //send the standby nodes the bootstrap message.
           initializingCluster = false;
           for (TaskID taskId : liveState.getSecondaryNameNodes()) {
-            Timer timer = new Timer(true);
-            TimerTask waitForNameNodes = new DnsCheckTask(
-                driver,
-                taskId,
-                liveState.getNameNodeDomainNames(),
-                HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE);
-            timer.scheduleAtFixedRate(waitForNameNodes, 0, 15000);
+            sendMessageTo(driver, taskId, HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE);
           }
         } else {
           //Activate secondary name node after first name node is activated
@@ -371,26 +365,12 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
         //Activate primary name node after all journal nodes are activated
         for (TaskID taskId : liveState.getStagingTasks()) {
           if (taskId.getValue().contains(HDFSConstants.NAME_NODE_TASKID)) {
-            Timer timer = new Timer(true);
-            TimerTask waitForJournalNodes = new DnsCheckTask(
-                driver,
-                taskId,
-                liveState.getJournalNodeDomainNames(),
-                HDFSConstants.JOURNAL_NODE_LISTEN_PORT,
-                HDFSConstants.NAME_NODE_INIT_MESSAGE);
-            timer.scheduleAtFixedRate(waitForJournalNodes, 0, 15000);
+            sendMessageTo(driver, taskId, HDFSConstants.NAME_NODE_INIT_MESSAGE);
             break;
           }
         }
       } else if (status.getTaskId().getValue().contains(HDFSConstants.DATA_NODE_ID)) {
-        Timer timer = new Timer(true);
-        TimerTask waitForJournalNodes = new DnsCheckTask(
-            driver,
-            status.getTaskId(),
-            liveState.getNameNodeDomainNames(),
-            HDFSConstants.NAME_NODE_HTTP_PORT,
-            HDFSConstants.DATA_NODE_INIT_MESSAGE);
-        timer.scheduleAtFixedRate(waitForJournalNodes, 0, 15000);
+        sendMessageTo(driver, status.getTaskId(), HDFSConstants.DATA_NODE_INIT_MESSAGE);
       }
     }
   }
@@ -428,65 +408,5 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
         ExecutorID.newBuilder().setValue("executor." + postfix).build(),
         SlaveID.newBuilder().setValue(slaveId).build(),
         message.getBytes());
-  }
-
-  private class DnsCheckTask extends TimerTask {
-    SchedulerDriver driver;
-    Protos.TaskID taskId;
-    Set<String> hosts;
-    boolean withPort;
-    int port;
-    String message;
-
-    public DnsCheckTask(SchedulerDriver driver, Protos.TaskID taskId, Set<String> hosts, int port, String message) {
-      this.driver = driver;
-      this.taskId = taskId;
-      this.hosts = hosts;
-      withPort = true;
-      this.port = port;
-      this.message = message;
-    }
-
-    public DnsCheckTask(SchedulerDriver driver, Protos.TaskID taskId, Set<String> hosts, String message) {
-      this.driver = driver;
-      this.taskId = taskId;
-      this.hosts = hosts;
-      withPort = false;
-      this.message = message;
-    }
-
-    @Override
-    public void run() {
-      boolean success = true;
-      if (withPort) {
-        for (String host : hosts) {
-          log.info("Checking for " + host + " at port " + port);
-          try (Socket connected = new Socket(host, port)) {
-            log.info("Successfully found " + host + " at port " + port);
-          } catch (SecurityException | IOException e) {
-            log.info("Couldn't resolve host " + host + " at port " + port);
-            success = false;
-            break;
-          }
-        }
-      } else {
-        for (String host : hosts) {
-          log.info("Checking for " + host);
-          try {
-            InetAddress.getByName(host);
-            log.info("Successfully found " + host);
-          } catch (SecurityException | IOException e) {
-            log.info("Couldn't resolve host " + host);
-            success = false;
-            break;
-          }
-        }
-      }
-      if (success) {
-        log.info("Successfully found all nodes needed to continue. Sending message: " + message);
-        sendMessageTo(driver, taskId, message);
-        this.cancel();
-      }
-    }
   }
 }

@@ -11,6 +11,7 @@ import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.MesosExecutorDriver;
 import org.apache.mesos.Protos.*;
 import org.apache.mesos.hdfs.config.SchedulerConf;
+import org.apache.mesos.hdfs.state.LiveState;
 import org.apache.mesos.hdfs.util.HDFSConstants;
 import org.apache.mesos.hdfs.util.StreamRedirect;
 
@@ -32,13 +33,15 @@ public abstract class AbstractNodeExecutor implements Executor {
   // reload config no more than once every 60 sec
   protected RateLimiter reloadLimiter = RateLimiter.create(1 / 60.);
   protected SchedulerConf schedulerConf;
+  protected LiveState liveState;
 
   /**
    * Constructor which takes in configuration.
    **/
   @Inject
-  AbstractNodeExecutor(SchedulerConf schedulerConf) {
+  AbstractNodeExecutor(SchedulerConf schedulerConf, LiveState liveState) {
     this.schedulerConf = schedulerConf;
+    this.liveState = liveState;
   }
 
   /**
