@@ -14,12 +14,9 @@ import org.apache.mesos.hdfs.util.HDFSConstants;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.TreeSet;
-import java.util.concurrent.TimeUnit;
 
 /**
  * The executor for the Primary Name Node Machine.
