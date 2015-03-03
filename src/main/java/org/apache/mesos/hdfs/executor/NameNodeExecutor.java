@@ -24,8 +24,6 @@ import java.util.TimerTask;
 public class NameNodeExecutor extends AbstractNodeExecutor {
   public static final Log log = LogFactory.getLog(NameNodeExecutor.class);
 
-  private LiveState liveState;
-
   private Task nameNodeTask;
   private Task zkfcNodeTask;
   private Task journalNodeTask;
