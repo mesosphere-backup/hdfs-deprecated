@@ -247,9 +247,6 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
       return;
     }
 
-//    int maxNameNodes = HDFSConstants.TOTAL_NAME_NODES;
-//    int maxJournalNodes = maxNameNodes + conf.getJournalNodeCount();
-
     if (liveState.getNameNodes().size() == 0 && liveState.getJournalNodes().size() == 0) {
       log.info("No NameNodes or JournalNodes found.  Collecting offers until we have sufficient "
           + "capacity to launch.");
