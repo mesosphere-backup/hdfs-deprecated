@@ -9,6 +9,7 @@ import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.MesosExecutorDriver;
 import org.apache.mesos.Protos.*;
 import org.apache.mesos.hdfs.config.SchedulerConf;
+import org.apache.mesos.hdfs.util.HDFSConstants;
 
 /**
  * The executor for a Basic Node (either a Journal Node or Data Node).
@@ -17,6 +18,8 @@ import org.apache.mesos.hdfs.config.SchedulerConf;
 public class NodeExecutor extends AbstractNodeExecutor {
   public static final Log log = LogFactory.getLog(NodeExecutor.class);
   private Task task;
+
+  private Task dataNodeTask;
 
   /**
    * The constructor for the node which saves the configuration.
@@ -42,14 +45,24 @@ public class NodeExecutor extends AbstractNodeExecutor {
    */
   @Override
   public void launchTask(final ExecutorDriver driver, final TaskInfo taskInfo) {
+    log.info(taskInfo.getTaskId().getValue());
     executorInfo = taskInfo.getExecutor();
     task = new Task(taskInfo);
-    driver.sendStatusUpdate(TaskStatus.newBuilder()
-        .setTaskId(taskInfo.getTaskId())
-        .setState(TaskState.TASK_RUNNING)
-        .setData(taskInfo.getData()).build());
-    startProcess(driver, task);
-
+    if (taskInfo.getTaskId().getValue().contains(HDFSConstants.DATA_NODE_ID)) {
+      // Initialize the data node and wait for activate message
+      dataNodeTask = task;
+      driver.sendStatusUpdate(TaskStatus.newBuilder()
+          .setTaskId(taskInfo.getTaskId())
+          .setState(TaskState.TASK_RUNNING)
+          .setData(taskInfo.getData()).build());
+    } else {
+      //for other tasks on this node, just start them normally
+      driver.sendStatusUpdate(TaskStatus.newBuilder()
+          .setTaskId(taskInfo.getTaskId())
+          .setState(TaskState.TASK_RUNNING)
+          .setData(taskInfo.getData()).build());
+      startProcess(driver, task);
+    }
   }
 
   @Override
@@ -58,6 +71,17 @@ public class NodeExecutor extends AbstractNodeExecutor {
     if (task.process != null && taskId.equals(task.taskInfo.getTaskId())) {
       task.process.destroy();
       task.process = null;
+    }
+  }
+
+  @Override
+  public void frameworkMessage(ExecutorDriver driver, byte[] msg) {
+    log.info("Executor received framework message of length: " + msg.length + " bytes");
+    String messageStr = new String(msg);
+    // launch tasks on init (primary NN), launch tasks on run (secondary NN)
+    if (messageStr.equals(HDFSConstants.DATA_NODE_INIT_MESSAGE)) {
+      // start the data node
+      startProcess(driver, dataNodeTask);
     }
   }
 }

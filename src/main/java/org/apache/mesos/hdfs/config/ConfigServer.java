@@ -24,8 +24,8 @@ public class ConfigServer {
 
   private Server server;
   private Engine engine;
-  private SchedulerConf schedulerConf;
-  private LiveState liveState;
+  private final SchedulerConf schedulerConf;
+  private final LiveState liveState;
 
   @Inject
   public ConfigServer(SchedulerConf schedulerConf, LiveState liveState) throws Exception {
@@ -58,33 +58,26 @@ public class ConfigServer {
       }
 
       String content = new String(Files.readAllBytes(Paths.get(confFile.getPath())));
-
-      Set<String> nameNodes = new TreeSet<>();
-      nameNodes.addAll(liveState.getNameNodeHosts());
-
-      Set<String> journalNodes = new TreeSet<>();
-      journalNodes.addAll(nameNodes);
-      journalNodes.addAll(liveState.getJournalNodeHosts());
-
       Map<String, Object> model = new HashMap<>();
+      
+      Set<String> nameNodes = liveState.getNameNodeDomainNames();
+      //add namenodes to hdfs schedulerConf
       Iterator<String> iter = nameNodes.iterator();
-      if (iter.hasNext()) {
-        model.put("nn1Hostname", iter.next());
+      for (int i = nameNodes.size(); i > 0; i--) {
+        model.put("nn" + i + "Hostname", iter.next());
       }
-      if (iter.hasNext()) {
-        model.put("nn2Hostname", iter.next());
-      }
+      model.put("nnHttpPort", HDFSConstants.NAME_NODE_HTTP_PORT);
+      model.put("nnRpcPort", HDFSConstants.NAME_NODE_RPC_PORT);
 
-      String journalNodeString = "";
-      for (String jn : journalNodes) {
-        journalNodeString += jn + ":8485;";
+      Set<String> journalNodes = liveState.getJournalNodeDomainNames();
+      //add journal nodes to hdfs schedulerConf
+      Iterator<String> jiter = journalNodes.iterator();
+      String jNodeString = "";
+      while (jiter.hasNext()) {
+        jNodeString += jiter.next() + ":" + HDFSConstants.JOURNAL_NODE_LISTEN_PORT;
+        if (jiter.hasNext()) jNodeString += ";";
       }
-      if (!journalNodeString.isEmpty()) {
-        // Chop the trailing ,
-        journalNodeString = journalNodeString.substring(0, journalNodeString.length() - 1);
-      }
-
-      model.put("journalnodes", journalNodeString);
+      model.put("journalnodes", jNodeString);
 
       model.put("frameworkName", schedulerConf.getFrameworkName());
       model.put("dataDir", schedulerConf.getDataDir());
