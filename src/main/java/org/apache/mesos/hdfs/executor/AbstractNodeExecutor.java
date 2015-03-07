@@ -11,7 +11,6 @@ import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.MesosExecutorDriver;
 import org.apache.mesos.Protos.*;
 import org.apache.mesos.hdfs.config.SchedulerConf;
-import org.apache.mesos.hdfs.state.LiveState;
 import org.apache.mesos.hdfs.util.HDFSConstants;
 import org.apache.mesos.hdfs.util.StreamRedirect;
 
@@ -19,9 +18,12 @@ import java.io.File;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class AbstractNodeExecutor implements Executor {
 
@@ -30,15 +32,13 @@ public abstract class AbstractNodeExecutor implements Executor {
   // reload config no more than once every 60 sec
   protected RateLimiter reloadLimiter = RateLimiter.create(1 / 60.);
   protected SchedulerConf schedulerConf;
-  protected LiveState liveState;
 
   /**
    * Constructor which takes in configuration.
    **/
   @Inject
-  AbstractNodeExecutor(SchedulerConf schedulerConf, LiveState liveState) {
+  AbstractNodeExecutor(SchedulerConf schedulerConf) {
     this.schedulerConf = schedulerConf;
-    this.liveState = liveState;
   }
 
   /**
