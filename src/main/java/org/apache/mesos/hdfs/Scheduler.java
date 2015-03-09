@@ -37,10 +37,6 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
   private boolean reconciliationCompleted;
 
   @Inject
-  public Scheduler(SchedulerConf conf, LiveState liveState) {
-    this(conf, liveState, new PersistentState(conf));
-  }
-
   public Scheduler(SchedulerConf conf, LiveState liveState, PersistentState persistentState) {
     this.conf = conf;
     this.liveState = liveState;

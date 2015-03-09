@@ -165,6 +165,9 @@ public abstract class AbstractNodeExecutor implements Executor {
    * Reloads the cluster configuration so the executor has the correct configuration info.
    **/
   protected void reloadConfig() {
+    // don't need to reload configurations if using mesos-dns
+    if (schedulerConf.usingMesosDns()) return;
+
     // Find config URI
     String configUri = "";
     for (CommandInfo.URI uri : executorInfo.getCommand().getUrisList()) {
