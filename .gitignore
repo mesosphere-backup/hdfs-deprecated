@@ -1,5 +1,5 @@
 target/
-*.iml
+*.i??
 .idea/
 hadoop-*
 hdfs-mesos-*
