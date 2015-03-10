@@ -4,3 +4,7 @@ target/
 hadoop-*
 hdfs-mesos-*
 native/
+
+# gradle and output
+.gradle
+build
