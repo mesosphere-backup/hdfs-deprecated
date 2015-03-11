@@ -131,14 +131,12 @@ public class PersistentState {
       Iterator<String> iter = unusedJournalNodeNames.iterator();
       String name = iter.next();
       unusedJournalNodeNames.remove(name);
-      log.info("Added task id " + taskId.getValue() + " with name " + name);
       journalNodeNames.put(taskId.getValue(), name);
       return name;
     } else {
       Iterator<String> iter = unusedNameNodeNames.iterator();
       String name = iter.next();
       unusedNameNodeNames.remove(name);
-      log.info("Added task id " + taskId.getValue() + " with name " + name);
       nameNodeNames.put(taskId.getValue(), name);
       return name;
     }
@@ -174,11 +172,8 @@ public class PersistentState {
     log.info("removing task with id " + taskId);
     HashMap<String, String> journalNodes = getJournalNodes();
     if (journalNodes.values().contains(taskId)) {
-      log.info("Giving journal node name back");
       if (journalNodeNames.containsKey(taskId)) {
         String name = journalNodeNames.get(taskId);
-        log.info("Found journalnode name for id: " + name);
-        log.info("Unused journal node names: ");
         log.info(unusedJournalNodeNames);
         unusedJournalNodeNames.add(name);
         journalNodeNames.remove(taskId);
@@ -194,12 +189,8 @@ public class PersistentState {
     HashMap<String, String> nameNodes = getNameNodes();
     if (nameNodes.values().contains(taskId)) {
       // Give the name back to use.
-      log.info("Giving name node name back");
       if (nameNodeNames.containsKey(taskId)) {
         String name = nameNodeNames.get(taskId);
-        log.info("Found namenode name for id: " + name);
-        log.info("Unused name node names: ");
-        log.info(unusedNameNodeNames);
         unusedNameNodeNames.add(name);
         nameNodeNames.remove(taskId);
       }
