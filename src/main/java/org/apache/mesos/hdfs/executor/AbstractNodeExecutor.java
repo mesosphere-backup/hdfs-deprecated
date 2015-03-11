@@ -5,9 +5,7 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.mesos.Executor;
-import org.apache.mesos.ExecutorDriver;
-import org.apache.mesos.MesosExecutorDriver;
+import org.apache.mesos.*;
 import org.apache.mesos.Protos.*;
 import org.apache.mesos.hdfs.config.SchedulerConf;
 import org.apache.mesos.hdfs.util.HDFSConstants;
@@ -23,6 +21,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Timer;
 import java.util.TimerTask;
 
 public abstract class AbstractNodeExecutor implements Executor {
@@ -30,6 +29,7 @@ public abstract class AbstractNodeExecutor implements Executor {
   public static final Log log = LogFactory.getLog(AbstractNodeExecutor.class);
   protected ExecutorInfo executorInfo;
   protected SchedulerConf schedulerConf;
+  protected Timer timer;
 
   /**
    * Constructor which takes in configuration.
@@ -37,6 +37,7 @@ public abstract class AbstractNodeExecutor implements Executor {
   @Inject
   AbstractNodeExecutor(SchedulerConf schedulerConf) {
     this.schedulerConf = schedulerConf;
+    this.timer = new Timer();
   }
 
   /**
@@ -155,6 +156,8 @@ public abstract class AbstractNodeExecutor implements Executor {
         process = Runtime.getRuntime().exec(new String[]{
             "sh", "-c", task.cmd});
         redirectProcess(process);
+        TimedHealthCheck healthCheck = new TimedHealthCheck(driver, task);
+        timer.scheduleAtFixedRate(healthCheck, 30000, 60000);
       } catch (IOException e) {
         log.fatal(e);
         sendTaskFailed(driver, task);
@@ -229,7 +232,7 @@ public abstract class AbstractNodeExecutor implements Executor {
     }
   }
 
-  protected void runHealthChecks(ExecutorDriver driver, Task task) {
+  protected boolean runHealthChecks(ExecutorDriver driver, Task task) {
     log.info("Performing health check for task: " + task.taskInfo.getTaskId().getValue());
 
     Process healthCmd = null;
@@ -279,13 +282,16 @@ public abstract class AbstractNodeExecutor implements Executor {
         inputStream.close();
         bufferedReader.close();
         if (!nodeRegistered) {
-          log.error("Node health check failed for task: " + task.taskInfo.getTaskId().getValue());
+          log.error("Node health check failed for task named " + nodeName + " with id: "
+              + task.taskInfo.getTaskId().getValue());
           killTask(driver, task.taskInfo.getTaskId());
+          return true;
         }
       }
     } catch (IOException e) {
       log.error("Error in the health check: ", e);
     }
+    return false;
   }
 
   /**
@@ -347,7 +353,8 @@ public abstract class AbstractNodeExecutor implements Executor {
 
     @Override
     public void run() {
-      runHealthChecks(driver, task);
+      if (runHealthChecks(driver, task))
+        this.cancel();
     }
   }
 
