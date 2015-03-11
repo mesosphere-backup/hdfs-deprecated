@@ -36,8 +36,7 @@ public class ConfigServer {
     this(schedulerConf, new PersistentState(schedulerConf));
   }
 
-  public ConfigServer(SchedulerConf schedulerConf, PersistentState persistentState)
-      throws Exception {
+  public ConfigServer(SchedulerConf schedulerConf, PersistentState persistentState) throws Exception {
     this.schedulerConf = schedulerConf;
     this.persistentState = persistentState;
     engine = new Engine();
@@ -56,8 +55,11 @@ public class ConfigServer {
   }
 
   private class ServeHdfsConfigHandler extends AbstractHandler {
-    public synchronized void handle(String target, Request baseRequest, HttpServletRequest request,
-        HttpServletResponse response) throws IOException {
+
+    public synchronized void handle(String target,
+                                    Request baseRequest,
+                                    HttpServletRequest request,
+                                    HttpServletResponse response) throws IOException {
 
       File confFile = new File(schedulerConf.getConfigPath());
 
@@ -83,14 +85,7 @@ public class ConfigServer {
         model.put("nn2Hostname", iter.next());
       }
 
-      String journalNodeString = "";
-      for (String jn : journalNodes) {
-        journalNodeString += jn + ":8485;";
-      }
-      if (!journalNodeString.isEmpty()) {
-        // Chop the trailing ,
-        journalNodeString = journalNodeString.substring(0, journalNodeString.length() - 1);
-      }
+      String journalNodeString = getJournalNodes(journalNodes);
 
       model.put("journalnodes", journalNodeString);
       model.put("frameworkName", schedulerConf.getFrameworkName());
@@ -109,6 +104,19 @@ public class ConfigServer {
       baseRequest.setHandled(true);
       response.getWriter().println(content);
     }
-  }
 
+    private String getJournalNodes(Set<String> journalNodes) {
+      StringBuilder journalNodeStringBuilder = new StringBuilder("");
+      for (String jn : journalNodes) {
+        journalNodeStringBuilder.append(jn).append(":8485;");
+      }
+      String journalNodeString = journalNodeStringBuilder.toString();
+
+      if (!journalNodeString.isEmpty()) {
+        // Chop the trailing ,
+        journalNodeString = journalNodeString.substring(0, journalNodeString.length() - 1);
+      }
+      return journalNodeString;
+    }
+  }
 }
