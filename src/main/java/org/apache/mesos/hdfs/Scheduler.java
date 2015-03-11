@@ -491,8 +491,8 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
     log.info(String.format("Sending message '%s' to taskId=%s, slaveId=%s", message,
         taskId.getValue(), slaveID.getValue()));
     String postfix = taskId.getValue();
-    postfix = postfix.substring(postfix.indexOf(".") + 1, postfix.length());
-    postfix = postfix.substring(postfix.indexOf(".") + 1, postfix.length());
+    postfix = postfix.substring(postfix.indexOf('.') + 1, postfix.length());
+    postfix = postfix.substring(postfix.indexOf('.') + 1, postfix.length());
     driver.sendFrameworkMessage(
         ExecutorID.newBuilder().setValue("executor." + postfix).build(),
         slaveID,
