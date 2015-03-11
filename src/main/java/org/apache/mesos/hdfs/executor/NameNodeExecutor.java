@@ -9,7 +9,9 @@ import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.MesosExecutorDriver;
 import org.apache.mesos.Protos.*;
 import org.apache.mesos.hdfs.config.SchedulerConf;
+import org.apache.mesos.hdfs.executor.AbstractNodeExecutor.TimedHealthCheck;
 import org.apache.mesos.hdfs.util.HDFSConstants;
+import java.util.Timer;
 
 import java.io.File;
 
@@ -19,11 +21,18 @@ import java.io.File;
 public class NameNodeExecutor extends AbstractNodeExecutor {
   public static final Log log = LogFactory.getLog(NameNodeExecutor.class);
 
+  // Tasks run by executor
   private Task nameNodeTask;
   // TODO better handling in livestate and persistent state of zkfc task. Right now they are
   // chained.
   private Task zkfcNodeTask;
   private Task journalNodeTask;
+
+  // Timed Health Check for node health monitoring
+  private TimedHealthCheck healthCheckJN;
+  private TimedHealthCheck healthCheckNN;
+  private TimedHealthCheck healthCheckZN;
+  private Timer timer;
 
   /**
    * The constructor for the primary name node which saves the configuration.
@@ -49,6 +58,7 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
    **/
   @Override
   public void launchTask(final ExecutorDriver driver, final TaskInfo taskInfo) {
+    timer = new Timer(true);
     executorInfo = taskInfo.getExecutor();
     Task task = new Task(taskInfo);
     if (taskInfo.getTaskId().getValue().contains(HDFSConstants.JOURNAL_NODE_ID)) {
@@ -59,6 +69,8 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
           .setTaskId(journalNodeTask.taskInfo.getTaskId())
           .setState(TaskState.TASK_RUNNING)
           .build());
+      healthCheckJN = new TimedHealthCheck(driver, journalNodeTask);
+      timer.scheduleAtFixedRate(healthCheckJN, 30000, 60000);
     } else if (taskInfo.getTaskId().getValue().contains(HDFSConstants.NAME_NODE_TASKID)) {
       nameNodeTask = task;
       driver.sendStatusUpdate(TaskStatus.newBuilder()
@@ -89,6 +101,7 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
     if (task != null && task.process != null) {
       task.process.destroy();
       task.process = null;
+      sendTaskFailed(driver, task);
     }
   }
 
@@ -108,12 +121,21 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
       }
       runCommand(driver, nameNodeTask, "bin/hdfs-mesos-namenode " + messageStr);
       startProcess(driver, nameNodeTask);
+      driver.sendStatusUpdate(TaskStatus.newBuilder()
+          .setTaskId(nameNodeTask.taskInfo.getTaskId())
+          .setState(TaskState.TASK_RUNNING)
+          .build());
+      healthCheckNN = new TimedHealthCheck(driver, nameNodeTask);
+      timer.scheduleAtFixedRate(healthCheckNN, 30000, 60000);
+      // Start the zkfc node
       startProcess(driver, zkfcNodeTask);
       driver.sendStatusUpdate(TaskStatus.newBuilder()
           .setTaskId(nameNodeTask.taskInfo.getTaskId())
           .setState(TaskState.TASK_RUNNING)
           .setMessage(messageStr)
           .build());
+      healthCheckZN = new TimedHealthCheck(driver, zkfcNodeTask);
+      timer.scheduleAtFixedRate(healthCheckZN, 30000, 60000);
     }
   }
 }
