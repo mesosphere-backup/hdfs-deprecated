@@ -16,6 +16,7 @@ import org.apache.mesos.hdfs.config.SchedulerConf;
 import org.apache.mesos.hdfs.util.HDFSConstants;
 
 import java.io.File;
+import java.nio.charset.Charset;
 
 /**
  * The executor for the Primary Name Node Machine.
@@ -99,7 +100,7 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
   @Override
   public void frameworkMessage(ExecutorDriver driver, byte[] msg) {
     super.frameworkMessage(driver, msg);
-    String messageStr = new String(msg);
+    String messageStr = new String(msg, Charset.defaultCharset());
     File nameDir = new File(schedulerConf.getDataDir() + "/name");
     if (messageStr.equals(HDFSConstants.NAME_NODE_INIT_MESSAGE)
         || messageStr.equals(HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE)) {

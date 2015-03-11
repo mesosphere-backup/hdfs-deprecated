@@ -30,6 +30,7 @@ import org.apache.mesos.hdfs.state.LiveState;
 import org.apache.mesos.hdfs.state.PersistentState;
 import org.apache.mesos.hdfs.util.HDFSConstants;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -509,7 +510,7 @@ public class HDFSScheduler implements org.apache.mesos.Scheduler, Runnable {
     driver.sendFrameworkMessage(
         ExecutorID.newBuilder().setValue("executor." + postfix).build(),
         slaveID,
-        message.getBytes());
+        message.getBytes(Charset.defaultCharset()));
   }
 
   private boolean isTerminalState(TaskStatus taskStatus) {

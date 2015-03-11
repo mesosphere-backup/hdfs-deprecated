@@ -22,8 +22,11 @@ import org.apache.mesos.hdfs.util.StreamRedirect;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -61,7 +64,7 @@ public abstract class AbstractNodeExecutor implements Executor {
    */
   @Override
   public void registered(ExecutorDriver driver, ExecutorInfo executorInfo,
-      FrameworkInfo frameworkInfo, SlaveInfo slaveInfo) {
+                         FrameworkInfo frameworkInfo, SlaveInfo slaveInfo) {
     // Set up data dir
     setUpDataDir();
     createSymbolicLink();
@@ -163,7 +166,8 @@ public abstract class AbstractNodeExecutor implements Executor {
   private void addBinaryToPath(String hdfsBinaryPath) throws IOException {
     String pathEnvVarLocation = "/usr/bin/hadoop";
     String scriptContent = "#!/bin/bash \n" + hdfsBinaryPath + "/bin/hadoop \"$@\"";
-    FileWriter fileWriter = new FileWriter(pathEnvVarLocation);
+    File file = new File(pathEnvVarLocation);
+    Writer fileWriter = new OutputStreamWriter(new FileOutputStream(file), "UTF-8");
     BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
     bufferedWriter.write(scriptContent);
     bufferedWriter.close();
@@ -280,7 +284,7 @@ public abstract class AbstractNodeExecutor implements Executor {
   @Override
   public void frameworkMessage(ExecutorDriver driver, byte[] msg) {
     reloadConfig();
-    String messageStr = new String(msg);
+    String messageStr = new String(msg, Charset.defaultCharset());
     LOG.info("Executor received framework message: " + messageStr);
   }
 
