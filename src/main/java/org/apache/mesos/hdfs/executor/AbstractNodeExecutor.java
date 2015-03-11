@@ -38,6 +38,8 @@ import java.nio.file.Paths;
 public abstract class AbstractNodeExecutor implements Executor {
 
   public static final Log LOG = LogFactory.getLog(AbstractNodeExecutor.class);
+  private static final String DEFAULT_HADOOP_PATH = "/usr/bin/hadoop";
+
   protected ExecutorInfo executorInfo;
   protected SchedulerConf schedulerConf;
 
@@ -164,7 +166,7 @@ public abstract class AbstractNodeExecutor implements Executor {
    * Mesos slave packaging.
    */
   private void addBinaryToPath(String hdfsBinaryPath) throws IOException {
-    String pathEnvVarLocation = "/usr/bin/hadoop";
+    String pathEnvVarLocation = DEFAULT_HADOOP_PATH;
     String scriptContent = "#!/bin/bash \n" + hdfsBinaryPath + "/bin/hadoop \"$@\"";
     File file = new File(pathEnvVarLocation);
     Writer fileWriter = new OutputStreamWriter(new FileOutputStream(file), "UTF-8");
@@ -179,11 +181,11 @@ public abstract class AbstractNodeExecutor implements Executor {
    */
   protected void startProcess(ExecutorDriver driver, Task task) {
     reloadConfig();
-    Process process = task.process;
+    Process process = task.getProcess();
     if (process == null) {
       try {
         process = Runtime.getRuntime().exec(new String[]{
-            "sh", "-c", task.cmd});
+            "sh", "-c", task.getCmd()});
         redirectProcess(process);
       } catch (IOException e) {
         LOG.fatal(e);
@@ -266,7 +268,7 @@ public abstract class AbstractNodeExecutor implements Executor {
    */
   private void sendTaskFailed(ExecutorDriver driver, Task task) {
     driver.sendStatusUpdate(TaskStatus.newBuilder()
-        .setTaskId(task.taskInfo.getTaskId())
+        .setTaskId(task.getTaskInfo().getTaskId())
         .setState(TaskState.TASK_FAILED)
         .build());
   }
@@ -298,21 +300,4 @@ public abstract class AbstractNodeExecutor implements Executor {
     // TODO(elingg) let's shut down the driver more gracefully
     LOG.info("Executor asked to shutdown");
   }
-
-  /**
-   * The task class for use within the executor
-   */
-  public static class Task {
-    public TaskInfo taskInfo;
-    public String cmd;
-    public Process process;
-
-    Task(TaskInfo taskInfo) {
-      this.taskInfo = taskInfo;
-      this.cmd = taskInfo.getData().toStringUtf8();
-      LOG.info(String.format("Launching task, taskId=%s cmd='%s'", taskInfo.getTaskId().getValue(),
-          cmd));
-    }
-  }
-
 }

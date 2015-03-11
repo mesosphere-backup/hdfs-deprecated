@@ -61,19 +61,19 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
       // Start the journal node
       startProcess(driver, journalNodeTask);
       driver.sendStatusUpdate(TaskStatus.newBuilder()
-          .setTaskId(journalNodeTask.taskInfo.getTaskId())
+          .setTaskId(journalNodeTask.getTaskInfo().getTaskId())
           .setState(TaskState.TASK_RUNNING)
           .build());
     } else if (taskInfo.getTaskId().getValue().contains(HDFSConstants.NAME_NODE_TASKID)) {
       nameNodeTask = task;
       driver.sendStatusUpdate(TaskStatus.newBuilder()
-          .setTaskId(nameNodeTask.taskInfo.getTaskId())
+          .setTaskId(nameNodeTask.getTaskInfo().getTaskId())
           .setState(TaskState.TASK_RUNNING)
           .build());
     } else if (taskInfo.getTaskId().getValue().contains(HDFSConstants.ZKFC_NODE_ID)) {
       zkfcNodeTask = task;
       driver.sendStatusUpdate(TaskStatus.newBuilder()
-          .setTaskId(zkfcNodeTask.taskInfo.getTaskId())
+          .setTaskId(zkfcNodeTask.getTaskInfo().getTaskId())
           .setState(TaskState.TASK_RUNNING)
           .build());
     }
@@ -91,9 +91,9 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
       task = zkfcNodeTask;
     }
 
-    if (task != null && task.process != null) {
-      task.process.destroy();
-      task.process = null;
+    if (task != null && task.getProcess() != null) {
+      task.getProcess().destroy();
+      task.setProcess(null);
     }
   }
 
@@ -115,7 +115,7 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
         startProcess(driver, nameNodeTask);
         startProcess(driver, zkfcNodeTask);
         driver.sendStatusUpdate(TaskStatus.newBuilder()
-            .setTaskId(nameNodeTask.taskInfo.getTaskId())
+            .setTaskId(nameNodeTask.getTaskInfo().getTaskId())
             .setState(TaskState.TASK_RUNNING)
             .setMessage(messageStr)
             .build());

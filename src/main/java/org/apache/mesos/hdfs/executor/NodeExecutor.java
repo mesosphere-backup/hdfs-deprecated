@@ -56,9 +56,9 @@ public class NodeExecutor extends AbstractNodeExecutor {
   @Override
   public void killTask(ExecutorDriver driver, TaskID taskId) {
     log.info("Killing task : " + taskId.getValue());
-    if (task.process != null && taskId.equals(task.taskInfo.getTaskId())) {
-      task.process.destroy();
-      task.process = null;
+    if (task.getProcess() != null && taskId.equals(task.getTaskInfo().getTaskId())) {
+      task.getProcess().destroy();
+      task.setProcess(null);
     }
   }
 }
