@@ -261,9 +261,12 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
       TaskID taskId = TaskID.newBuilder()
           .setValue(String.format("task.%s.%s", taskName, taskIdName))
           .build();
+      //for name nodes, we need to get its own unique task name
+      String realTaskName = taskName.equals(HDFSConstants.NAME_NODE_ID) || taskName.equals(HDFSConstants.JOURNAL_NODE_ID) ?
+          persistentState.chooseNodeName(taskId) : taskName;
       TaskInfo task = TaskInfo.newBuilder()
           .setExecutor(executorInfo)
-          .setName(taskName)
+          .setName(realTaskName)
           .setTaskId(taskId)
           .setSlaveId(offer.getSlaveId())
           .addAllResources(taskResources)
