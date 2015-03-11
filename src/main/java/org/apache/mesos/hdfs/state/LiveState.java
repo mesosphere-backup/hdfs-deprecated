@@ -11,6 +11,7 @@ import org.apache.mesos.hdfs.util.HDFSConstants;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 
 @Singleton
@@ -20,9 +21,9 @@ public class LiveState {
   private Set<Protos.TaskID> stagingTasks = new HashSet<>();
   private AcquisitionPhase currentAcquisitionPhase = AcquisitionPhase.RECONCILING_TASKS;
   // TODO (nicgrayson) Might need to split this out to jns, nns, and dns if dns too big
-  private LinkedHashMap<Protos.TaskID, Protos.TaskStatus> runningTasks = new LinkedHashMap<>();
-  private HashMap<Protos.TaskStatus, Boolean> nameNode1TaskMap = new HashMap<>();
-  private HashMap<Protos.TaskStatus, Boolean> nameNode2TaskMap = new HashMap<>();
+  private Map<Protos.TaskID, Protos.TaskStatus> runningTasks = new LinkedHashMap<>();
+  private Map<Protos.TaskStatus, Boolean> nameNode1TaskMap = new HashMap<>();
+  private Map<Protos.TaskStatus, Boolean> nameNode2TaskMap = new HashMap<>();
 
   public boolean isNameNode1Initialized() {
     return !nameNode1TaskMap.isEmpty() && nameNode1TaskMap.values().iterator().next();
@@ -44,7 +45,7 @@ public class LiveState {
     stagingTasks.remove(taskID);
   }
 
-  public LinkedHashMap<Protos.TaskID, Protos.TaskStatus> getRunningTasks() {
+  public Map<Protos.TaskID, Protos.TaskStatus> getRunningTasks() {
     return runningTasks;
   }
 

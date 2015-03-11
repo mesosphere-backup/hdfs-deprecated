@@ -38,10 +38,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.List;
+
 import java.util.Timer;
 import java.util.TimerTask;
+
 
 //TODO remove as much logic as possible from Scheduler to clean up code
 public class HDFSScheduler implements org.apache.mesos.Scheduler, Runnable {
@@ -575,6 +576,7 @@ public class HDFSScheduler implements org.apache.mesos.Scheduler, Runnable {
   private boolean reconciliationComplete() {
     return reconciliationCompleted;
   }
+
 
   private class ReconcileStateTask extends TimerTask {
 
