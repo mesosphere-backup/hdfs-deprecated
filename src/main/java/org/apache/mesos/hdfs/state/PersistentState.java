@@ -1,5 +1,7 @@
 package org.apache.mesos.hdfs.state;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -16,15 +18,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+@Singleton
 public class PersistentState {
   public static final Log log = LogFactory.getLog(PersistentState.class);
   private static String FRAMEWORK_ID_KEY = "frameworkId";
@@ -33,10 +31,22 @@ public class PersistentState {
   private static String DATANODES_KEY = "dataNodes";
   private ZooKeeperState zkState;
 
+  private HashSet<String> unusedNameNodeNames = new HashSet<>();
+  private HashMap<String, String> nameNodeNames = new HashMap<>();
+  private HashSet<String> unusedJournalNodeNames = new HashSet<>();
+  private HashMap<String, String> journalNodeNames = new HashMap<>();
+
+  @Inject
   public PersistentState(SchedulerConf conf) {
     MesosNativeLibrary.load(conf.getNativeLibrary());
     this.zkState = new ZooKeeperState(conf.getStateZkServers(),
         conf.getStateZkTimeout(), TimeUnit.MILLISECONDS, "/hdfs-mesos/" + conf.getFrameworkName());
+    for (int i = conf.getJournalNodeCount(); i > 0; i--) {
+      unusedJournalNodeNames.add(HDFSConstants.JOURNAL_NODE_ID + i);
+    }
+    for (int i = HDFSConstants.TOTAL_NAME_NODES; i > 0; i--) {
+      unusedNameNodeNames.add(HDFSConstants.NAME_NODE_ID + i);
+    }
   }
 
   public FrameworkID getFrameworkID() throws InterruptedException, ExecutionException,
@@ -44,6 +54,7 @@ public class PersistentState {
     byte[] existingFrameworkId = zkState.fetch(FRAMEWORK_ID_KEY).get().value();
     if (existingFrameworkId.length > 0) {
       return FrameworkID.parseFrom(existingFrameworkId);
+
     } else {
       return null;
     }
@@ -115,6 +126,22 @@ public class PersistentState {
     return allTasksIds.values();
   }
 
+  public String chooseNodeName(Protos.TaskID taskId) {
+    if (taskId.getValue().contains(HDFSConstants.JOURNAL_NODE_ID)) {
+      Iterator<String> iter = unusedJournalNodeNames.iterator();
+      String name = iter.next();
+      unusedJournalNodeNames.remove(name);
+      journalNodeNames.put(taskId.getValue(), name);
+      return name;
+    } else {
+      Iterator<String> iter = unusedNameNodeNames.iterator();
+      String name = iter.next();
+      unusedNameNodeNames.remove(name);
+      nameNodeNames.put(taskId.getValue(), name);
+      return name;
+    }
+  }
+
   public void addHdfsNode(Protos.TaskID taskId, String hostname, String taskName) {
     switch (taskName) {
       case HDFSConstants.NAME_NODE_ID :
@@ -143,8 +170,15 @@ public class PersistentState {
   // TODO (elingg) optimize this method/ Possibly index by task id instead of hostname/
   // Possibly call removeTask(slaveId, taskId) to avoid iterating through all maps
   public void removeTaskId(String taskId) {
+    log.info("removing task with id " + taskId);
     HashMap<String, String> journalNodes = getJournalNodes();
     if (journalNodes.values().contains(taskId)) {
+      if (journalNodeNames.containsKey(taskId)) {
+        String name = journalNodeNames.get(taskId);
+        log.info(unusedJournalNodeNames);
+        unusedJournalNodeNames.add(name);
+        journalNodeNames.remove(taskId);
+      }
       for (Map.Entry<String, String> entry : journalNodes.entrySet()) {
         if (entry.getValue() != null && entry.getValue().equals(taskId)) {
           journalNodes.put(entry.getKey(), null);
@@ -155,6 +189,12 @@ public class PersistentState {
     }
     HashMap<String, String> nameNodes = getNameNodes();
     if (nameNodes.values().contains(taskId)) {
+      // Give the name back to use.
+      if (nameNodeNames.containsKey(taskId)) {
+        String name = nameNodeNames.get(taskId);
+        unusedNameNodeNames.add(name);
+        nameNodeNames.remove(taskId);
+      }
       for (Map.Entry<String, String> entry : nameNodes.entrySet()) {
         if (entry.getValue() != null && entry.getValue().equals(taskId)) {
           nameNodes.put(entry.getKey(), null);

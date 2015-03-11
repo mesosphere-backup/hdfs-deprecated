@@ -129,6 +129,7 @@ public class TestScheduler {
   @Test
   public void startsAJournalNodeWhenGivenAnOffer() {
     when(liveState.getCurrentAcquisitionPhase()).thenReturn(AcquisitionPhase.JOURNAL_NODES);
+    when(persistentState.chooseNodeName(any(Protos.TaskID.class))).thenReturn("journalnode1");
 
     scheduler.resourceOffers(driver,
         Lists.newArrayList(createTestOfferWithResources(0, 2, 1024)));
@@ -151,6 +152,7 @@ public class TestScheduler {
   public void launchesNamenodeWhenInNamenode1Phase() {
     when(liveState.getCurrentAcquisitionPhase()).thenReturn(AcquisitionPhase.START_NAME_NODES);
     when(persistentState.journalNodeRunningOnSlave("host0")).thenReturn(true);
+    when(persistentState.chooseNodeName(any(Protos.TaskID.class))).thenReturn("namenode1");
 
     scheduler.resourceOffers(driver, Lists.newArrayList(createTestOffer(0)));
 

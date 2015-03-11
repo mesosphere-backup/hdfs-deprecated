@@ -5,27 +5,31 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.mesos.Executor;
-import org.apache.mesos.ExecutorDriver;
-import org.apache.mesos.MesosExecutorDriver;
+import org.apache.mesos.*;
 import org.apache.mesos.Protos.*;
 import org.apache.mesos.hdfs.config.SchedulerConf;
 import org.apache.mesos.hdfs.util.HDFSConstants;
 import org.apache.mesos.hdfs.util.StreamRedirect;
 
 import java.io.File;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public abstract class AbstractNodeExecutor implements Executor {
 
   public static final Log log = LogFactory.getLog(AbstractNodeExecutor.class);
   protected ExecutorInfo executorInfo;
   protected SchedulerConf schedulerConf;
+  protected Timer timer;
 
   /**
    * Constructor which takes in configuration.
@@ -33,6 +37,7 @@ public abstract class AbstractNodeExecutor implements Executor {
   @Inject
   AbstractNodeExecutor(SchedulerConf schedulerConf) {
     this.schedulerConf = schedulerConf;
+    this.timer = new Timer();
   }
 
   /**
@@ -151,6 +156,8 @@ public abstract class AbstractNodeExecutor implements Executor {
         process = Runtime.getRuntime().exec(new String[]{
             "sh", "-c", task.cmd});
         redirectProcess(process);
+        TimedHealthCheck healthCheck = new TimedHealthCheck(driver, task);
+        timer.scheduleAtFixedRate(healthCheck, 30000, 60000);
       } catch (IOException e) {
         log.fatal(e);
         sendTaskFailed(driver, task);
@@ -165,6 +172,9 @@ public abstract class AbstractNodeExecutor implements Executor {
    * Reloads the cluster configuration so the executor has the correct configuration info.
    **/
   protected void reloadConfig() {
+    // don't need to reload configurations if using mesos-dns
+    if (schedulerConf.usingMesosDns()) return;
+
     // Find config URI
     String configUri = "";
     for (CommandInfo.URI uri : executorInfo.getCommand().getUrisList()) {
@@ -222,15 +232,82 @@ public abstract class AbstractNodeExecutor implements Executor {
     }
   }
 
+  protected boolean unhealthy(ExecutorDriver driver, Task task) {
+    log.info("Performing health check for task: " + task.taskInfo.getTaskId().getValue());
+
+    Process healthCmd = null;
+    String nodeName = null;
+    String healthCheckCmd = "netstat -plnat | grep ";
+    // TODO this code is working, but it is a mess/ refactor and use utility methods
+    try {
+      if (task.taskInfo.getTaskId().getValue().contains(HDFSConstants.DATA_NODE_ID)) {
+        nodeName = HDFSConstants.DATA_NODE_ID;
+        healthCmd = Runtime.getRuntime().exec(healthCheckCmd + "50075");
+      } else if (task.taskInfo.getTaskId().getValue().contains(HDFSConstants.JOURNAL_NODE_ID)) {
+        nodeName = HDFSConstants.JOURNAL_NODE_ID;
+        healthCmd = Runtime.getRuntime().exec(healthCheckCmd + "8480");
+      } else if (task.taskInfo.getTaskId().getValue().contains(HDFSConstants.ZKFC_NODE_ID)) {
+        nodeName = HDFSConstants.ZKFC_NODE_ID;
+        healthCmd = Runtime.getRuntime().exec(healthCheckCmd + "50071");
+      } else if (task.taskInfo.getTaskId().getValue().contains(HDFSConstants.NAME_NODE_ID)) {
+        nodeName = HDFSConstants.NAME_NODE_ID;
+        healthCmd = Runtime.getRuntime().exec(healthCheckCmd + "50070");
+      }
+
+      if (healthCmd != null) {
+        boolean nodeRegistered = false;
+        InputStream inputStream = healthCmd.getInputStream();
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+        String line;
+        while ((line = bufferedReader.readLine()) != null) {
+          int endPortIndex = line.lastIndexOf("java"); // TODO change this to /
+          int beginPortIndex = endPortIndex > 0 ? line.lastIndexOf(" ", endPortIndex) : -1;
+          if (endPortIndex != -1) {
+            line = line.substring(beginPortIndex + 1, endPortIndex - 1);
+            Process psCmd = Runtime.getRuntime().exec("ps " + line);
+            if (psCmd != null) {
+              BufferedReader bufferedReaderPS =
+                  new BufferedReader(new InputStreamReader(psCmd.getInputStream()));
+              String psCmdOutput = bufferedReaderPS.readLine();
+              while ((psCmdOutput = bufferedReaderPS.readLine()) != null
+                  && psCmdOutput.contains(nodeName)) {
+                nodeRegistered = true;
+              }
+              psCmd.getInputStream().close();
+              bufferedReaderPS.close();
+            }
+          }
+
+        }
+        inputStream.close();
+        bufferedReader.close();
+        if (!nodeRegistered) {
+          log.error("Node health check failed for task named " + nodeName + " with id: "
+              + task.taskInfo.getTaskId().getValue());
+          killTask(driver, task.taskInfo.getTaskId());
+          return true;
+        }
+      }
+    } catch (IOException e) {
+      log.error("Error in the health check: ", e);
+    }
+    return false;
+  }
+
   /**
    * Abstract method to launch a task.
    **/
   public abstract void launchTask(final ExecutorDriver driver, final TaskInfo taskInfo);
 
   /**
+   * Abstract method to kill a task.
+   **/
+  public abstract void killTask(final ExecutorDriver driver, final TaskID taskId);
+
+  /**
    * Let the scheduler know that the task has failed.
    **/
-  private void sendTaskFailed(ExecutorDriver driver, Task task) {
+  protected void sendTaskFailed(ExecutorDriver driver, Task task) {
     driver.sendStatusUpdate(TaskStatus.newBuilder()
         .setTaskId(task.taskInfo.getTaskId())
         .setState(TaskState.TASK_FAILED)
@@ -263,6 +340,22 @@ public abstract class AbstractNodeExecutor implements Executor {
   public void shutdown(ExecutorDriver d) {
     // TODO(elingg) let's shut down the driver more gracefully
     log.info("Executor asked to shutdown");
+  }
+
+  public class TimedHealthCheck extends TimerTask {
+    Task task;
+    ExecutorDriver driver;
+
+    public TimedHealthCheck(ExecutorDriver driver, Task task) {
+      this.driver = driver;
+      this.task = task;
+    }
+
+    @Override
+    public void run() {
+      if (unhealthy(driver, task))
+        this.cancel();
+    }
   }
 
   /**
