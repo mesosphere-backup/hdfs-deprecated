@@ -9,12 +9,10 @@ import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.MesosExecutorDriver;
 import org.apache.mesos.Protos.*;
 import org.apache.mesos.hdfs.config.SchedulerConf;
-import org.apache.mesos.hdfs.executor.AbstractNodeExecutor.TimedHealthCheck;
 import org.apache.mesos.hdfs.util.HDFSConstants;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.util.Timer;
 import java.util.TimerTask;
 
 /**
