@@ -78,10 +78,10 @@ public abstract class AbstractNodeExecutor implements Executor {
   }
 
   private void createDir(File dataDir) {
-    if (!dataDir.exists()) {
-      if (!dataDir.mkdirs()) {
-        LOG.error("unable to create dir: " + dataDir);
-      }
+    if (dataDir.exists()) {
+      LOG.warn("data dir exits:" + dataDir);
+    } else if (!dataDir.mkdirs()) {
+      LOG.error("unable to create dir: " + dataDir);
     }
   }
 
