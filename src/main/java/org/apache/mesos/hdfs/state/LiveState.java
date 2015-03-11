@@ -6,11 +6,8 @@ import com.google.inject.Singleton;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.Protos;
-import org.apache.mesos.hdfs.config.SchedulerConf;
 import org.apache.mesos.hdfs.util.HDFSConstants;
 
-
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -18,7 +15,8 @@ import java.util.Set;
 
 @Singleton
 public class LiveState {
-  public static final Log log = LogFactory.getLog(LiveState.class);
+  public final Log log = LogFactory.getLog(LiveState.class);
+
   private Set<Protos.TaskID> stagingTasks = new HashSet<>();
   private AcquisitionPhase currentAcquisitionPhase = AcquisitionPhase.RECONCILING_TASKS;
   // TODO (nicgrayson) Might need to split this out to jns, nns, and dns if dns too big
@@ -55,7 +53,7 @@ public class LiveState {
         && nameNode1TaskMap.keySet().iterator().next().getTaskId().equals(taskId)) {
       nameNode1TaskMap.clear();
     } else if (isNameNode2Initialized()
-       && nameNode2TaskMap.keySet().iterator().next().getTaskId().equals(taskId)) {
+        && nameNode2TaskMap.keySet().iterator().next().getTaskId().equals(taskId)) {
       nameNode2TaskMap.clear();
     }
     runningTasks.remove(taskId);

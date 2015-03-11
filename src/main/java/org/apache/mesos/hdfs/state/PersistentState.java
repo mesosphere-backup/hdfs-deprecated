@@ -29,7 +29,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class PersistentState {
-  public static final Log log = LogFactory.getLog(PersistentState.class);
+  public final Log log = LogFactory.getLog(PersistentState.class);
   private static String FRAMEWORK_ID_KEY = "frameworkId";
   private static String NAMENODES_KEY = "nameNodes";
   private static String JOURNALNODES_KEY = "journalNodes";
@@ -171,25 +171,25 @@ public class PersistentState {
 
   public void addHdfsNode(Protos.TaskID taskId, String hostname, String taskName) {
     switch (taskName) {
-      case HDFSConstants.NAME_NODE_ID :
+      case HDFSConstants.NAME_NODE_ID:
         HashMap<String, String> nameNodes = getNameNodes();
         nameNodes.put(hostname, taskId.getValue());
         System.out.println("Saving the name node " + hostname + " " + taskId.getValue());
         setNameNodes(nameNodes);
         break;
-      case HDFSConstants.JOURNAL_NODE_ID :
+      case HDFSConstants.JOURNAL_NODE_ID:
         HashMap<String, String> journalNodes = getJournalNodes();
         journalNodes.put(hostname, taskId.getValue());
         setJournalNodes(journalNodes);
         break;
-      case HDFSConstants.DATA_NODE_ID :
+      case HDFSConstants.DATA_NODE_ID:
         HashMap<String, String> dataNodes = getDataNodes();
         dataNodes.put(hostname, taskId.getValue());
         setDataNodes(dataNodes);
         break;
-      case HDFSConstants.ZKFC_NODE_ID :
+      case HDFSConstants.ZKFC_NODE_ID:
         break;
-      default :
+      default:
         log.error("Task name unknown");
     }
   }
@@ -286,7 +286,7 @@ public class PersistentState {
 
   /**
    * Get serializable object from store.
-   * 
+   *
    * @return serialized object or null if none
    * @throws ExecutionException
    * @throws InterruptedException
@@ -319,7 +319,7 @@ public class PersistentState {
 
   /**
    * Set serializable object in store
-   * 
+   *
    * @throws ExecutionException
    * @throws InterruptedException
    * @throws IOException
