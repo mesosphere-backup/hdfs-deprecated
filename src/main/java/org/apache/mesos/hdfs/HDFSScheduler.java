@@ -44,20 +44,20 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 //TODO remove as much logic as possible from Scheduler to clean up code
-public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
+public class HDFSScheduler implements org.apache.mesos.Scheduler, Runnable {
 
-  public final Log log = LogFactory.getLog(Scheduler.class);
+  public final Log log = LogFactory.getLog(HDFSScheduler.class);
   private final SchedulerConf conf;
   private final LiveState liveState;
   private PersistentState persistentState;
   private boolean reconciliationCompleted;
 
   @Inject
-  public Scheduler(SchedulerConf conf, LiveState liveState) {
+  public HDFSScheduler(SchedulerConf conf, LiveState liveState) {
     this(conf, liveState, new PersistentState(conf));
   }
 
-  public Scheduler(SchedulerConf conf, LiveState liveState, PersistentState persistentState) {
+  public HDFSScheduler(SchedulerConf conf, LiveState liveState, PersistentState persistentState) {
     this.conf = conf;
     this.liveState = liveState;
     this.persistentState = persistentState;
