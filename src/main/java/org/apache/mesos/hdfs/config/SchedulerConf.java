@@ -1,9 +1,12 @@
 package org.apache.mesos.hdfs.config;
 
 import com.google.inject.Singleton;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
+import org.apache.mesos.hdfs.util.HDFSConstants;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -11,6 +14,19 @@ import java.util.Properties;
 
 @Singleton
 public class SchedulerConf extends Configured {
+  private static final int DEFAULT_HEAP_SIZE = 256;
+  private static final int HADOOP_HEAP_SIZE = DEFAULT_HEAP_SIZE;
+  private static final int EXECUTOR_HEAP_SIZE = DEFAULT_HEAP_SIZE;
+  private static final int DATANODE_HEAP_SIZE = 1024;
+  private static final int NAMENODE_HEAP_SIZE = 1024;
+
+  private static final double DEFAULT_CPUS = 0.5;
+  private static final double EXECUTOR_CPUS = DEFAULT_CPUS;
+  private static final double NAMENODE_CPUS = 1;
+  private static final double JOURNAL_CPUS = 1;
+  private static final double DATANODE_CPUS = 1;
+
+  public final Log log = LogFactory.getLog(SchedulerConf.class);
 
   public SchedulerConf(Configuration conf) {
     setConf(conf);
@@ -35,11 +51,11 @@ public class SchedulerConf extends Configured {
   }
 
   public int getHadoopHeapSize() {
-    return getConf().getInt("mesos.hdfs.hadoop.heap.size", 256);
+    return getConf().getInt("mesos.hdfs.hadoop.heap.size", HADOOP_HEAP_SIZE);
   }
 
   public int getDataNodeHeapSize() {
-    return getConf().getInt("mesos.hdfs.datanode.heap.size", 1024);
+    return getConf().getInt("mesos.hdfs.datanode.heap.size", DATANODE_HEAP_SIZE);
   }
 
   public int getJournalNodeHeapSize() {
@@ -47,11 +63,11 @@ public class SchedulerConf extends Configured {
   }
 
   public int getNameNodeHeapSize() {
-    return getConf().getInt("mesos.hdfs.namenode.heap.size", 1024);
+    return getConf().getInt("mesos.hdfs.namenode.heap.size", NAMENODE_HEAP_SIZE);
   }
 
   public int getExecutorHeap() {
-    return getConf().getInt("mesos.hdfs.executor.heap.size", 256);
+    return getConf().getInt("mesos.hdfs.executor.heap.size", EXECUTOR_HEAP_SIZE);
   }
 
   public int getZkfcHeapSize() {
@@ -59,18 +75,24 @@ public class SchedulerConf extends Configured {
   }
 
   public int getTaskHeapSize(String taskName) {
+    int size = DEFAULT_HEAP_SIZE;
     switch (taskName) {
-      case "zkfc" :
-        return getZkfcHeapSize();
-      case "namenode" :
-        return getNameNodeHeapSize();
-      case "datanode" :
-        return getDataNodeHeapSize();
-      case "journalnode" :
-        return getJournalNodeHeapSize();
+      case HDFSConstants.ZKFC_NODE_ID :
+        size = getZkfcHeapSize();
+        break;
+      case HDFSConstants.NAME_NODE_ID :
+        size = getNameNodeHeapSize();
+        break;
+      case HDFSConstants.DATA_NODE_ID :
+        size = getDataNodeHeapSize();
+        break;
+      case HDFSConstants.JOURNAL_NODE_ID :
+        size = getJournalNodeHeapSize();
+        break;
       default :
-        throw new RuntimeException("Invalid taskName=" + taskName);
+        log.error("Invalid taskName = " + taskName);
     }
+    return size;
   }
 
   public double getJvmOverhead() {
@@ -94,7 +116,7 @@ public class SchedulerConf extends Configured {
   }
 
   public double getExecutorCpus() {
-    return getConf().getDouble("mesos.hdfs.executor.cpus", 0.5);
+    return getConf().getDouble("mesos.hdfs.executor.cpus", EXECUTOR_CPUS);
   }
 
   public double getZkfcCpus() {
@@ -102,30 +124,36 @@ public class SchedulerConf extends Configured {
   }
 
   public double getNameNodeCpus() {
-    return getConf().getDouble("mesos.hdfs.namenode.cpus", 1);
+    return getConf().getDouble("mesos.hdfs.namenode.cpus", NAMENODE_CPUS);
   }
 
   public double getJournalNodeCpus() {
-    return getConf().getDouble("mesos.hdfs.journalnode.cpus", 1);
+    return getConf().getDouble("mesos.hdfs.journalnode.cpus", JOURNAL_CPUS);
   }
 
   public double getDataNodeCpus() {
-    return getConf().getDouble("mesos.hdfs.datanode.cpus", 1);
+    return getConf().getDouble("mesos.hdfs.datanode.cpus", DATANODE_CPUS);
   }
 
   public double getTaskCpus(String taskName) {
+    double cpus = DEFAULT_CPUS;
     switch (taskName) {
-      case "zkfc" :
-        return getZkfcCpus();
-      case "namenode" :
-        return getNameNodeCpus();
-      case "datanode" :
-        return getDataNodeCpus();
-      case "journalnode" :
-        return getJournalNodeCpus();
+      case HDFSConstants.ZKFC_NODE_ID :
+        cpus = getZkfcCpus();
+        break;
+      case HDFSConstants.NAME_NODE_ID :
+        cpus = getNameNodeCpus();
+        break;
+      case HDFSConstants.DATA_NODE_ID :
+        cpus = getDataNodeCpus();
+        break;
+      case HDFSConstants.JOURNAL_NODE_ID :
+        cpus = getJournalNodeCpus();
+        break;
       default :
-        throw new RuntimeException("Invalid taskName=" + taskName);
+        log.error("Invalid taskName=" + taskName);
     }
+    return cpus;
   }
 
   public int getJournalNodeCount() {
