@@ -75,14 +75,14 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
 
   @Override
   public void executorLost(SchedulerDriver driver, ExecutorID executorID, SlaveID slaveID,
-                           int status) {
+      int status) {
     log.info("Executor lost: executorId=" + executorID.getValue() + " slaveId="
         + slaveID.getValue() + " status=" + status);
   }
 
   @Override
   public void frameworkMessage(SchedulerDriver driver, ExecutorID executorID, SlaveID slaveID,
-                               byte[] data) {
+      byte[] data) {
     log.info("Framework message: executorId=" + executorID.getValue() + " slaveId="
         + slaveID.getValue() + " data='" + Arrays.toString(data) + "'");
   }
@@ -139,19 +139,19 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
           .getCurrentAcquisitionPhase().toString()));
 
       switch (liveState.getCurrentAcquisitionPhase()) {
-        case RECONCILING_TASKS:
+        case RECONCILING_TASKS :
           if (reconciliationComplete()) {
             correctCurrentPhase();
           }
           break;
-        case JOURNAL_NODES:
+        case JOURNAL_NODES :
           if (liveState.getJournalNodeSize() == conf.getJournalNodeCount()) {
             // TODO move the reload to correctCurrentPhase and make it idempotent
             reloadConfigsOnAllRunningTasks(driver);
             correctCurrentPhase();
           }
           break;
-        case START_NAME_NODES:
+        case START_NAME_NODES :
           if (liveState.getNameNodeSize() == (HDFSConstants.TOTAL_NAME_NODES)) {
             // TODO move the reload to correctCurrentPhase and make it idempotent
             reloadConfigsOnAllRunningTasks(driver);
@@ -182,7 +182,7 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
           }
           break;
         // TODO (elingg) add a configurable number of data nodes
-        case DATA_NODES:
+        case DATA_NODES :
           break;
       }
     } else {
@@ -205,28 +205,28 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
         driver.declineOffer(offer.getId());
       } else {
         switch (liveState.getCurrentAcquisitionPhase()) {
-          case RECONCILING_TASKS:
+          case RECONCILING_TASKS :
             log.info("Declining offers while reconciling tasks");
             driver.declineOffer(offer.getId());
             break;
-          case JOURNAL_NODES:
+          case JOURNAL_NODES :
             if (tryToLaunchJournalNode(driver, offer)) {
               acceptedOffer = true;
             } else {
               driver.declineOffer(offer.getId());
             }
             break;
-          case START_NAME_NODES:
+          case START_NAME_NODES :
             if (tryToLaunchNameNode(driver, offer)) {
               acceptedOffer = true;
             } else {
               driver.declineOffer(offer.getId());
             }
             break;
-          case FORMAT_NAME_NODES:
+          case FORMAT_NAME_NODES :
             driver.declineOffer(offer.getId());
             break;
-          case DATA_NODES:
+          case DATA_NODES :
             if (tryToLaunchDataNode(driver, offer)) {
               acceptedOffer = true;
             } else {
@@ -299,7 +299,7 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
   }
 
   private ExecutorInfo createExecutor(String taskIdName, String nodeName, String executorName,
-                                      List<Resource> resources) {
+      List<Resource> resources) {
     int confServerPort = conf.getConfigServerPort();
     return ExecutorInfo
         .newBuilder()
@@ -502,7 +502,7 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
   }
 
   private void sendMessageTo(SchedulerDriver driver, TaskID taskId,
-                             SlaveID slaveID, String message) {
+      SlaveID slaveID, String message) {
     log.info(String.format("Sending message '%s' to taskId=%s, slaveId=%s", message,
         taskId.getValue(), slaveID.getValue()));
     String postfix = taskId.getValue();

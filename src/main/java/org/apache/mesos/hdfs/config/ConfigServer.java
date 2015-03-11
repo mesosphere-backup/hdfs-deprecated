@@ -36,7 +36,8 @@ public class ConfigServer {
     this(schedulerConf, new PersistentState(schedulerConf));
   }
 
-  public ConfigServer(SchedulerConf schedulerConf, PersistentState persistentState) throws Exception {
+  public ConfigServer(SchedulerConf schedulerConf, PersistentState persistentState)
+      throws Exception {
     this.schedulerConf = schedulerConf;
     this.persistentState = persistentState;
     engine = new Engine();
