@@ -4,7 +4,6 @@ import com.google.inject.Singleton;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
 import org.apache.mesos.hdfs.util.HDFSConstants;
 
@@ -12,8 +11,15 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Properties;
 
+/**
+ * Provides executor configurations for launching processes at the slave leveraging hadoop
+ * configurations
+ */
 @Singleton
-public class SchedulerConf extends Configured {
+public class SchedulerConf {
+
+  private Configuration hadoopConfig;
+
   private static final int DEFAULT_HEAP_SIZE = 256;
   private static final int HADOOP_HEAP_SIZE = DEFAULT_HEAP_SIZE;
   private static final int EXECUTOR_HEAP_SIZE = DEFAULT_HEAP_SIZE;
@@ -30,6 +36,14 @@ public class SchedulerConf extends Configured {
 
   public SchedulerConf(Configuration conf) {
     setConf(conf);
+  }
+
+  private void setConf(Configuration conf) {
+    this.hadoopConfig = conf;
+  }
+
+  private Configuration getConf() {
+    return hadoopConfig;
   }
 
   public SchedulerConf() {

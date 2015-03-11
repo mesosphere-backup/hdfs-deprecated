@@ -1,5 +1,8 @@
 package org.apache.mesos.hdfs.state;
 
+/**
+ * Stages of the framework state machine
+ */
 public enum AcquisitionPhase {
   RECONCILING_TASKS, // Waits here for the timeout on (re)registration
   JOURNAL_NODES, // Launches and waits for all journalnodes to start

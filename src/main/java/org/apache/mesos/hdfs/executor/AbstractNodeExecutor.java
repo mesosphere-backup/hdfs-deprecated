@@ -28,6 +28,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+/**
+ * Abstract executor for HDFS with common services for NameNode and NodeExecutors It also provides
+ * the main() for executors
+ */
 public abstract class AbstractNodeExecutor implements Executor {
 
   public static final Log LOG = LogFactory.getLog(AbstractNodeExecutor.class);

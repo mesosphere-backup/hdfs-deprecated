@@ -28,6 +28,9 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Provides the state of the framework as stored in zk. This is the expected state of the services.
+ */
 public class PersistentState {
   public final Log log = LogFactory.getLog(PersistentState.class);
   private static final String FRAMEWORK_ID_KEY = "frameworkId";

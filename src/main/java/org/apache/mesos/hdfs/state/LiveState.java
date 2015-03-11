@@ -14,6 +14,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Provides the "Live" state of the framework.  This is the state as reported by the Mesos Master.
+ */
 @Singleton
 public class LiveState {
   public final Log log = LogFactory.getLog(LiveState.class);

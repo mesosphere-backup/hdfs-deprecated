@@ -44,8 +44,11 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 
-//TODO remove as much logic as possible from Scheduler to clean up code
+/**
+ * The HDFS Scheduler implementation.
+ */
 public class HDFSScheduler implements org.apache.mesos.Scheduler, Runnable {
+  // TODO(elingg) remove as much logic as possible from Scheduler to clean up code
 
   public final Log log = LogFactory.getLog(HDFSScheduler.class);
   private final SchedulerConf conf;

@@ -24,6 +24,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+/**
+ * Provides configuration information through http API service
+ */
 public class ConfigServer {
 
   private Server server;
