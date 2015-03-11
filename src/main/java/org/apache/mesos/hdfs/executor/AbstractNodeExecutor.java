@@ -232,7 +232,7 @@ public abstract class AbstractNodeExecutor implements Executor {
     }
   }
 
-  protected boolean runHealthChecks(ExecutorDriver driver, Task task) {
+  protected boolean unhealthy(ExecutorDriver driver, Task task) {
     log.info("Performing health check for task: " + task.taskInfo.getTaskId().getValue());
 
     Process healthCmd = null;
@@ -353,7 +353,7 @@ public abstract class AbstractNodeExecutor implements Executor {
 
     @Override
     public void run() {
-      if (runHealthChecks(driver, task))
+      if (unhealthy(driver, task))
         this.cancel();
     }
   }
