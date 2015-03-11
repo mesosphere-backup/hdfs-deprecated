@@ -3,7 +3,6 @@ package org.apache.mesos.hdfs;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
-import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.MesosSchedulerDriver;
@@ -31,18 +30,15 @@ import org.apache.mesos.hdfs.state.LiveState;
 import org.apache.mesos.hdfs.state.PersistentState;
 import org.apache.mesos.hdfs.util.HDFSConstants;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.concurrent.ExecutionException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
-
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-
+import java.util.concurrent.ExecutionException;
 
 /**
  * The HDFS Scheduler implementation.
@@ -580,7 +576,6 @@ public class HDFSScheduler implements org.apache.mesos.Scheduler, Runnable {
     return reconciliationCompleted;
   }
 
-
   private class ReconcileStateTask extends TimerTask {
 
     @Override
@@ -590,7 +585,7 @@ public class HDFSScheduler implements org.apache.mesos.Scheduler, Runnable {
       log.info(String.format("NameNodes: %s", persistentState.getNameNodes()));
       log.info(String.format("DataNodes: %s", persistentState.getDataNodes()));
 
-      LinkedHashMap<Protos.TaskID, Protos.TaskStatus> runningTasks = liveState.getRunningTasks();
+      Map<TaskID, TaskStatus> runningTasks = liveState.getRunningTasks();
       Collection<String> taskIds = persistentState.getAllTaskIds();
       Collection<Protos.TaskID> runningTaskIds = runningTasks.keySet();
       for (String taskId : taskIds) {
