@@ -10,7 +10,7 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 
 public class StreamRedirect extends Thread {
-  public static final Log log = LogFactory.getLog(StreamRedirect.class);
+  public final Log log = LogFactory.getLog(StreamRedirect.class);
   InputStream stream;
   PrintStream outputStream;
 
