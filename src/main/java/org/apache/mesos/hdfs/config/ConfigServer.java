@@ -40,8 +40,6 @@ public class ConfigServer {
       throws Exception {
     this.schedulerConf = schedulerConf;
     this.persistentState = persistentState;
-
-
     engine = new Engine();
     server = new Server(schedulerConf.getConfigServerPort());
     ResourceHandler resourceHandler = new ResourceHandler();
