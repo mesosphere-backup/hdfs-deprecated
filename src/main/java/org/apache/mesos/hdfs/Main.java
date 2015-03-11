@@ -6,6 +6,9 @@ import org.apache.mesos.hdfs.config.ConfigServer;
 
 public class Main {
 
+  private Main() {
+  }
+
   public static void main(String[] args) throws Exception {
     Injector injector = Guice.createInjector();
     Thread scheduler = new Thread(injector.getInstance(Scheduler.class));
@@ -13,5 +16,4 @@ public class Main {
 
     injector.getInstance(ConfigServer.class);
   }
-
 }

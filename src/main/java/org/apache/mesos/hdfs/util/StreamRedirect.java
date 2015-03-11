@@ -1,5 +1,8 @@
 package org.apache.mesos.hdfs.util;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -7,6 +10,7 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 
 public class StreamRedirect extends Thread {
+  public static final Log log = LogFactory.getLog(StreamRedirect.class);
   InputStream stream;
   PrintStream outputStream;
 
@@ -25,7 +29,7 @@ public class StreamRedirect extends Thread {
         outputStream.println(streamLine);
       }
     } catch (IOException ioe) {
-      ioe.printStackTrace();
+      log.error("stream redirect error", ioe);
     }
   }
 }
