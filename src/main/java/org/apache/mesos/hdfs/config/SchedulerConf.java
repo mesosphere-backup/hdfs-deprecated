@@ -216,7 +216,7 @@ public class SchedulerConf extends Configured {
       try {
         hostAddress = InetAddress.getLocalHost().getHostAddress();
       } catch (UnknownHostException e) {
-        throw new RuntimeException(e);
+        log.error("issue with host address", e);
       }
     }
     return hostAddress;

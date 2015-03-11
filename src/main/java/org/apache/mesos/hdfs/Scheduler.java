@@ -96,11 +96,11 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
   public void registered(SchedulerDriver driver, FrameworkID frameworkId, MasterInfo masterInfo) {
     try {
       persistentState.setFrameworkId(frameworkId);
+      log.info("Registered framework frameworkId=" + frameworkId.getValue());
+
     } catch (InterruptedException | ExecutionException e) {
       log.error("Error setting framework id in persistent state", e);
-      throw new RuntimeException(e);
     }
-    log.info("Registered framework frameworkId=" + frameworkId.getValue());
     //reconcile tasks upon registration
     reconcileTasks(driver);
   }
@@ -259,11 +259,9 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
       }
     } catch (InterruptedException | ExecutionException | InvalidProtocolBufferException e) {
       log.error("Error recovering framework id", e);
-      throw new RuntimeException(e);
     }
 
-    MesosSchedulerDriver driver = new MesosSchedulerDriver(this, frameworkInfo.build(),
-        conf.getMesosMasterUri());
+    MesosSchedulerDriver driver = new MesosSchedulerDriver(this, frameworkInfo.build(), conf.getMesosMasterUri());
     driver.run();
   }
 
