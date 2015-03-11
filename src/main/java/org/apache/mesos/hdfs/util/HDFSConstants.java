@@ -17,9 +17,9 @@ public class HDFSConstants {
   public static final String DATA_NODE_ID = "datanode";
   public static final String ZKFC_NODE_ID = "zkfc";
 
-  //health check ports
+  // health check ports
   public static final int NAME_NODE_HEALTH_PORT = 50070;
-  public static final int JOURNAL_NODE_HEALTH_PORT = 8480;
+  public static final int JOURNAL_NODE_HEALTH_PORT = 8485;
 
   // NameNode TaskId
   public static final String NAME_NODE_TASKID = ".namenode.namenode.";

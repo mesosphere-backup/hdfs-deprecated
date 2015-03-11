@@ -11,9 +11,15 @@ import org.apache.mesos.Protos.*;
 import org.apache.mesos.hdfs.config.SchedulerConf;
 import org.apache.mesos.hdfs.executor.AbstractNodeExecutor.TimedHealthCheck;
 import org.apache.mesos.hdfs.util.HDFSConstants;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.util.HashSet;
 import java.util.Timer;
 
 import java.io.File;
+import java.util.TimerTask;
 
 /**
  * The executor for the Primary Name Node Machine.
@@ -27,12 +33,6 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
   // chained.
   private Task zkfcNodeTask;
   private Task journalNodeTask;
-
-  // Timed Health Check for node health monitoring
-  private TimedHealthCheck healthCheckJN;
-  private TimedHealthCheck healthCheckNN;
-  private TimedHealthCheck healthCheckZN;
-  private Timer timer;
 
   /**
    * The constructor for the primary name node which saves the configuration.
@@ -58,7 +58,6 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
    **/
   @Override
   public void launchTask(final ExecutorDriver driver, final TaskInfo taskInfo) {
-    timer = new Timer(true);
     executorInfo = taskInfo.getExecutor();
     Task task = new Task(taskInfo);
     if (taskInfo.getTaskId().getValue().contains(HDFSConstants.JOURNAL_NODE_ID)) {
@@ -69,8 +68,6 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
           .setTaskId(journalNodeTask.taskInfo.getTaskId())
           .setState(TaskState.TASK_RUNNING)
           .build());
-      healthCheckJN = new TimedHealthCheck(driver, journalNodeTask);
-      timer.scheduleAtFixedRate(healthCheckJN, 30000, 60000);
     } else if (taskInfo.getTaskId().getValue().contains(HDFSConstants.NAME_NODE_TASKID)) {
       nameNodeTask = task;
       driver.sendStatusUpdate(TaskStatus.newBuilder()
@@ -119,14 +116,6 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
       } else {
         nameDir.mkdirs();
       }
-      runCommand(driver, nameNodeTask, "bin/hdfs-mesos-namenode " + messageStr);
-      startProcess(driver, nameNodeTask);
-      driver.sendStatusUpdate(TaskStatus.newBuilder()
-          .setTaskId(nameNodeTask.taskInfo.getTaskId())
-          .setState(TaskState.TASK_RUNNING)
-          .build());
-      healthCheckNN = new TimedHealthCheck(driver, nameNodeTask);
-      timer.scheduleAtFixedRate(healthCheckNN, 30000, 60000);
       // Start the zkfc node
       startProcess(driver, zkfcNodeTask);
       driver.sendStatusUpdate(TaskStatus.newBuilder()
@@ -134,8 +123,99 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
           .setState(TaskState.TASK_RUNNING)
           .setMessage(messageStr)
           .build());
-      healthCheckZN = new TimedHealthCheck(driver, zkfcNodeTask);
-      timer.scheduleAtFixedRate(healthCheckZN, 30000, 60000);
+      // start the namenode task
+      driver.sendStatusUpdate(TaskStatus.newBuilder()
+          .setTaskId(nameNodeTask.taskInfo.getTaskId())
+          .setState(TaskState.TASK_RUNNING)
+          .build());
+      if (schedulerConf.usingMesosDns()) {
+        // need to wait for other nodes to be available.
+        if (messageStr.equals(HDFSConstants.NAME_NODE_INIT_MESSAGE)) {
+          PreNNInitTask checker = new PreNNInitTask(driver, nameNodeTask);
+          timer.scheduleAtFixedRate(checker, 0, 15000);
+        } else if (messageStr.equals(HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE)) {
+          PreNNBootstrapTask checker = new PreNNBootstrapTask(driver, nameNodeTask);
+          timer.scheduleAtFixedRate(checker, 0, 15000);
+        }
+      } else {
+        runCommand(driver, nameNodeTask, "bin/hdfs-mesos-namenode " + messageStr);
+        startProcess(driver, nameNodeTask);
+      }
+    }
+  }
+
+  /**
+   * This class is designed to help launch the primary namenode in its init phase. The node needs
+   * the journal nodes to be available on port 8485. In Mesos-DNS, this takes an uncertain amount of
+   * time, so we must schedule it asynchronously.
+   */
+  private class PreNNInitTask extends TimerTask {
+    ExecutorDriver driver;
+    Task task;
+
+    public PreNNInitTask(ExecutorDriver driver, Task task) {
+      this.driver = driver;
+      this.task = task;
+    }
+
+    @Override
+    public void run() {
+      boolean success = true;
+      for (int i = schedulerConf.getJournalNodeCount(); i > 0; i--) {
+        String host = HDFSConstants.JOURNAL_NODE_ID + i + "." + schedulerConf.getFrameworkName() + "." + schedulerConf.getMesosDnsDomain();
+        log.info("Checking for " + host);
+        try (Socket connected = new Socket(host, HDFSConstants.JOURNAL_NODE_HEALTH_PORT)) {
+          log.info("Successfully found " + host + " at port " + HDFSConstants.JOURNAL_NODE_HEALTH_PORT);
+        } catch (SecurityException | IOException e) {
+          log.info("Couldn't resolve host " + host + " at port " + HDFSConstants.JOURNAL_NODE_HEALTH_PORT);
+          success = false;
+          break;
+        }
+      }
+      if (success) {
+        log.info("Successfully found all nodes needed to continue. Sending message: " + HDFSConstants.NAME_NODE_INIT_MESSAGE);
+        this.cancel();
+        runCommand(driver, task, "bin/hdfs-mesos-namenode " + HDFSConstants.NAME_NODE_INIT_MESSAGE);
+        startProcess(driver, task);
+      }
+    }
+  }
+
+  /**
+   * This class is designed to help launch the secondary namenode in its bootstrap phase. The node
+   * needs both name nodes to be available as DNS entries. In Mesos-DNS, this takes an uncertain
+   * amount of time, so we must schedule it asynchronously.
+   */
+  private class PreNNBootstrapTask extends TimerTask {
+    ExecutorDriver driver;
+    Task task;
+
+    public PreNNBootstrapTask(ExecutorDriver driver, Task task) {
+      this.driver = driver;
+      this.task = task;
+    }
+
+    @Override
+    public void run() {
+      boolean success = true;
+      for (int i = HDFSConstants.TOTAL_NAME_NODES; i > 0; i--) {
+        String host = HDFSConstants.NAME_NODE_ID + i + "." + schedulerConf.getFrameworkName() + "." + schedulerConf.getMesosDnsDomain();
+        log.info("Checking for " + host);
+        try {
+          InetAddress.getByName(host);
+          log.info("Successfully found " + host);
+        } catch (SecurityException | IOException e) {
+          log.info("Couldn't resolve host " + host);
+          success = false;
+          break;
+        }
+      }
+      if (success) {
+        log.info("Successfully found all nodes needed to continue. Sending message: " + HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE);
+        this.cancel();
+        runCommand(driver, task, "bin/hdfs-mesos-namenode " + HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE);
+        startProcess(driver, task);
+      }
     }
   }
 }
