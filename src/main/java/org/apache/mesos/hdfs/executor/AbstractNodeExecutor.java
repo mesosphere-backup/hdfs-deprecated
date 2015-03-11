@@ -8,13 +8,20 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.Executor;
 import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.MesosExecutorDriver;
-import org.apache.mesos.Protos.*;
+import org.apache.mesos.Protos.CommandInfo;
+import org.apache.mesos.Protos.ExecutorInfo;
+import org.apache.mesos.Protos.FrameworkInfo;
+import org.apache.mesos.Protos.SlaveInfo;
+import org.apache.mesos.Protos.Status;
+import org.apache.mesos.Protos.TaskInfo;
+import org.apache.mesos.Protos.TaskState;
+import org.apache.mesos.Protos.TaskStatus;
 import org.apache.mesos.hdfs.config.SchedulerConf;
 import org.apache.mesos.hdfs.util.HDFSConstants;
 import org.apache.mesos.hdfs.util.StreamRedirect;
 
-import java.io.File;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -23,13 +30,13 @@ import java.nio.file.Paths;
 
 public abstract class AbstractNodeExecutor implements Executor {
 
-  public static final Log log = LogFactory.getLog(AbstractNodeExecutor.class);
+  public static final Log LOG = LogFactory.getLog(AbstractNodeExecutor.class);
   protected ExecutorInfo executorInfo;
   protected SchedulerConf schedulerConf;
 
   /**
    * Constructor which takes in configuration.
-   **/
+   */
   @Inject
   AbstractNodeExecutor(SchedulerConf schedulerConf) {
     this.schedulerConf = schedulerConf;
@@ -37,7 +44,7 @@ public abstract class AbstractNodeExecutor implements Executor {
 
   /**
    * Main method which injects the configuration and state and creates the driver.
-   **/
+   */
   public static void main(String[] args) {
     Injector injector = Guice.createInjector();
     MesosExecutorDriver driver = new MesosExecutorDriver(
@@ -47,19 +54,19 @@ public abstract class AbstractNodeExecutor implements Executor {
 
   /**
    * Register the framework with the executor.
-   **/
+   */
   @Override
   public void registered(ExecutorDriver driver, ExecutorInfo executorInfo,
       FrameworkInfo frameworkInfo, SlaveInfo slaveInfo) {
     // Set up data dir
     setUpDataDir();
     createSymbolicLink();
-    log.info("Executor registered with the slave");
+    LOG.info("Executor registered with the slave");
   }
 
   /**
    * Delete and recreate the data directory.
-   **/
+   */
   private void setUpDataDir() {
     // Create primary data dir if it does not exist
     File dataDir = new File(schedulerConf.getDataDir());
@@ -90,9 +97,9 @@ public abstract class AbstractNodeExecutor implements Executor {
 
   /**
    * Create Symbolic Link for the HDFS binary.
-   **/
+   */
   private void createSymbolicLink() {
-    log.info("Creating a symbolic link for HDFS binary");
+    LOG.info("Creating a symbolic link for HDFS binary");
     try {
       // Find Hdfs binary in sandbox
       File sandboxHdfsBinary = new File(System.getProperty("user.dir"));
@@ -130,12 +137,12 @@ public abstract class AbstractNodeExecutor implements Executor {
       // Create symbolic link
       Path hdfsLinkDirPath = Paths.get(hdfsBinaryPath);
       Files.createSymbolicLink(hdfsLinkDirPath, sandboxHdfsBinaryPath);
-      log.info("The linked HDFS binary path is: " + sandboxHdfsBinaryPath);
-      log.info("The symbolic link path is: " + hdfsLinkDirPath);
+      LOG.info("The linked HDFS binary path is: " + sandboxHdfsBinaryPath);
+      LOG.info("The symbolic link path is: " + hdfsLinkDirPath);
       // Adding binary to the PATH environment variable
       addBinaryToPath(hdfsBinaryPath);
     } catch (Exception e) {
-      log.fatal("Error creating the symbolic link to hdfs binary: " + e);
+      LOG.fatal("Error creating the symbolic link to hdfs binary: " + e);
       System.exit(1);
     }
   }
@@ -144,7 +151,7 @@ public abstract class AbstractNodeExecutor implements Executor {
    * Add hdfs binary to the PATH environment variable by linking it to /usr/bin/hadoop. This
    * requires that /usr/bin/ is on the Mesos slave PATH, which is defined as part of the standard
    * Mesos slave packaging.
-   **/
+   */
   private void addBinaryToPath(String hdfsBinaryPath) throws IOException {
     String pathEnvVarLocation = "/usr/bin/hadoop";
     String scriptContent = "#!/bin/bash \n" + hdfsBinaryPath + "/bin/hadoop \"$@\"";
@@ -157,7 +164,7 @@ public abstract class AbstractNodeExecutor implements Executor {
 
   /**
    * Starts a task's process so it goes into running state.
-   **/
+   */
   protected void startProcess(ExecutorDriver driver, Task task) {
     reloadConfig();
     Process process = task.process;
@@ -167,18 +174,18 @@ public abstract class AbstractNodeExecutor implements Executor {
             "sh", "-c", task.cmd});
         redirectProcess(process);
       } catch (IOException e) {
-        log.fatal(e);
+        LOG.fatal(e);
         sendTaskFailed(driver, task);
         System.exit(2);
       }
     } else {
-      log.error("Tried to start process, but process already running");
+      LOG.error("Tried to start process, but process already running");
     }
   }
 
   /**
    * Reloads the cluster configuration so the executor has the correct configuration info.
-   **/
+   */
   protected void reloadConfig() {
     // Find config URI
     String configUri = "";
@@ -188,26 +195,26 @@ public abstract class AbstractNodeExecutor implements Executor {
       }
     }
     if (configUri.isEmpty()) {
-      log.error("Couldn't find hdfs-site.xml URI");
+      LOG.error("Couldn't find hdfs-site.xml URI");
       return;
     }
     try {
-      log.info(String.format("Reloading hdfs-site.xml from %s", configUri));
+      LOG.info(String.format("Reloading hdfs-site.xml from %s", configUri));
       String cfgCmd[] = new String[]{"sh", "-c",
           String.format("curl -o hdfs-site.xml %s ; cp hdfs-site.xml etc/hadoop/", configUri)};
       Process process = Runtime.getRuntime().exec(cfgCmd);
       //TODO(nicgrayson) check if the config has changed
       redirectProcess(process);
       int exitCode = process.waitFor();
-      log.info("Finished reloading hdfs-site.xml, exited with status " + exitCode);
+      LOG.info("Finished reloading hdfs-site.xml, exited with status " + exitCode);
     } catch (InterruptedException | IOException e) {
-      log.error("Caught exception", e);
+      LOG.error("Caught exception", e);
     }
   }
 
   /**
    * Redirects a process to STDERR and STDOUT for logging and debugging purposes.
-   **/
+   */
   protected void redirectProcess(Process process) {
     StreamRedirect stdoutRedirect = new StreamRedirect(process.getInputStream(), System.out);
     stdoutRedirect.start();
@@ -217,34 +224,34 @@ public abstract class AbstractNodeExecutor implements Executor {
 
   /**
    * Run a command and wait for it's successful completion.
-   **/
+   */
   protected void runCommand(ExecutorDriver driver, Task task, String command) {
     reloadConfig();
     try {
-      log.info(String.format("About to run command: %s", command));
+      LOG.info(String.format("About to run command: %s", command));
       Process init = Runtime.getRuntime().exec(new String[]{"sh", "-c", command});
       redirectProcess(init);
       int exitCode = init.waitFor();
-      log.info("Finished running command, exited with status " + exitCode);
+      LOG.info("Finished running command, exited with status " + exitCode);
       if (exitCode != 0) {
-        log.fatal("Unable to run command: " + command);
+        LOG.fatal("Unable to run command: " + command);
         sendTaskFailed(driver, task);
         System.exit(1);
       }
     } catch (InterruptedException | IOException e) {
-      log.fatal(e);
+      LOG.fatal(e);
       System.exit(1);
     }
   }
 
   /**
    * Abstract method to launch a task.
-   **/
+   */
   public abstract void launchTask(final ExecutorDriver driver, final TaskInfo taskInfo);
 
   /**
    * Let the scheduler know that the task has failed.
-   **/
+   */
   private void sendTaskFailed(ExecutorDriver driver, Task task) {
     driver.sendStatusUpdate(TaskStatus.newBuilder()
         .setTaskId(task.taskInfo.getTaskId())
@@ -254,36 +261,36 @@ public abstract class AbstractNodeExecutor implements Executor {
 
   @Override
   public void reregistered(ExecutorDriver driver, SlaveInfo slaveInfo) {
-    log.info("Executor reregistered with the slave");
+    LOG.info("Executor reregistered with the slave");
   }
 
   @Override
   public void disconnected(ExecutorDriver driver) {
-    log.info("Executor disconnected from the slave");
+    LOG.info("Executor disconnected from the slave");
   }
 
   @Override
   public void frameworkMessage(ExecutorDriver driver, byte[] msg) {
     reloadConfig();
     String messageStr = new String(msg);
-    log.info("Executor received framework message: " + messageStr);
+    LOG.info("Executor received framework message: " + messageStr);
   }
 
   @Override
   public void error(ExecutorDriver driver, String message) {
-    log.error(this.getClass().getName() + ".error: " + message);
+    LOG.error(this.getClass().getName() + ".error: " + message);
   }
 
   @Override
   public void shutdown(ExecutorDriver d) {
     // TODO(elingg) let's shut down the driver more gracefully
-    log.info("Executor asked to shutdown");
+    LOG.info("Executor asked to shutdown");
   }
 
   /**
    * The task class for use within the executor
-   **/
-  public class Task {
+   */
+  public static class Task {
     public TaskInfo taskInfo;
     public String cmd;
     public Process process;
@@ -291,7 +298,7 @@ public abstract class AbstractNodeExecutor implements Executor {
     Task(TaskInfo taskInfo) {
       this.taskInfo = taskInfo;
       this.cmd = taskInfo.getData().toStringUtf8();
-      log.info(String.format("Launching task, taskId=%s cmd='%s'", taskInfo.getTaskId().getValue(),
+      LOG.info(String.format("Launching task, taskId=%s cmd='%s'", taskInfo.getTaskId().getValue(),
           cmd));
     }
   }
