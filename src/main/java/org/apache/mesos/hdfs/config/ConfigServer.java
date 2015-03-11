@@ -41,8 +41,6 @@ public class ConfigServer {
     this.schedulerConf = schedulerConf;
     this.persistentState = persistentState;
 
-    // Stop the config server if we're using mesos dns.
-    if (schedulerConf.usingMesosDns()) return;
 
     engine = new Engine();
     server = new Server(schedulerConf.getConfigServerPort());
