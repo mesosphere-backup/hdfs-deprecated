@@ -136,12 +136,10 @@ public class SchedulerConf extends Configured {
     return getConf().get("mesos.hdfs.framework.name", "hdfs");
   }
 
-  public boolean usingMesosDns() {
-    return getConf().get("mesos.hdfs.mesosdns.domain", "") != "";
-  }
+  public boolean usingMesosDns() { return Boolean.valueOf(getConf().get("mesos.hdfs.mesosdns", "false"));}
 
   public String getMesosDnsDomain() {
-    return getConf().get("mesos.hdfs.mesosdns.domain");
+    return getConf().get("mesos.hdfs.mesosdns.domain", "mesos");
   }
 
   public long getFailoverTimeout() {
