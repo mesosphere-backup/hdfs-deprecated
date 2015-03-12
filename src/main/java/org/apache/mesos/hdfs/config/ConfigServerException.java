@@ -14,4 +14,13 @@ public class ConfigServerException extends RuntimeException {
   public ConfigServerException() {
     this("");
   }
+
+  @Override
+  public String getMessage() {
+    return message;
+  }
+
+  public void setMessage(String message) {
+    this.message = message;
+  }
 }
