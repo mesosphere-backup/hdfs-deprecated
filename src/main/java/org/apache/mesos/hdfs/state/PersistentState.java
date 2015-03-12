@@ -235,15 +235,15 @@ public class PersistentState {
   }
 
   public boolean journalNodeRunningOnSlave(String hostname) {
-    return getJournalNodes().keySet().contains(hostname);
+    return getJournalNodes().containsKey(hostname);
   }
 
   public boolean nameNodeRunningOnSlave(String hostname) {
-    return getNameNodes().keySet().contains(hostname);
+    return getNameNodes().containsKey(hostname);
   }
 
   public boolean dataNodeRunningOnSlave(String hostname) {
-    return getDataNodes().keySet().contains(hostname);
+    return getDataNodes().containsKey(hostname);
   }
 
   private void setNameNodes(HashMap<String, String> nameNodes) {
