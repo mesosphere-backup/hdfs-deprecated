@@ -156,7 +156,7 @@ public class HDFSScheduler implements org.apache.mesos.Scheduler, Runnable {
           }
           break;
         case START_NAME_NODES :
-          if (liveState.getNameNodeSize() == (HDFSConstants.TOTAL_NAME_NODES)) {
+          if (liveState.getNameNodeSize() == HDFSConstants.TOTAL_NAME_NODES) {
             // TODO (elingg) move the reload to correctCurrentPhase and make it idempotent
             reloadConfigsOnAllRunningTasks(driver);
             correctCurrentPhase();
@@ -432,8 +432,8 @@ public class HDFSScheduler implements org.apache.mesos.Scheduler, Runnable {
 
   private boolean tryToLaunchNameNode(SchedulerDriver driver, Offer offer) {
     if (offerNotEnoughResources(offer,
-        (conf.getNameNodeCpus() + conf.getZkfcCpus()),
-        (conf.getNameNodeHeapSize() + conf.getZkfcHeapSize()))) {
+        conf.getNameNodeCpus() + conf.getZkfcCpus(),
+        conf.getNameNodeHeapSize() + conf.getZkfcHeapSize())) {
       log.info("Offer does not have enough resources");
       return false;
     }
@@ -517,19 +517,19 @@ public class HDFSScheduler implements org.apache.mesos.Scheduler, Runnable {
   }
 
   private boolean isTerminalState(TaskStatus taskStatus) {
-    return (taskStatus.getState().equals(TaskState.TASK_FAILED)
+    return taskStatus.getState().equals(TaskState.TASK_FAILED)
         || taskStatus.getState().equals(TaskState.TASK_FINISHED)
         || taskStatus.getState().equals(TaskState.TASK_KILLED)
         || taskStatus.getState().equals(TaskState.TASK_LOST)
-        || taskStatus.getState().equals(TaskState.TASK_ERROR));
+        || taskStatus.getState().equals(TaskState.TASK_ERROR);
   }
 
   private boolean isRunningState(TaskStatus taskStatus) {
-    return (taskStatus.getState().equals(TaskState.TASK_RUNNING));
+    return taskStatus.getState().equals(TaskState.TASK_RUNNING);
   }
 
   private boolean isStagingState(TaskStatus taskStatus) {
-    return (taskStatus.getState().equals(TaskState.TASK_STAGING));
+    return taskStatus.getState().equals(TaskState.TASK_STAGING);
   }
 
   private void reloadConfigsOnAllRunningTasks(SchedulerDriver driver) {
