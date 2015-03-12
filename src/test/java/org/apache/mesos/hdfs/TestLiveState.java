@@ -85,7 +85,7 @@ public class TestLiveState {
 
   @Test
   public void addsAndRemovesStagingTasks() {
-    liveState.addStagingTask(createTaskInfo("journalnode").getTaskId());
+    liveState.addStagingTask(createTaskInfo("journalnode").getTaskId(), "journalnode1");
     assertEquals(1, liveState.getStagingTasksSize());
     liveState.removeStagingTask(createTaskInfo("journalnode").getTaskId());
     assertEquals(0, liveState.getStagingTasksSize());

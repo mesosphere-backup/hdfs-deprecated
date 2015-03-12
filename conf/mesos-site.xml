@@ -53,6 +53,16 @@
   </property>
 
   <property>
+    <name>mesos.hdfs.mesosdns</name>
+    <value>false</value>
+  </property>
+
+  <property>
+    <name>mesos.hdfs.mesosdns.domain</name>
+    <value>mesos</value>
+  </property>
+
+  <property>
     <name>mesos.native.library</name>
     <value>/usr/local/lib/libmesos.so</value>
   </property>

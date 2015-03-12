@@ -21,8 +21,9 @@ public class LiveState {
   public static final Log log = LogFactory.getLog(LiveState.class);
   private Set<Protos.TaskID> stagingTasks = new HashSet<>();
   private AcquisitionPhase currentAcquisitionPhase = AcquisitionPhase.RECONCILING_TASKS;
-  // TODO (nicgrayson) Might need to split this out to jns, nns, and dns if dns too big
-  private LinkedHashMap<Protos.TaskID, Protos.TaskStatus> runningTasks = new LinkedHashMap<>();
+  private LinkedHashMap<String, Protos.TaskStatus> runningTasks = new LinkedHashMap<>();
+  private HashMap<String, String> journalNodeNames = new HashMap<>();
+  private HashMap<String, String> nameNodeNames = new HashMap<>();
   private HashMap<Protos.TaskStatus, Boolean> nameNode1TaskMap = new HashMap<>();
   private HashMap<Protos.TaskStatus, Boolean> nameNode2TaskMap = new HashMap<>();
 
@@ -34,8 +35,18 @@ public class LiveState {
     return !nameNode2TaskMap.isEmpty() && nameNode2TaskMap.values().iterator().next();
   }
 
-  public void addStagingTask(Protos.TaskID taskId) {
+  public HashMap<String, String> getJournalNodeNames() { return journalNodeNames; }
+
+  public HashMap<String, String> getNameNodeNames() { return nameNodeNames; }
+
+  public void addStagingTask(Protos.TaskID taskId, String taskName) {
     stagingTasks.add(taskId);
+    if (taskId.getValue().contains(HDFSConstants.NAME_NODE_TASKID)) {
+      nameNodeNames.put(taskId.getValue(), taskName);
+    }
+    if (taskId.getValue().contains(HDFSConstants.JOURNAL_NODE_ID)) {
+      journalNodeNames.put(taskId.getValue(), taskName);
+    }
   }
 
   public int getStagingTasksSize() {
@@ -46,7 +57,7 @@ public class LiveState {
     stagingTasks.remove(taskID);
   }
 
-  public LinkedHashMap<Protos.TaskID, Protos.TaskStatus> getRunningTasks() {
+  public LinkedHashMap<String, Protos.TaskStatus> getRunningTasks() {
     return runningTasks;
   }
 
@@ -58,7 +69,9 @@ public class LiveState {
        && nameNode2TaskMap.keySet().iterator().next().getTaskId().equals(taskId)) {
       nameNode2TaskMap.clear();
     }
-    runningTasks.remove(taskId);
+    runningTasks.remove(taskId.getValue());
+    journalNodeNames.remove(taskId.getValue());
+    nameNodeNames.remove(taskId.getValue());
   }
 
   public void updateTaskForStatus(Protos.TaskStatus status) {
@@ -93,7 +106,7 @@ public class LiveState {
         nameNode2TaskMap.put(status, false);
       }
     }
-    runningTasks.put(status.getTaskId(), status);
+    runningTasks.put(status.getTaskId().getValue(), status);
   }
 
   public AcquisitionPhase getCurrentAcquisitionPhase() {
@@ -141,10 +154,10 @@ public class LiveState {
   }
 
   private int countOfRunningTasksWith(final String nodeId) {
-    return Sets.filter(runningTasks.keySet(), new Predicate<Protos.TaskID>() {
+    return Sets.filter(runningTasks.keySet(), new Predicate<String>() {
       @Override
-      public boolean apply(Protos.TaskID taskID) {
-        return taskID.getValue().contains(nodeId);
+      public boolean apply(String taskId) {
+        return taskId.contains(nodeId);
       }
     }).size();
   }

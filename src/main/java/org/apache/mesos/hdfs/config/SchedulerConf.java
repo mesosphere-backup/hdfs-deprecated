@@ -26,6 +26,14 @@ public class SchedulerConf extends Configured {
     setConf(configuration);
   }
 
+  public boolean usingMesosDns() {
+    return Boolean.valueOf(getConf().get("mesos.hdfs.mesosdns", "false"));
+  }
+
+  public String getMesosDnsDomain() {
+    return getConf().get("mesos.hdfs.mesosdns.domain", "mesos");
+  }
+
   public String getExecutorPath() {
     return getConf().get("mesos.hdfs.executor.path", "..");
   }
