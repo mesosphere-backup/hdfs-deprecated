@@ -174,7 +174,6 @@ public class PersistentState {
       case HDFSConstants.NAME_NODE_ID :
         HashMap<String, String> nameNodes = getNameNodes();
         nameNodes.put(hostname, taskId.getValue());
-        System.out.println("Saving the name node " + hostname + " " + taskId.getValue());
         setNameNodes(nameNodes);
         break;
       case HDFSConstants.JOURNAL_NODE_ID :

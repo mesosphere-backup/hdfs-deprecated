@@ -551,16 +551,23 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
 
   private void correctCurrentPhase() {
     if (liveState.getJournalNodeSize() < conf.getJournalNodeCount()) {
+      // need to add journal nodes
       liveState.transitionTo(AcquisitionPhase.JOURNAL_NODES);
-    } else if (!journalNodesAvailable()) {
-      liveState.transitionTo(AcquisitionPhase.WAIT_FOR_JOURNAL_NODES);
     } else if (liveState.getNameNodeSize() < HDFSConstants.TOTAL_NAME_NODES) {
-      liveState.transitionTo(AcquisitionPhase.START_NAME_NODES);
-    } else if (!nameNodesAvailable()) {
-      liveState.transitionTo(AcquisitionPhase.WAIT_FOR_NAME_NODES);
+      // wait for journal nodes to become available
+      if (!journalNodesAvailable())
+        liveState.transitionTo(AcquisitionPhase.WAIT_FOR_JOURNAL_NODES);
+      // or start the name nodes
+      else
+        liveState.transitionTo(AcquisitionPhase.START_NAME_NODES);
     } else if (!liveState.isNameNode1Initialized()
         || !liveState.isNameNode2Initialized()) {
-      liveState.transitionTo(AcquisitionPhase.FORMAT_NAME_NODES);
+      // wait for name nodes to become available
+      if (!nameNodesAvailable())
+        liveState.transitionTo(AcquisitionPhase.WAIT_FOR_NAME_NODES);
+      // or start formatting nodes
+      else
+        liveState.transitionTo(AcquisitionPhase.FORMAT_NAME_NODES);
     } else {
       liveState.transitionTo(AcquisitionPhase.DATA_NODES);
     }

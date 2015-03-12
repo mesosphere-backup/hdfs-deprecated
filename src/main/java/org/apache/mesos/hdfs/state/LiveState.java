@@ -62,10 +62,10 @@ public class LiveState {
   }
 
   public void removeRunningTask(Protos.TaskID taskId) {
-    if (isNameNode1Initialized()
+    if (!nameNode1TaskMap.isEmpty()
         && nameNode1TaskMap.keySet().iterator().next().getTaskId().equals(taskId)) {
       nameNode1TaskMap.clear();
-    } else if (isNameNode2Initialized()
+    } else if (!nameNode2TaskMap.isEmpty()
        && nameNode2TaskMap.keySet().iterator().next().getTaskId().equals(taskId)) {
       nameNode2TaskMap.clear();
     }
