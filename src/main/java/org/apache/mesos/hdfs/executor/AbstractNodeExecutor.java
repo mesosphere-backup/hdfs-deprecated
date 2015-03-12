@@ -16,7 +16,7 @@ import org.apache.mesos.Protos.Status;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.TaskState;
 import org.apache.mesos.Protos.TaskStatus;
-import org.apache.mesos.hdfs.config.SchedulerConf;
+import org.apache.mesos.hdfs.config.HdfsConfig;
 import org.apache.mesos.hdfs.util.HDFSConstants;
 import org.apache.mesos.hdfs.util.StreamRedirect;
 
@@ -41,14 +41,14 @@ public abstract class AbstractNodeExecutor implements Executor {
   private static final String DEFAULT_HADOOP_PATH = "/usr/bin/hadoop";
 
   protected ExecutorInfo executorInfo;
-  protected SchedulerConf schedulerConf;
+  protected HdfsConfig hdfsConfig;
 
   /**
    * Constructor which takes in configuration.
    */
   @Inject
-  AbstractNodeExecutor(SchedulerConf schedulerConf) {
-    this.schedulerConf = schedulerConf;
+  AbstractNodeExecutor(HdfsConfig hdfsConfig) {
+    this.hdfsConfig = hdfsConfig;
   }
 
   /**
@@ -66,7 +66,7 @@ public abstract class AbstractNodeExecutor implements Executor {
    */
   @Override
   public void registered(ExecutorDriver driver, ExecutorInfo executorInfo,
-                         FrameworkInfo frameworkInfo, SlaveInfo slaveInfo) {
+      FrameworkInfo frameworkInfo, SlaveInfo slaveInfo) {
     // Set up data dir
     setUpDataDir();
     createSymbolicLink();
@@ -78,11 +78,11 @@ public abstract class AbstractNodeExecutor implements Executor {
    */
   private void setUpDataDir() {
     // Create primary data dir if it does not exist
-    File dataDir = new File(schedulerConf.getDataDir());
+    File dataDir = new File(hdfsConfig.getDataDir());
     createDir(dataDir);
 
     // Create secondary data dir if it does not exist
-    File secondaryDataDir = new File(schedulerConf.getSecondaryDataDir());
+    File secondaryDataDir = new File(hdfsConfig.getSecondaryDataDir());
     createDir(secondaryDataDir);
   }
 
@@ -121,11 +121,11 @@ public abstract class AbstractNodeExecutor implements Executor {
       Path sandboxHdfsBinaryPath = Paths.get(sandboxHdfsBinary.getAbsolutePath());
 
       // Create mesosphere opt dir (parent dir of the symbolic link) if it does not exist
-      File frameworkMountDir = new File(schedulerConf.getFrameworkMountPath());
+      File frameworkMountDir = new File(hdfsConfig.getFrameworkMountPath());
       createDir(frameworkMountDir);
 
       // Delete and recreate directory for symbolic link every time
-      String hdfsBinaryPath = schedulerConf.getFrameworkMountPath()
+      String hdfsBinaryPath = hdfsConfig.getFrameworkMountPath()
           + "/" + HDFSConstants.HDFS_BINARY_DIR;
       File hdfsBinaryDir = new File(hdfsBinaryPath);
 

@@ -12,7 +12,7 @@ import org.apache.mesos.Protos.TaskID;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.TaskState;
 import org.apache.mesos.Protos.TaskStatus;
-import org.apache.mesos.hdfs.config.SchedulerConf;
+import org.apache.mesos.hdfs.config.HdfsConfig;
 
 /**
  * The executor for a Basic Node (either a Journal Node or Data Node).
@@ -25,8 +25,8 @@ public class NodeExecutor extends AbstractNodeExecutor {
    * The constructor for the node which saves the configuration.
    */
   @Inject
-  NodeExecutor(SchedulerConf schedulerConf) {
-    super(schedulerConf);
+  NodeExecutor(HdfsConfig hdfsConfig) {
+    super(hdfsConfig);
   }
 
   /**

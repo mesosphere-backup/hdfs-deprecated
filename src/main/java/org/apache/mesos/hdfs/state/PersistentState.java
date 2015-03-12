@@ -7,7 +7,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.MesosNativeLibrary;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.FrameworkID;
-import org.apache.mesos.hdfs.config.SchedulerConf;
+import org.apache.mesos.hdfs.config.HdfsConfig;
 import org.apache.mesos.hdfs.util.HDFSConstants;
 import org.apache.mesos.state.Variable;
 import org.apache.mesos.state.ZooKeeperState;
@@ -44,7 +44,7 @@ public class PersistentState {
   private Timestamp deadNameNodeTimeStamp = null;
   private Timestamp deadDataNodeTimeStamp = null;
 
-  public PersistentState(SchedulerConf conf) {
+  public PersistentState(HdfsConfig conf) {
     MesosNativeLibrary.load(conf.getNativeLibrary());
     this.zkState = new ZooKeeperState(conf.getStateZkServers(),
         conf.getStateZkTimeout(), TimeUnit.MILLISECONDS, "/hdfs-mesos/" + conf.getFrameworkName());
@@ -174,25 +174,25 @@ public class PersistentState {
 
   public void addHdfsNode(Protos.TaskID taskId, String hostname, String taskName) {
     switch (taskName) {
-      case HDFSConstants.NAME_NODE_ID:
+      case HDFSConstants.NAME_NODE_ID :
         Map<String, String> nameNodes = getNameNodes();
         nameNodes.put(hostname, taskId.getValue());
         log.info("Saving the name node " + hostname + " " + taskId.getValue());
         setNameNodes(nameNodes);
         break;
-      case HDFSConstants.JOURNAL_NODE_ID:
+      case HDFSConstants.JOURNAL_NODE_ID :
         Map<String, String> journalNodes = getJournalNodes();
         journalNodes.put(hostname, taskId.getValue());
         setJournalNodes(journalNodes);
         break;
-      case HDFSConstants.DATA_NODE_ID:
+      case HDFSConstants.DATA_NODE_ID :
         Map<String, String> dataNodes = getDataNodes();
         dataNodes.put(hostname, taskId.getValue());
         setDataNodes(dataNodes);
         break;
-      case HDFSConstants.ZKFC_NODE_ID:
+      case HDFSConstants.ZKFC_NODE_ID :
         break;
-      default:
+      default :
         log.error("Task name unknown");
     }
   }
@@ -290,7 +290,7 @@ public class PersistentState {
 
   /**
    * Get serializable object from store.
-   *
+   * 
    * @return serialized object or null if none
    * @throws ExecutionException
    * @throws InterruptedException
@@ -323,7 +323,7 @@ public class PersistentState {
 
   /**
    * Set serializable object in store
-   *
+   * 
    * @throws ExecutionException
    * @throws InterruptedException
    * @throws IOException

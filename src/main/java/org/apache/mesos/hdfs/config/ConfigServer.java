@@ -36,21 +36,21 @@ public class ConfigServer {
 
   private Server server;
   private Engine engine;
-  private SchedulerConf schedulerConf;
+  private HdfsConfig hdfsConf;
   private PersistentState persistentState;
 
   @Inject
-  public ConfigServer(SchedulerConf schedulerConf) {
-    this(schedulerConf, new PersistentState(schedulerConf));
+  public ConfigServer(HdfsConfig hdfsConf) {
+    this(hdfsConf, new PersistentState(hdfsConf));
   }
 
-  public ConfigServer(SchedulerConf schedulerConf, PersistentState persistentState) {
-    this.schedulerConf = schedulerConf;
+  public ConfigServer(HdfsConfig hdfsConf, PersistentState persistentState) {
+    this.hdfsConf = hdfsConf;
     this.persistentState = persistentState;
     engine = new Engine();
-    server = new Server(schedulerConf.getConfigServerPort());
+    server = new Server(hdfsConf.getConfigServerPort());
     ResourceHandler resourceHandler = new ResourceHandler();
-    resourceHandler.setResourceBase(schedulerConf.getExecutorPath());
+    resourceHandler.setResourceBase(hdfsConf.getExecutorPath());
     HandlerList handlers = new HandlerList();
     handlers.setHandlers(new Handler[]{
         resourceHandler, new ServeHdfsConfigHandler()});
@@ -59,7 +59,7 @@ public class ConfigServer {
     try {
       server.start();
 
-      //NOPMD jetty throws a generic exception, we have to catch it!
+      // NOPMD jetty throws a generic exception, we have to catch it!
     } catch (Exception e) {
       final String msg = "unable to start jetty server";
       log.error(msg, e);
@@ -82,7 +82,7 @@ public class ConfigServer {
                                     HttpServletRequest request,
                                     HttpServletResponse response) throws IOException {
 
-      File confFile = new File(schedulerConf.getConfigPath());
+      File confFile = new File(hdfsConf.getConfigPath());
 
       if (!confFile.exists()) {
         throw new FileNotFoundException("Couldn't file config file: " + confFile.getPath()
@@ -109,9 +109,9 @@ public class ConfigServer {
       String journalNodeString = getJournalNodes(journalNodes);
 
       model.put("journalnodes", journalNodeString);
-      model.put("frameworkName", schedulerConf.getFrameworkName());
-      model.put("dataDir", schedulerConf.getDataDir());
-      model.put("haZookeeperQuorum", schedulerConf.getHaZookeeperQuorum());
+      model.put("frameworkName", hdfsConf.getFrameworkName());
+      model.put("dataDir", hdfsConf.getDataDir());
+      model.put("haZookeeperQuorum", hdfsConf.getHaZookeeperQuorum());
 
       content = engine.transform(content, model);
 
