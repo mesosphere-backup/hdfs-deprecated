@@ -16,7 +16,7 @@ import java.util.Properties;
  * configurations
  */
 @Singleton
-public class SchedulerConf {
+public class HdfsConfig {
 
   private Configuration hadoopConfig;
 
@@ -38,9 +38,9 @@ public class SchedulerConf {
   private static final int DEFAULT_ZK_TIME_MS = 20000;
   private static final int DEFAULT_RECONCILIATION_TIMEOUT = 30;
 
-  public final Log log = LogFactory.getLog(SchedulerConf.class);
+  public final Log log = LogFactory.getLog(HdfsConfig.class);
 
-  public SchedulerConf(Configuration conf) {
+  public HdfsConfig(Configuration conf) {
     setConf(conf);
   }
 
@@ -52,7 +52,7 @@ public class SchedulerConf {
     return hadoopConfig;
   }
 
-  public SchedulerConf() {
+  public HdfsConfig() {
     // The path is configurable via the mesos.conf.path system property
     // so it can be changed when starting up the scheduler via bash
     Properties props = System.getProperties();
