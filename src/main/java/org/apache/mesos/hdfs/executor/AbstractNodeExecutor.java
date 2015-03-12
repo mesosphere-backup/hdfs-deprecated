@@ -66,7 +66,7 @@ public abstract class AbstractNodeExecutor implements Executor {
    */
   @Override
   public void registered(ExecutorDriver driver, ExecutorInfo executorInfo,
-                         FrameworkInfo frameworkInfo, SlaveInfo slaveInfo) {
+      FrameworkInfo frameworkInfo, SlaveInfo slaveInfo) {
     // Set up data dir
     setUpDataDir();
     createSymbolicLink();

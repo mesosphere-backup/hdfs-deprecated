@@ -42,6 +42,7 @@ public class Task {
   Task(Protos.TaskInfo taskInfo) {
     this.taskInfo = taskInfo;
     this.cmd = taskInfo.getData().toStringUtf8();
-    logger.info(String.format("Launching task, taskId=%s cmd='%s'", taskInfo.getTaskId().getValue(), cmd));
+    logger.info(String.format("Launching task, taskId=%s cmd='%s'",
+        taskInfo.getTaskId().getValue(), cmd));
   }
 }
