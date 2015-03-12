@@ -10,6 +10,9 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.nio.charset.Charset;
 
+/**
+ * Can be used to redirect the STDOUT and STDERR of a started process.  Used for the executors.
+ */
 public class StreamRedirect extends Thread {
   public final Log log = LogFactory.getLog(StreamRedirect.class);
   InputStream stream;
@@ -25,7 +28,7 @@ public class StreamRedirect extends Thread {
       InputStreamReader streamReader = new InputStreamReader(stream, Charset.defaultCharset());
       BufferedReader streamBuffer = new BufferedReader(streamReader);
 
-      String streamLine = null;
+      String streamLine;
       while ((streamLine = streamBuffer.readLine()) != null) {
         outputStream.println(streamLine);
       }

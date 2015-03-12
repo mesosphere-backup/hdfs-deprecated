@@ -45,7 +45,7 @@ import java.util.concurrent.ExecutionException;
  * The HDFS Scheduler implementation.
  */
 public class HDFSScheduler implements org.apache.mesos.Scheduler, Runnable {
-  // TODO(elingg) remove as much logic as possible from Scheduler to clean up code
+  // TODO (elingg) remove as much logic as possible from Scheduler to clean up code
 
   public final Log log = LogFactory.getLog(HDFSScheduler.class);
   private final SchedulerConf conf;
@@ -154,7 +154,7 @@ public class HDFSScheduler implements org.apache.mesos.Scheduler, Runnable {
           break;
         case START_NAME_NODES :
           if (liveState.getNameNodeSize() == (HDFSConstants.TOTAL_NAME_NODES)) {
-            // TODO move the reload to correctCurrentPhase and make it idempotent
+            // TODO (elingg) move the reload to correctCurrentPhase and make it idempotent
             reloadConfigsOnAllRunningTasks(driver);
             correctCurrentPhase();
           }
@@ -199,7 +199,7 @@ public class HDFSScheduler implements org.apache.mesos.Scheduler, Runnable {
         && reconciliationComplete()) {
       correctCurrentPhase();
     }
-    // TODO within each phase, accept offers based on the number of nodes you need
+    // TODO (elingg) within each phase, accept offers based on the number of nodes you need
     boolean acceptedOffer = false;
     for (Offer offer : offers) {
       if (acceptedOffer) {
@@ -565,7 +565,7 @@ public class HDFSScheduler implements org.apache.mesos.Scheduler, Runnable {
   }
 
   private void reconcileTasks(SchedulerDriver driver) {
-    // TODO run this method repeatedly with exponential backoff in the case that it takes time for
+    // TODO (elingg) run this method repeatedly with exponential backoff in the case that it takes time for
     // different slaves to reregister upon master failover.
     reconciliationCompleted = false;
     driver.reconcileTasks(Collections.<Protos.TaskStatus> emptyList());
