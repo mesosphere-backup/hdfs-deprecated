@@ -1,9 +1,14 @@
 apply plugin: 'findbugs'
-//apply plugin: 'checkstyle'
+apply plugin: 'checkstyle'
 apply plugin: 'pmd'
 
 tasks.withType(FindBugs) {
   excludeFilter = file("$rootProject.projectDir/config/findbugs/excludeFilter.xml")
+}
+
+// ignore test source for checkstyles
+checkstyle {
+    sourceSets = [sourceSets.main]
 }
 
 pmd {
