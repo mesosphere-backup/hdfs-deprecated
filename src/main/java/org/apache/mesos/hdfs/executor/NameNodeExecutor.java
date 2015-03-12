@@ -25,7 +25,8 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
   public final Log log = LogFactory.getLog(NameNodeExecutor.class);
 
   private Task nameNodeTask;
-  // TODO (elingg) better handling in livestate and persistent state of zkfc task. Right now they are
+  // TODO (elingg) better handling in livestate and persistent state of zkfc task. Right now they
+  // are
   // chained.
   private Task zkfcNodeTask;
   private Task journalNodeTask;

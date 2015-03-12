@@ -48,6 +48,9 @@ public class HDFSScheduler implements org.apache.mesos.Scheduler, Runnable {
   // TODO (elingg) remove as much logic as possible from Scheduler to clean up code
 
   public final Log log = LogFactory.getLog(HDFSScheduler.class);
+
+  private static final int SECONDS = 1000;
+
   private final SchedulerConf conf;
   private final LiveState liveState;
   private PersistentState persistentState;
@@ -565,12 +568,13 @@ public class HDFSScheduler implements org.apache.mesos.Scheduler, Runnable {
   }
 
   private void reconcileTasks(SchedulerDriver driver) {
-    // TODO (elingg) run this method repeatedly with exponential backoff in the case that it takes time for
+    // TODO (elingg) run this method repeatedly with exponential backoff in the case that it takes
+    // time for
     // different slaves to reregister upon master failover.
     reconciliationCompleted = false;
     driver.reconcileTasks(Collections.<Protos.TaskStatus> emptyList());
     Timer timer = new Timer();
-    timer.schedule(new ReconcileStateTask(), conf.getReconciliationTimeout() * 1000);
+    timer.schedule(new ReconcileStateTask(), conf.getReconciliationTimeout() * SECONDS);
   }
 
   private boolean reconciliationComplete() {

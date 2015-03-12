@@ -32,6 +32,12 @@ public class SchedulerConf {
   private static final double JOURNAL_CPUS = 1;
   private static final double DATANODE_CPUS = 1;
 
+  private static final double DEFAULT_JVM_OVERHEAD = 1.25;
+  private static final int DEFAULT_JOURNAL_NODE_COUNT = 3;
+  private static final int DEFAULT_FAILOVER_TIMEOUT = 31449600;
+  private static final int DEFAULT_ZK_TIME_MS = 20000;
+  private static final int DEFAULT_RECONCILIATION_TIMEOUT = 30;
+
   public final Log log = LogFactory.getLog(SchedulerConf.class);
 
   public SchedulerConf(Configuration conf) {
@@ -110,7 +116,7 @@ public class SchedulerConf {
   }
 
   public double getJvmOverhead() {
-    return getConf().getDouble("mesos.hdfs.jvm.overhead", 1.25);
+    return getConf().getDouble("mesos.hdfs.jvm.overhead", DEFAULT_JVM_OVERHEAD);
   }
 
   public String getJvmOpts() {
@@ -171,7 +177,7 @@ public class SchedulerConf {
   }
 
   public int getJournalNodeCount() {
-    return getConf().getInt("mesos.hdfs.journalnode.count", 3);
+    return getConf().getInt("mesos.hdfs.journalnode.count", DEFAULT_JOURNAL_NODE_COUNT);
   }
 
   public String getFrameworkName() {
@@ -179,7 +185,7 @@ public class SchedulerConf {
   }
 
   public long getFailoverTimeout() {
-    return getConf().getLong("mesos.failover.timeout.sec", 31449600);
+    return getConf().getLong("mesos.failover.timeout.sec", DEFAULT_FAILOVER_TIMEOUT);
   }
 
   // TODO(elingg) Most likely this user name will change to HDFS
@@ -213,7 +219,7 @@ public class SchedulerConf {
   }
 
   public int getStateZkTimeout() {
-    return getConf().getInt("mesos.hdfs.state.zk.timeout.ms", 20000);
+    return getConf().getInt("mesos.hdfs.state.zk.timeout.ms", DEFAULT_ZK_TIME_MS);
   }
 
   public String getNativeLibrary() {
@@ -247,7 +253,7 @@ public class SchedulerConf {
   }
 
   public int getReconciliationTimeout() {
-    return getConf().getInt("mesos.reconciliation.timeout.seconds", 30);
+    return getConf().getInt("mesos.reconciliation.timeout.seconds", DEFAULT_RECONCILIATION_TIMEOUT);
   }
 
   public int getDeadNodeTimeout() {

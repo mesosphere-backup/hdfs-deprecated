@@ -11,7 +11,7 @@ import java.io.PrintStream;
 import java.nio.charset.Charset;
 
 /**
- * Can be used to redirect the STDOUT and STDERR of a started process.  Used for the executors.
+ * Can be used to redirect the STDOUT and STDERR of a started process. Used for the executors.
  */
 public class StreamRedirect extends Thread {
   public final Log log = LogFactory.getLog(StreamRedirect.class);
