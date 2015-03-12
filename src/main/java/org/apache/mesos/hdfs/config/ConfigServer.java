@@ -2,6 +2,8 @@ package org.apache.mesos.hdfs.config;
 
 import com.floreysoft.jmte.Engine;
 import com.google.inject.Inject;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.hdfs.state.PersistentState;
 import org.apache.mesos.hdfs.util.HDFSConstants;
 import org.eclipse.jetty.server.Handler;
@@ -30,18 +32,19 @@ import java.util.TreeSet;
  */
 public class ConfigServer {
 
+  public final Log log = LogFactory.getLog(ConfigServer.class);
+
   private Server server;
   private Engine engine;
   private SchedulerConf schedulerConf;
   private PersistentState persistentState;
 
   @Inject
-  public ConfigServer(SchedulerConf schedulerConf) throws Exception {
+  public ConfigServer(SchedulerConf schedulerConf) {
     this(schedulerConf, new PersistentState(schedulerConf));
   }
 
-  public ConfigServer(SchedulerConf schedulerConf, PersistentState persistentState)
-      throws Exception {
+  public ConfigServer(SchedulerConf schedulerConf, PersistentState persistentState) {
     this.schedulerConf = schedulerConf;
     this.persistentState = persistentState;
     engine = new Engine();
@@ -52,11 +55,24 @@ public class ConfigServer {
     handlers.setHandlers(new Handler[]{
         resourceHandler, new ServeHdfsConfigHandler()});
     server.setHandler(handlers);
-    server.start();
+
+    try {
+      server.start();
+
+      //NOPMD jetty throws a generic exception, we have to catch it!
+    } catch (Exception e) {
+      final String msg = "unable to start jetty server";
+      log.error(msg, e);
+      throw new ConfigServerException(msg);
+    }
   }
 
-  public void stop() throws Exception {
-    server.stop();
+  public void stop() {
+    try {
+      server.stop();
+    } catch (Exception e) {
+      log.debug("unable to stop the jetty service", e);
+    }
   }
 
   private class ServeHdfsConfigHandler extends AbstractHandler {

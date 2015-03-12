@@ -12,7 +12,7 @@ public final class Main {
   private Main() {
   }
 
-  public static void main(String[] args) throws Exception {
+  public static void main(String[] args) {
     Injector injector = Guice.createInjector();
     Thread scheduler = new Thread(injector.getInstance(HDFSScheduler.class));
     scheduler.start();

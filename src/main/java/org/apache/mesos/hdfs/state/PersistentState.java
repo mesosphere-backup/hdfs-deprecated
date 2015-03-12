@@ -174,25 +174,25 @@ public class PersistentState {
 
   public void addHdfsNode(Protos.TaskID taskId, String hostname, String taskName) {
     switch (taskName) {
-      case HDFSConstants.NAME_NODE_ID :
+      case HDFSConstants.NAME_NODE_ID:
         Map<String, String> nameNodes = getNameNodes();
         nameNodes.put(hostname, taskId.getValue());
         log.info("Saving the name node " + hostname + " " + taskId.getValue());
         setNameNodes(nameNodes);
         break;
-      case HDFSConstants.JOURNAL_NODE_ID :
+      case HDFSConstants.JOURNAL_NODE_ID:
         Map<String, String> journalNodes = getJournalNodes();
         journalNodes.put(hostname, taskId.getValue());
         setJournalNodes(journalNodes);
         break;
-      case HDFSConstants.DATA_NODE_ID :
+      case HDFSConstants.DATA_NODE_ID:
         Map<String, String> dataNodes = getDataNodes();
         dataNodes.put(hostname, taskId.getValue());
         setDataNodes(dataNodes);
         break;
-      case HDFSConstants.ZKFC_NODE_ID :
+      case HDFSConstants.ZKFC_NODE_ID:
         break;
-      default :
+      default:
         log.error("Task name unknown");
     }
   }
@@ -253,7 +253,7 @@ public class PersistentState {
   private void setNameNodes(Map<String, String> nameNodes) {
     try {
       set(NAMENODES_KEY, nameNodes);
-    } catch (Exception e) {
+    } catch (InterruptedException | ExecutionException | IOException e) {
       log.error("Error while setting namenodes in persistent state", e);
     }
   }
@@ -261,7 +261,7 @@ public class PersistentState {
   private void setJournalNodes(Map<String, String> journalNodes) {
     try {
       set(JOURNALNODES_KEY, journalNodes);
-    } catch (Exception e) {
+    } catch (InterruptedException | ExecutionException | IOException e) {
       log.error("Error while setting journalnodes in persistent state", e);
     }
   }
@@ -269,7 +269,7 @@ public class PersistentState {
   private void setDataNodes(Map<String, String> dataNodes) {
     try {
       set(DATANODES_KEY, dataNodes);
-    } catch (Exception e) {
+    } catch (InterruptedException | ExecutionException | IOException e) {
       log.error("Error while setting datanodes in persistent state", e);
     }
   }
@@ -281,7 +281,8 @@ public class PersistentState {
         return new HashMap<>();
       }
       return nodesMap;
-    } catch (Exception e) {
+      // todo:  (kensipe) remove ClassNotFoundException exception and probably not use generics in return of get(key)
+    } catch (InterruptedException | ExecutionException | IOException | ClassNotFoundException e) {
       log.error(String.format("Error while getting %s in persistent state", key), e);
       return new HashMap<>();
     }
@@ -289,7 +290,7 @@ public class PersistentState {
 
   /**
    * Get serializable object from store.
-   * 
+   *
    * @return serialized object or null if none
    * @throws ExecutionException
    * @throws InterruptedException
@@ -322,7 +323,7 @@ public class PersistentState {
 
   /**
    * Set serializable object in store
-   * 
+   *
    * @throws ExecutionException
    * @throws InterruptedException
    * @throws IOException

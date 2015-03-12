@@ -66,7 +66,7 @@ public abstract class AbstractNodeExecutor implements Executor {
    */
   @Override
   public void registered(ExecutorDriver driver, ExecutorInfo executorInfo,
-      FrameworkInfo frameworkInfo, SlaveInfo slaveInfo) {
+                         FrameworkInfo frameworkInfo, SlaveInfo slaveInfo) {
     // Set up data dir
     setUpDataDir();
     createSymbolicLink();
@@ -154,7 +154,7 @@ public abstract class AbstractNodeExecutor implements Executor {
       LOG.info("The symbolic link path is: " + hdfsLinkDirPath);
       // Adding binary to the PATH environment variable
       addBinaryToPath(hdfsBinaryPath);
-    } catch (Exception e) {
+    } catch (IOException e) {
       LOG.fatal("Error creating the symbolic link to hdfs binary: " + e);
       System.exit(1);
     }
