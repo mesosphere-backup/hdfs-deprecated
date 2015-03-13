@@ -12,10 +12,6 @@ import org.apache.mesos.hdfs.config.SchedulerConf;
 import org.apache.mesos.hdfs.util.HDFSConstants;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.util.Timer;
-import java.util.TimerTask;
 
 /**
  * The executor for the Primary Name Node Machine.
@@ -65,16 +61,10 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
           .build());
     } else if (taskInfo.getTaskId().getValue().contains(HDFSConstants.NAME_NODE_TASKID)) {
       nameNodeTask = task;
-      if (schedulerConf.usingMesosDns()) {
-        Timer timer = new Timer();
-        PreNNInitTask initTask = new PreNNInitTask(driver, nameNodeTask);
-        timer.scheduleAtFixedRate(initTask, 10000, 10000);
-      } else {
-        driver.sendStatusUpdate(TaskStatus.newBuilder()
-            .setTaskId(nameNodeTask.taskInfo.getTaskId())
-            .setState(TaskState.TASK_RUNNING)
-            .build());
-      }
+      driver.sendStatusUpdate(TaskStatus.newBuilder()
+          .setTaskId(nameNodeTask.taskInfo.getTaskId())
+          .setState(TaskState.TASK_RUNNING)
+          .build());
     } else if (taskInfo.getTaskId().getValue().contains(HDFSConstants.ZKFC_NODE_ID)) {
       zkfcNodeTask = task;
       driver.sendStatusUpdate(TaskStatus.newBuilder()
@@ -116,8 +106,8 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
       } else {
         deleteFile(nameDir);
         nameDir.mkdirs();
-        runCommand(driver, nameNodeTask, "bin/hdfs-mesos-namenode " + messageStr);
       }
+      runCommand(driver, nameNodeTask, "bin/hdfs-mesos-namenode " + messageStr);
       startProcess(driver, nameNodeTask);
       startProcess(driver, zkfcNodeTask);
       driver.sendStatusUpdate(TaskStatus.newBuilder()
@@ -125,46 +115,6 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
           .setState(TaskState.TASK_RUNNING)
           .setMessage(messageStr)
           .build());
-    }
-  }
-
-  /**
-   * This class is designed to help launch the secondary namenode in its bootstrap phase. The node
-   * needs both name nodes to be available as DNS entries. In Mesos-DNS, this takes an uncertain
-   * amount of time, so we must schedule it asynchronously.
-   */
-  private class PreNNInitTask extends TimerTask {
-    ExecutorDriver driver;
-    Task task;
-
-    public PreNNInitTask(ExecutorDriver driver, Task task) {
-      this.driver = driver;
-      this.task = task;
-    }
-
-    @Override
-    public void run() {
-      boolean success = true;
-      for (int i = HDFSConstants.TOTAL_NAME_NODES; i > 0; i--) {
-        String host = HDFSConstants.NAME_NODE_ID + i + "." + schedulerConf.getFrameworkName() + "." + schedulerConf.getMesosDnsDomain();
-        log.info("Checking for " + host);
-        try {
-          InetAddress.getByName(host);
-          log.info("Successfully found " + host);
-        } catch (SecurityException | IOException e) {
-          log.info("Couldn't resolve host " + host);
-          success = false;
-          break;
-        }
-      }
-      if (success) {
-        log.info("Successfully found all nodes needed to continue. Sending status update.");
-        this.cancel();
-        driver.sendStatusUpdate(TaskStatus.newBuilder()
-            .setTaskId(nameNodeTask.taskInfo.getTaskId())
-            .setState(TaskState.TASK_RUNNING)
-            .build());
-      }
     }
   }
 }
