@@ -1,5 +1,7 @@
 package org.apache.mesos.hdfs.state;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.logging.Log;
@@ -28,6 +30,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+@Singleton
 public class PersistentState {
   public static final Log log = LogFactory.getLog(PersistentState.class);
   private static String FRAMEWORK_ID_KEY = "frameworkId";
@@ -41,6 +44,7 @@ public class PersistentState {
   private Timestamp deadNameNodeTimeStamp = null;
   private Timestamp deadDataNodeTimeStamp = null;
 
+  @Inject
   public PersistentState(SchedulerConf conf) {
     MesosNativeLibrary.load(conf.getNativeLibrary());
     this.zkState = new ZooKeeperState(conf.getStateZkServers(),
