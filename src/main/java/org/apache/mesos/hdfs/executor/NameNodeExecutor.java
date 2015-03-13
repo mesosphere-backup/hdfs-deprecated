@@ -69,12 +69,11 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
         Timer timer = new Timer();
         PreNNInitTask initTask = new PreNNInitTask(driver, nameNodeTask);
         timer.scheduleAtFixedRate(initTask, 10000, 10000);
-      } else {
-        driver.sendStatusUpdate(TaskStatus.newBuilder()
-            .setTaskId(nameNodeTask.taskInfo.getTaskId())
-            .setState(TaskState.TASK_RUNNING)
-            .build());
       }
+      driver.sendStatusUpdate(TaskStatus.newBuilder()
+          .setTaskId(nameNodeTask.taskInfo.getTaskId())
+          .setState(TaskState.TASK_RUNNING)
+          .build());
     } else if (taskInfo.getTaskId().getValue().contains(HDFSConstants.ZKFC_NODE_ID)) {
       zkfcNodeTask = task;
       driver.sendStatusUpdate(TaskStatus.newBuilder()
