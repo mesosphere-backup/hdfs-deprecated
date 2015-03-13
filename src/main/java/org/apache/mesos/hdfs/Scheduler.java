@@ -155,12 +155,6 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
                 liveState.getFirstNameNodeTaskId(),
                 liveState.getFirstNameNodeSlaveId(),
                 HDFSConstants.NAME_NODE_INIT_MESSAGE);
-          } else if (!liveState.isNameNode1Initialized()) {
-            sendMessageTo(
-                driver,
-                liveState.getFirstNameNodeTaskId(),
-                liveState.getFirstNameNodeSlaveId(),
-                HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE);
           } else if (!liveState.isNameNode2Initialized()) {
             sendMessageTo(
                 driver,

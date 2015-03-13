@@ -68,7 +68,7 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
       if (schedulerConf.usingMesosDns()) {
         Timer timer = new Timer();
         PreNNInitTask initTask = new PreNNInitTask(driver, nameNodeTask);
-        timer.scheduleAtFixedRate(initTask, 10000, 10000);
+        timer.scheduleAtFixedRate(initTask, 30000, 10000);
       }
       driver.sendStatusUpdate(TaskStatus.newBuilder()
           .setTaskId(nameNodeTask.taskInfo.getTaskId())
@@ -115,8 +115,8 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
       } else {
         deleteFile(nameDir);
         nameDir.mkdirs();
-        runCommand(driver, nameNodeTask, "bin/hdfs-mesos-namenode " + messageStr);
       }
+      runCommand(driver, nameNodeTask, "bin/hdfs-mesos-namenode " + messageStr);
       startProcess(driver, nameNodeTask);
       startProcess(driver, zkfcNodeTask);
       driver.sendStatusUpdate(TaskStatus.newBuilder()
