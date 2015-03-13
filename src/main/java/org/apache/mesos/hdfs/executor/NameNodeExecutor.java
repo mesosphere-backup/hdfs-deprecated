@@ -106,8 +106,8 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
       } else {
         deleteFile(nameDir);
         nameDir.mkdirs();
+        runCommand(driver, nameNodeTask, "bin/hdfs-mesos-namenode " + messageStr);
       }
-      runCommand(driver, nameNodeTask, "bin/hdfs-mesos-namenode " + messageStr);
       startProcess(driver, nameNodeTask);
       startProcess(driver, zkfcNodeTask);
       driver.sendStatusUpdate(TaskStatus.newBuilder()
