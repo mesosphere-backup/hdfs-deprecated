@@ -551,7 +551,6 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
     } else {
       liveState.transitionTo(AcquisitionPhase.DATA_NODES);
     }
-    
   }
 
   private boolean offerNotEnoughResources(Offer offer, double cpus, int mem) {
