@@ -14,15 +14,11 @@ import org.apache.mesos.hdfs.state.AcquisitionPhase;
 import org.apache.mesos.hdfs.state.LiveState;
 import org.apache.mesos.hdfs.state.PersistentState;
 import org.apache.mesos.hdfs.util.HDFSConstants;
-import org.apache.mesos.hdfs.util.MesosDns;
+import org.apache.mesos.hdfs.util.DnsResolver;
 
-import java.io.IOException;
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
-import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -36,7 +32,8 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
   public static final Log log = LogFactory.getLog(Scheduler.class);
   private final SchedulerConf conf;
   private final LiveState liveState;
-  private PersistentState persistentState;
+  private final PersistentState persistentState;
+  private final DnsResolver dnsResolver;
   private boolean reconciliationCompleted;
 
   @Inject
@@ -44,6 +41,7 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
     this.conf = conf;
     this.liveState = liveState;
     this.persistentState = persistentState;
+    this.dnsResolver = new DnsResolver(this, conf, persistentState);
   }
 
   @Override
@@ -134,9 +132,6 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
             correctCurrentPhase();
           }
           break;
-        case WAIT_FOR_JOURNAL_NODES :
-          correctCurrentPhase();
-          break;
         case START_NAME_NODES :
           if (liveState.getNameNodeSize() == (HDFSConstants.TOTAL_NAME_NODES)) {
             // TODO move the reload to correctCurrentPhase and make it idempotent
@@ -144,25 +139,22 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
             correctCurrentPhase();
           }
           break;
-        case WAIT_FOR_NAME_NODES :
-          correctCurrentPhase();
-          break;
         case FORMAT_NAME_NODES :
           if (!liveState.isNameNode1Initialized()
               && !liveState.isNameNode2Initialized()) {
-            sendMessageTo(
+            dnsResolver.sendMessageAfterNNResolvable(
                 driver,
                 liveState.getFirstNameNodeTaskId(),
                 liveState.getFirstNameNodeSlaveId(),
                 HDFSConstants.NAME_NODE_INIT_MESSAGE);
           } else if (!liveState.isNameNode1Initialized()) {
-            sendMessageTo(
+            dnsResolver.sendMessageAfterNNResolvable(
                 driver,
                 liveState.getFirstNameNodeTaskId(),
                 liveState.getFirstNameNodeSlaveId(),
                 HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE);
           } else if (!liveState.isNameNode2Initialized()) {
-            sendMessageTo(
+            dnsResolver.sendMessageAfterNNResolvable(
                 driver,
                 liveState.getSecondNameNodeTaskId(),
                 liveState.getSecondNameNodeSlaveId(),
@@ -206,20 +198,13 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
               driver.declineOffer(offer.getId());
             }
             break;
-          case WAIT_FOR_JOURNAL_NODES :
-            driver.declineOffer(offer.getId());
-            correctCurrentPhase();
-            break;
           case START_NAME_NODES :
-            if (tryToLaunchNameNode(driver, offer)) {
+            if (dnsResolver.journalNodesResolvable()
+                && tryToLaunchNameNode(driver, offer)) {
               acceptedOffer = true;
             } else {
               driver.declineOffer(offer.getId());
             }
-            break;
-          case WAIT_FOR_NAME_NODES :
-            driver.declineOffer(offer.getId());
-            correctCurrentPhase();
             break;
           case FORMAT_NAME_NODES :
             driver.declineOffer(offer.getId());
@@ -519,7 +504,7 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
     return false;
   }
 
-  private void sendMessageTo(SchedulerDriver driver, TaskID taskId,
+  public void sendMessageTo(SchedulerDriver driver, TaskID taskId,
       SlaveID slaveID, String message) {
     log.info(String.format("Sending message '%s' to taskId=%s, slaveId=%s", message,
         taskId.getValue(), slaveID.getValue()));
@@ -560,20 +545,12 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
       // need to add journal nodes
       liveState.transitionTo(AcquisitionPhase.JOURNAL_NODES);
     } else if (liveState.getNameNodeSize() < HDFSConstants.TOTAL_NAME_NODES) {
-      // wait for journal nodes to become available
-      if (!MesosDns.journalNodesResolvable(conf, persistentState))
-        liveState.transitionTo(AcquisitionPhase.WAIT_FOR_JOURNAL_NODES);
-      // or start the name nodes
-      else
-        liveState.transitionTo(AcquisitionPhase.START_NAME_NODES);
+      // Start the name nodes
+      liveState.transitionTo(AcquisitionPhase.START_NAME_NODES);
     } else if (!liveState.isNameNode1Initialized()
         || !liveState.isNameNode2Initialized()) {
-      // wait for name nodes to become available
-      if (!MesosDns.nameNodesResolvable(conf, persistentState))
-        liveState.transitionTo(AcquisitionPhase.WAIT_FOR_NAME_NODES);
-      // or start formatting nodes
-      else
-        liveState.transitionTo(AcquisitionPhase.FORMAT_NAME_NODES);
+      // start formatting nodes
+      liveState.transitionTo(AcquisitionPhase.FORMAT_NAME_NODES);
     } else {
       liveState.transitionTo(AcquisitionPhase.DATA_NODES);
     }

@@ -8,6 +8,7 @@ import org.apache.mesos.hdfs.config.SchedulerConf;
 import org.apache.mesos.hdfs.state.AcquisitionPhase;
 import org.apache.mesos.hdfs.state.LiveState;
 import org.apache.mesos.hdfs.state.PersistentState;
+import org.apache.mesos.hdfs.util.DnsResolver;
 import org.apache.mesos.hdfs.util.HDFSConstants;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,6 +39,9 @@ public class TestScheduler {
 
   @Mock
   LiveState liveState;
+
+  @Mock
+  DnsResolver dnsResolver;
 
   @Captor
   ArgumentCaptor<Collection<Protos.TaskInfo>> taskInfosCapture;
@@ -151,6 +155,7 @@ public class TestScheduler {
   public void launchesNamenodeWhenInNamenode1Phase() {
     when(liveState.getCurrentAcquisitionPhase()).thenReturn(AcquisitionPhase.START_NAME_NODES);
     when(persistentState.journalNodeRunningOnSlave("host0")).thenReturn(true);
+    when(dnsResolver.journalNodesResolvable()).thenReturn(true);
 
     scheduler.resourceOffers(driver, Lists.newArrayList(createTestOffer(0)));
 

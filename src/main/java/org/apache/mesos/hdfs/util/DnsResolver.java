@@ -2,6 +2,8 @@ package org.apache.mesos.hdfs.util;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.mesos.Protos;
+import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.hdfs.Scheduler;
 import org.apache.mesos.hdfs.config.SchedulerConf;
 import org.apache.mesos.hdfs.state.PersistentState;
@@ -10,14 +12,26 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * Created by Abhay Agarwal on 3/12/15.
  */
-public class MesosDns {
+public class DnsResolver {
   public static final Log log = LogFactory.getLog(Scheduler.class);
 
-  public static boolean journalNodesResolvable(SchedulerConf conf, PersistentState persistentState) {
+  private final Scheduler scheduler;
+  private final SchedulerConf conf;
+  private final PersistentState persistentState;
+
+  public DnsResolver(Scheduler scheduler, SchedulerConf conf, PersistentState persistentState) {
+    this.scheduler = scheduler;
+    this.conf = conf;
+    this.persistentState = persistentState;
+  }
+
+  public boolean journalNodesResolvable() {
     Set<String> hosts = new HashSet<>();
     if (conf.usingMesosDns()) {
       for (int i = conf.getJournalNodeCount(); i > 0; i--)
@@ -32,6 +46,7 @@ public class MesosDns {
         log.info("Successfully found " + host);
       } catch (SecurityException | IOException e) {
         log.info("Couldn't resolve host " + host);
+        log.info("Sleeping before retrying.");
         success = false;
         break;
       }
@@ -39,7 +54,7 @@ public class MesosDns {
     return success;
   }
 
-  public static boolean nameNodesResolvable(SchedulerConf conf, PersistentState persistentState) {
+  public boolean nameNodesResolvable() {
     Set<String> hosts = new HashSet<>();
     if (conf.usingMesosDns()) {
       for (int i = HDFSConstants.TOTAL_NAME_NODES; i > 0; i--)
@@ -54,10 +69,28 @@ public class MesosDns {
         log.info("Successfully found " + host);
       } catch (SecurityException | IOException e) {
         log.info("Couldn't resolve host " + host);
+        log.info("Sleeping before retrying.");
         success = false;
         break;
       }
     }
     return success;
+  }
+
+  public void sendMessageAfterNNResolvable(final SchedulerDriver driver,
+      final Protos.TaskID taskId,
+      final Protos.SlaveID slaveID, final String message) {
+    class PreNNInitTask extends TimerTask {
+      @Override
+      public void run() {
+        if (nameNodesResolvable()) {
+          this.cancel();
+          scheduler.sendMessageTo(driver, taskId, slaveID, message);
+        }
+      }
+    }
+    Timer timer = new Timer();
+    PreNNInitTask task = new PreNNInitTask();
+    timer.scheduleAtFixedRate(task, 0, 10000);
   }
 }
