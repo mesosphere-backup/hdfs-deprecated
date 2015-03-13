@@ -21,12 +21,12 @@
     <name>mesos.hdfs.data.dir</name>
     <value>/tmp/hdfs/data</value>
   </property>
-
+  
   <property>
     <name>mesos.hdfs.secondary.data.dir</name>
     <value>/var/run/hadoop-hdfs</value>
   </property>
-
+  
   <property>
     <name>mesos.hdfs.framework.mnt.path</name>
     <value>/opt/mesosphere</value>
@@ -34,17 +34,17 @@
 
   <property>
     <name>mesos.hdfs.state.zk</name>
-    <value>master.mesos:2181</value>
+    <value>localhost:2181</value>
   </property>
 
   <property>
     <name>mesos.master.uri</name>
-    <value>zk://master.mesos:2181/mesos</value>
+    <value>zk://localhost:2181/mesos</value>
   </property>
 
   <property>
     <name>mesos.hdfs.zkfc.ha.zookeeper.quorum</name>
-    <value>172.16.0.12:2181,172.16.0.13:2181,172.16.0.14:2181,172.16.0.15:2181,172.16.0.16:2181</value>
+    <value>localhost:2181</value>
   </property>
 
   <property>
@@ -54,17 +54,12 @@
 
   <property>
     <name>mesos.hdfs.mesosdns</name>
-    <value>true</value>
+    <value>false</value>
   </property>
 
   <property>
     <name>mesos.hdfs.mesosdns.domain</name>
     <value>mesos</value>
-  </property>
-
-  <property>
-    <name>mesos.hdfs.preshared-configuration</name>
-    <value>false</value>
   </property>
 
   <property>
@@ -109,7 +104,7 @@
 
   <property>
     <name>mesos.hdfs.datanode.cpus</name>
-    <value>0.5</value>
+    <value>1</value>
   </property>
 
   <property>
