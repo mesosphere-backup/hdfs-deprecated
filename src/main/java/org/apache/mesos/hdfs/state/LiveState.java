@@ -21,6 +21,7 @@ public class LiveState {
   public static final Log log = LogFactory.getLog(LiveState.class);
   private Set<Protos.TaskID> stagingTasks = new HashSet<>();
   private AcquisitionPhase currentAcquisitionPhase = AcquisitionPhase.RECONCILING_TASKS;
+  // TODO (nicgrayson) Might need to split this out to jns, nns, and dns if dns too big
   private LinkedHashMap<String, Protos.TaskStatus> runningTasks = new LinkedHashMap<>();
   private HashMap<String, String> journalNodeNames = new HashMap<>();
   private HashMap<String, String> nameNodeNames = new HashMap<>();
@@ -57,7 +58,7 @@ public class LiveState {
     stagingTasks.remove(taskID);
   }
 
-  public LinkedHashMap<String, Protos.TaskStatus> getRunningTasks() {
+  public HashMap<String, Protos.TaskStatus> getRunningTasks() {
     return runningTasks;
   }
 
