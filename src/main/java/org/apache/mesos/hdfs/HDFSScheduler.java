@@ -49,7 +49,7 @@ public class HDFSScheduler implements org.apache.mesos.Scheduler, Runnable {
 
   public final Log log = LogFactory.getLog(HDFSScheduler.class);
 
-  private static final int SECONDS = 1000;
+  private static final int SECONDS_FROM_MILLIS = 1000;
 
   private final HdfsConfig conf;
   private final LiveState liveState;
@@ -574,7 +574,7 @@ public class HDFSScheduler implements org.apache.mesos.Scheduler, Runnable {
     reconciliationCompleted = false;
     driver.reconcileTasks(Collections.<Protos.TaskStatus>emptyList());
     Timer timer = new Timer();
-    timer.schedule(new ReconcileStateTask(), conf.getReconciliationTimeout() * SECONDS);
+    timer.schedule(new ReconcileStateTask(), conf.getReconciliationTimeout() * SECONDS_FROM_MILLIS);
   }
 
   private boolean reconciliationComplete() {
