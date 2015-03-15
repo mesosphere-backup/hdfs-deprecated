@@ -38,7 +38,7 @@ public class PersistentState {
   private static final String JOURNALNODES_KEY = "journalNodes";
   private static final String DATANODES_KEY = "dataNodes";
   private ZooKeeperState zkState;
-  private SchedulerConf conf;
+  private HdfsConfig conf;
 
   private Timestamp deadJournalNodeTimeStamp = null;
   private Timestamp deadNameNodeTimeStamp = null;
@@ -70,7 +70,7 @@ public class PersistentState {
 
   private void removeDeadJournalNodes() {
     deadJournalNodeTimeStamp = null;
-    HashMap<String, String> journalNodes = getJournalNodes();
+    Map<String, String> journalNodes = getJournalNodes();
     List<String> deadJournalHosts = getDeadJournalNodes();
     for (String deadJournalHost : deadJournalHosts) {
       journalNodes.remove(deadJournalHost);
@@ -81,7 +81,7 @@ public class PersistentState {
 
   private void removeDeadNameNodes() {
     deadNameNodeTimeStamp = null;
-    HashMap<String, String> nameNodes = getNameNodes();
+    Map<String, String> nameNodes = getNameNodes();
     List<String> deadNameHosts = getDeadNameNodes();
     for (String deadNameHost : deadNameHosts) {
       nameNodes.remove(deadNameHost);
@@ -92,7 +92,7 @@ public class PersistentState {
 
   private void removeDeadDataNodes() {
     deadDataNodeTimeStamp = null;
-    HashMap<String, String> dataNodes = getDataNodes();
+    Map<String, String> dataNodes = getDataNodes();
     List<String> deadDataHosts = getDeadDataNodes();
     for (String deadDataHost : deadDataHosts) {
       dataNodes.remove(deadDataHost);
@@ -106,7 +106,7 @@ public class PersistentState {
           removeDeadJournalNodes();
           return new ArrayList<>();
       } else {
-        HashMap<String, String> journalNodes = getJournalNodes();
+        Map<String, String> journalNodes = getJournalNodes();
         Set<String> journalHosts = journalNodes.keySet();
         List<String> deadJournalHosts = new ArrayList<>();
         for (String journalHost: journalHosts) {
@@ -123,7 +123,7 @@ public class PersistentState {
           removeDeadNameNodes();
           return new ArrayList<>();
       } else {
-        HashMap<String, String> nameNodes = getNameNodes();
+        Map<String, String> nameNodes = getNameNodes();
         Set<String> nameHosts = nameNodes.keySet();
         List<String> deadNameHosts = new ArrayList<>();
         for (String nameHost : nameHosts) {
@@ -140,7 +140,7 @@ public class PersistentState {
           removeDeadDataNodes();
           return new ArrayList<>();
       } else {
-        HashMap<String, String> dataNodes = getDataNodes();
+        Map<String, String> dataNodes = getDataNodes();
         Set<String> dataHosts = dataNodes.keySet();
         List<String> deadDataHosts = new ArrayList<>();
         for (String dataHost : dataHosts) {

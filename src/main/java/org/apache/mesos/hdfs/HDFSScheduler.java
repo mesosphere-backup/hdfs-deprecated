@@ -150,7 +150,7 @@ public class HDFSScheduler implements org.apache.mesos.Scheduler, Runnable {
           break;
         case JOURNAL_NODES :
           if (liveState.getJournalNodeSize() == conf.getJournalNodeCount()) {
-            // TODO move the reload to correctCurrentPhase and make it idempotent
+            // TODO (elingg) move the reload to correctCurrentPhase and make it idempotent
             reloadConfigsOnAllRunningTasks(driver);
             correctCurrentPhase();
           }
@@ -477,9 +477,9 @@ public class HDFSScheduler implements org.apache.mesos.Scheduler, Runnable {
 
     boolean launch = false;
     List<String> deadDataNodes = persistentState.getDeadDataNodes();
-    //TODO (elingg) Relax this constraint to only wait for DN's when the number of DN's is small
-    //What number of DN's should we try to recover or should we remove this constraint
-    //entirely?
+    // TODO (elingg) Relax this constraint to only wait for DN's when the number of DN's is small
+    // What number of DN's should we try to recover or should we remove this constraint
+    // entirely?
     if (deadDataNodes.isEmpty()) {
       if (persistentState.dataNodeRunningOnSlave(offer.getHostname())
           || persistentState.nameNodeRunningOnSlave(offer.getHostname())

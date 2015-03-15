@@ -96,7 +96,7 @@ public abstract class AbstractNodeExecutor implements Executor {
 
   /**
    * Delete a file or directory.
-   **/
+   */
   protected void deleteFile(File fileToDelete) {
     if (fileToDelete.isDirectory()) {
       String[] entries = fileToDelete.list();
@@ -135,10 +135,10 @@ public abstract class AbstractNodeExecutor implements Executor {
         redirectProcess(process);
         int exitCode = process.waitFor();
         if (exitCode != 0) {
-          log.info("Unable to unlink old sym link. Link may not exist. Exit code: " + exitCode);
+          LOG.info("Unable to unlink old sym link. Link may not exist. Exit code: " + exitCode);
         }
-      } catch (IOException e) {
-        log.fatal("Could not unlink" + hdfsBinaryPath + ": " + e);
+      } catch (IOException | InterruptedException e) {
+        LOG.fatal("Could not unlink" + hdfsBinaryPath + ": " + e);
         System.exit(1);
       }
 
