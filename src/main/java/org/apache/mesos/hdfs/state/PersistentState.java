@@ -7,7 +7,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.MesosNativeLibrary;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.FrameworkID;
-import org.apache.mesos.hdfs.config.HdfsConfig;
+import org.apache.mesos.hdfs.config.HdfsFrameworkConfig;
 import org.apache.mesos.hdfs.util.HDFSConstants;
 import org.apache.mesos.state.Variable;
 import org.apache.mesos.state.ZooKeeperState;
@@ -38,13 +38,13 @@ public class PersistentState {
   private static final String JOURNALNODES_KEY = "journalNodes";
   private static final String DATANODES_KEY = "dataNodes";
   private ZooKeeperState zkState;
-  private HdfsConfig conf;
+  private HdfsFrameworkConfig conf;
 
   private Timestamp deadJournalNodeTimeStamp = null;
   private Timestamp deadNameNodeTimeStamp = null;
   private Timestamp deadDataNodeTimeStamp = null;
 
-  public PersistentState(HdfsConfig conf) {
+  public PersistentState(HdfsFrameworkConfig conf) {
     MesosNativeLibrary.load(conf.getNativeLibrary());
     this.zkState = new ZooKeeperState(conf.getStateZkServers(),
         conf.getStateZkTimeout(), TimeUnit.MILLISECONDS, "/hdfs-mesos/" + conf.getFrameworkName());

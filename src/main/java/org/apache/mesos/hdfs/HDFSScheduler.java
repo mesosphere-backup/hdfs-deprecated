@@ -24,7 +24,7 @@ import org.apache.mesos.Protos.TaskState;
 import org.apache.mesos.Protos.TaskStatus;
 import org.apache.mesos.Protos.Value;
 import org.apache.mesos.SchedulerDriver;
-import org.apache.mesos.hdfs.config.HdfsConfig;
+import org.apache.mesos.hdfs.config.HdfsFrameworkConfig;
 import org.apache.mesos.hdfs.state.AcquisitionPhase;
 import org.apache.mesos.hdfs.state.LiveState;
 import org.apache.mesos.hdfs.state.PersistentState;
@@ -51,17 +51,17 @@ public class HDFSScheduler implements org.apache.mesos.Scheduler, Runnable {
 
   private static final int SECONDS_FROM_MILLIS = 1000;
 
-  private final HdfsConfig conf;
+  private final HdfsFrameworkConfig conf;
   private final LiveState liveState;
   private PersistentState persistentState;
   private boolean reconciliationCompleted;
 
   @Inject
-  public HDFSScheduler(HdfsConfig conf, LiveState liveState) {
+  public HDFSScheduler(HdfsFrameworkConfig conf, LiveState liveState) {
     this(conf, liveState, new PersistentState(conf));
   }
 
-  public HDFSScheduler(HdfsConfig conf, LiveState liveState, PersistentState persistentState) {
+  public HDFSScheduler(HdfsFrameworkConfig conf, LiveState liveState, PersistentState persistentState) {
     this.conf = conf;
     this.liveState = liveState;
     this.persistentState = persistentState;

@@ -12,7 +12,7 @@ import org.apache.mesos.Protos.TaskID;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.TaskState;
 import org.apache.mesos.Protos.TaskStatus;
-import org.apache.mesos.hdfs.config.HdfsConfig;
+import org.apache.mesos.hdfs.config.HdfsFrameworkConfig;
 import org.apache.mesos.hdfs.util.HDFSConstants;
 
 import java.io.File;
@@ -35,7 +35,7 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
    * The constructor for the primary name node which saves the configuration.
    */
   @Inject
-  NameNodeExecutor(HdfsConfig hdfsConfig) {
+  NameNodeExecutor(HdfsFrameworkConfig hdfsConfig) {
     super(hdfsConfig);
   }
 

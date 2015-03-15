@@ -36,15 +36,15 @@ public class ConfigServer {
 
   private Server server;
   private Engine engine;
-  private HdfsConfig hdfsConf;
+  private HdfsFrameworkConfig hdfsConf;
   private PersistentState persistentState;
 
   @Inject
-  public ConfigServer(HdfsConfig hdfsConf) {
+  public ConfigServer(HdfsFrameworkConfig hdfsConf) {
     this(hdfsConf, new PersistentState(hdfsConf));
   }
 
-  public ConfigServer(HdfsConfig hdfsConf, PersistentState persistentState) {
+  public ConfigServer(HdfsFrameworkConfig hdfsConf, PersistentState persistentState) {
     this.hdfsConf = hdfsConf;
     this.persistentState = persistentState;
     engine = new Engine();

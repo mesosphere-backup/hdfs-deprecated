@@ -16,7 +16,7 @@ import org.apache.mesos.Protos.Status;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.TaskState;
 import org.apache.mesos.Protos.TaskStatus;
-import org.apache.mesos.hdfs.config.HdfsConfig;
+import org.apache.mesos.hdfs.config.HdfsFrameworkConfig;
 import org.apache.mesos.hdfs.util.HDFSConstants;
 import org.apache.mesos.hdfs.util.StreamRedirect;
 
@@ -41,13 +41,13 @@ public abstract class AbstractNodeExecutor implements Executor {
   private static final String DEFAULT_HADOOP_PATH = "/usr/bin/hadoop";
 
   protected ExecutorInfo executorInfo;
-  protected HdfsConfig hdfsConfig;
+  protected HdfsFrameworkConfig hdfsConfig;
 
   /**
    * Constructor which takes in configuration.
    */
   @Inject
-  AbstractNodeExecutor(HdfsConfig hdfsConfig) {
+  AbstractNodeExecutor(HdfsFrameworkConfig hdfsConfig) {
     this.hdfsConfig = hdfsConfig;
   }
 

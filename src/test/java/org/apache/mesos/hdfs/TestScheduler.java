@@ -4,7 +4,7 @@ import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.mesos.Protos;
 import org.apache.mesos.SchedulerDriver;
-import org.apache.mesos.hdfs.config.HdfsConfig;
+import org.apache.mesos.hdfs.config.HdfsFrameworkConfig;
 import org.apache.mesos.hdfs.state.AcquisitionPhase;
 import org.apache.mesos.hdfs.state.LiveState;
 import org.apache.mesos.hdfs.state.PersistentState;
@@ -27,7 +27,7 @@ import static org.mockito.Mockito.*;
 @SuppressWarnings("unchecked")
 public class TestScheduler {
 
-  private final HdfsConfig hdfsConfig = new HdfsConfig(new Configuration());
+  private final HdfsFrameworkConfig hdfsConfig = new HdfsFrameworkConfig(new Configuration());
 
   @Mock
   SchedulerDriver driver;
