@@ -143,26 +143,26 @@ public class HDFSScheduler implements org.apache.mesos.Scheduler, Runnable {
           .getCurrentAcquisitionPhase().toString()));
 
       switch (liveState.getCurrentAcquisitionPhase()) {
-        case RECONCILING_TASKS :
+        case RECONCILING_TASKS:
           if (reconciliationComplete()) {
             correctCurrentPhase();
           }
           break;
-        case JOURNAL_NODES :
+        case JOURNAL_NODES:
           if (liveState.getJournalNodeSize() == conf.getJournalNodeCount()) {
             // TODO (elingg) move the reload to correctCurrentPhase and make it idempotent
             reloadConfigsOnAllRunningTasks(driver);
             correctCurrentPhase();
           }
           break;
-        case START_NAME_NODES :
+        case START_NAME_NODES:
           if (liveState.getNameNodeSize() == HDFSConstants.TOTAL_NAME_NODES) {
             // TODO (elingg) move the reload to correctCurrentPhase and make it idempotent
             reloadConfigsOnAllRunningTasks(driver);
             correctCurrentPhase();
           }
           break;
-        case FORMAT_NAME_NODES :
+        case FORMAT_NAME_NODES:
           if (!liveState.isNameNode1Initialized() && !liveState.isNameNode2Initialized()) {
             sendMessageTo(
                 driver,
@@ -186,7 +186,7 @@ public class HDFSScheduler implements org.apache.mesos.Scheduler, Runnable {
           }
           break;
         // TODO (elingg) add a configurable number of data nodes
-        case DATA_NODES :
+        case DATA_NODES:
           break;
       }
     } else {
@@ -209,28 +209,28 @@ public class HDFSScheduler implements org.apache.mesos.Scheduler, Runnable {
         driver.declineOffer(offer.getId());
       } else {
         switch (liveState.getCurrentAcquisitionPhase()) {
-          case RECONCILING_TASKS :
+          case RECONCILING_TASKS:
             log.info("Declining offers while reconciling tasks");
             driver.declineOffer(offer.getId());
             break;
-          case JOURNAL_NODES :
+          case JOURNAL_NODES:
             if (tryToLaunchJournalNode(driver, offer)) {
               acceptedOffer = true;
             } else {
               driver.declineOffer(offer.getId());
             }
             break;
-          case START_NAME_NODES :
+          case START_NAME_NODES:
             if (tryToLaunchNameNode(driver, offer)) {
               acceptedOffer = true;
             } else {
               driver.declineOffer(offer.getId());
             }
             break;
-          case FORMAT_NAME_NODES :
+          case FORMAT_NAME_NODES:
             driver.declineOffer(offer.getId());
             break;
-          case DATA_NODES :
+          case DATA_NODES:
             if (tryToLaunchDataNode(driver, offer)) {
               acceptedOffer = true;
             } else {
@@ -270,7 +270,7 @@ public class HDFSScheduler implements org.apache.mesos.Scheduler, Runnable {
   }
 
   private void launchNode(SchedulerDriver driver, Offer offer,
-                          String nodeName, List<String> taskNames, String executorName) {
+      String nodeName, List<String> taskNames, String executorName) {
     log.info(String.format("Launching node of type %s with tasks %s", nodeName,
         taskNames.toString()));
     String taskIdName = String.format("%s.%s.%d", nodeName, executorName,
@@ -572,7 +572,7 @@ public class HDFSScheduler implements org.apache.mesos.Scheduler, Runnable {
     // time for
     // different slaves to reregister upon master failover.
     reconciliationCompleted = false;
-    driver.reconcileTasks(Collections.<Protos.TaskStatus> emptyList());
+    driver.reconcileTasks(Collections.<Protos.TaskStatus>emptyList());
     Timer timer = new Timer();
     timer.schedule(new ReconcileStateTask(), conf.getReconciliationTimeout() * SECONDS);
   }
