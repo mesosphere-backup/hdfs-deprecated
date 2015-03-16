@@ -112,7 +112,7 @@ public class HdfsFrameworkConfig {
       default:
         final String msg = "Invalid request for heapsize for taskName = " + taskName;
         log.error(msg);
-        throw new ConfigServerException(msg);
+        throw new ConfigurationException(msg);
     }
     return size;
   }
@@ -175,7 +175,7 @@ public class HdfsFrameworkConfig {
       default:
         final String msg = "Invalid request for CPUs for taskName=" + taskName;
         log.error(msg);
-        throw new ConfigServerException(msg);
+        throw new ConfigurationException(msg);
     }
     return cpus;
   }
@@ -240,7 +240,9 @@ public class HdfsFrameworkConfig {
       try {
         hostAddress = InetAddress.getLocalHost().getHostAddress();
       } catch (UnknownHostException e) {
-        log.error("issue with host address", e);
+        final String msg = "issue with host address";
+        log.error(msg, e);
+        throw new ConfigurationException(msg);
       }
     }
     return hostAddress;
