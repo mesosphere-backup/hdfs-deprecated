@@ -97,20 +97,22 @@ public class HdfsFrameworkConfig {
   public int getTaskHeapSize(String taskName) {
     int size = DEFAULT_HEAP_SIZE;
     switch (taskName) {
-      case HDFSConstants.ZKFC_NODE_ID :
+      case HDFSConstants.ZKFC_NODE_ID:
         size = getZkfcHeapSize();
         break;
-      case HDFSConstants.NAME_NODE_ID :
+      case HDFSConstants.NAME_NODE_ID:
         size = getNameNodeHeapSize();
         break;
-      case HDFSConstants.DATA_NODE_ID :
+      case HDFSConstants.DATA_NODE_ID:
         size = getDataNodeHeapSize();
         break;
-      case HDFSConstants.JOURNAL_NODE_ID :
+      case HDFSConstants.JOURNAL_NODE_ID:
         size = getJournalNodeHeapSize();
         break;
-      default :
-        log.error("Invalid taskName = " + taskName);
+      default:
+        final String msg = "Invalid request for heapsize for taskName = " + taskName;
+        log.error(msg);
+        throw new ConfigServerException(msg);
     }
     return size;
   }
@@ -158,20 +160,22 @@ public class HdfsFrameworkConfig {
   public double getTaskCpus(String taskName) {
     double cpus = DEFAULT_CPUS;
     switch (taskName) {
-      case HDFSConstants.ZKFC_NODE_ID :
+      case HDFSConstants.ZKFC_NODE_ID:
         cpus = getZkfcCpus();
         break;
-      case HDFSConstants.NAME_NODE_ID :
+      case HDFSConstants.NAME_NODE_ID:
         cpus = getNameNodeCpus();
         break;
-      case HDFSConstants.DATA_NODE_ID :
+      case HDFSConstants.DATA_NODE_ID:
         cpus = getDataNodeCpus();
         break;
-      case HDFSConstants.JOURNAL_NODE_ID :
+      case HDFSConstants.JOURNAL_NODE_ID:
         cpus = getJournalNodeCpus();
         break;
-      default :
-        log.error("Invalid taskName=" + taskName);
+      default:
+        final String msg = "Invalid request for CPUs for taskName=" + taskName;
+        log.error(msg);
+        throw new ConfigServerException(msg);
     }
     return cpus;
   }
