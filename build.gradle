@@ -17,7 +17,7 @@ ext {
     mesosVer = "0.21.1"
     slf4jVersion = "1.7.10"
     logback_classicVersion = "1.1.2"
-    hadoopVersion = "2.4.0"
+    hadoopVersion = "2.5.2"
     jettyVersion = "9.2.2.v20140723"
     joda_timeVersion = "2.4"
     jmteVersion = "3.0"
