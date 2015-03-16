@@ -36,21 +36,21 @@ public class ConfigServer {
 
   private Server server;
   private Engine engine;
-  private HdfsFrameworkConfig hdfsConf;
+  private HdfsFrameworkConfig frameworkConfig;
   private PersistentState persistentState;
 
   @Inject
-  public ConfigServer(HdfsFrameworkConfig hdfsConf) {
-    this(hdfsConf, new PersistentState(hdfsConf));
+  public ConfigServer(HdfsFrameworkConfig frameworkConfig) {
+    this(frameworkConfig, new PersistentState(frameworkConfig));
   }
 
-  public ConfigServer(HdfsFrameworkConfig hdfsConf, PersistentState persistentState) {
-    this.hdfsConf = hdfsConf;
+  public ConfigServer(HdfsFrameworkConfig frameworkConfig, PersistentState persistentState) {
+    this.frameworkConfig = frameworkConfig;
     this.persistentState = persistentState;
     engine = new Engine();
-    server = new Server(hdfsConf.getConfigServerPort());
+    server = new Server(frameworkConfig.getConfigServerPort());
     ResourceHandler resourceHandler = new ResourceHandler();
-    resourceHandler.setResourceBase(hdfsConf.getExecutorPath());
+    resourceHandler.setResourceBase(frameworkConfig.getExecutorPath());
     HandlerList handlers = new HandlerList();
     handlers.setHandlers(new Handler[]{
         resourceHandler, new ServeHdfsConfigHandler()});
@@ -82,7 +82,7 @@ public class ConfigServer {
                                     HttpServletRequest request,
                                     HttpServletResponse response) throws IOException {
 
-      File confFile = new File(hdfsConf.getConfigPath());
+      File confFile = new File(frameworkConfig.getConfigPath());
 
       if (!confFile.exists()) {
         throw new FileNotFoundException("Couldn't file config file: " + confFile.getPath()
@@ -109,9 +109,9 @@ public class ConfigServer {
       String journalNodeString = getJournalNodes(journalNodes);
 
       model.put("journalnodes", journalNodeString);
-      model.put("frameworkName", hdfsConf.getFrameworkName());
-      model.put("dataDir", hdfsConf.getDataDir());
-      model.put("haZookeeperQuorum", hdfsConf.getHaZookeeperQuorum());
+      model.put("frameworkName", frameworkConfig.getFrameworkName());
+      model.put("dataDir", frameworkConfig.getDataDir());
+      model.put("haZookeeperQuorum", frameworkConfig.getHaZookeeperQuorum());
 
       content = engine.transform(content, model);
 

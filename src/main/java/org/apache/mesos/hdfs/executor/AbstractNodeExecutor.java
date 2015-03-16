@@ -41,14 +41,14 @@ public abstract class AbstractNodeExecutor implements Executor {
   private static final String DEFAULT_HADOOP_PATH = "/usr/bin/hadoop";
 
   protected ExecutorInfo executorInfo;
-  protected HdfsFrameworkConfig hdfsConfig;
+  protected HdfsFrameworkConfig frameworkConfig;
 
   /**
    * Constructor which takes in configuration.
    */
   @Inject
-  AbstractNodeExecutor(HdfsFrameworkConfig hdfsConfig) {
-    this.hdfsConfig = hdfsConfig;
+  AbstractNodeExecutor(HdfsFrameworkConfig frameworkConfig) {
+    this.frameworkConfig = frameworkConfig;
   }
 
   /**
@@ -78,11 +78,11 @@ public abstract class AbstractNodeExecutor implements Executor {
    */
   private void setUpDataDir() {
     // Create primary data dir if it does not exist
-    File dataDir = new File(hdfsConfig.getDataDir());
+    File dataDir = new File(frameworkConfig.getDataDir());
     createDir(dataDir);
 
     // Create secondary data dir if it does not exist
-    File secondaryDataDir = new File(hdfsConfig.getSecondaryDataDir());
+    File secondaryDataDir = new File(frameworkConfig.getSecondaryDataDir());
     createDir(secondaryDataDir);
   }
 
@@ -121,11 +121,11 @@ public abstract class AbstractNodeExecutor implements Executor {
       Path sandboxHdfsBinaryPath = Paths.get(sandboxHdfsBinary.getAbsolutePath());
 
       // Create mesosphere opt dir (parent dir of the symbolic link) if it does not exist
-      File frameworkMountDir = new File(hdfsConfig.getFrameworkMountPath());
+      File frameworkMountDir = new File(frameworkConfig.getFrameworkMountPath());
       createDir(frameworkMountDir);
 
       // Delete and recreate directory for symbolic link every time
-      String hdfsBinaryPath = hdfsConfig.getFrameworkMountPath()
+      String hdfsBinaryPath = frameworkConfig.getFrameworkMountPath()
           + "/" + HDFSConstants.HDFS_BINARY_DIR;
       File hdfsBinaryDir = new File(hdfsBinaryPath);
 

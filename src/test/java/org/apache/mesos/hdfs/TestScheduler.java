@@ -27,7 +27,7 @@ import static org.mockito.Mockito.*;
 @SuppressWarnings("unchecked")
 public class TestScheduler {
 
-  private final HdfsFrameworkConfig hdfsConfig = new HdfsFrameworkConfig(new Configuration());
+  private final HdfsFrameworkConfig frameworkConfig = new HdfsFrameworkConfig(new Configuration());
 
   @Mock
   SchedulerDriver driver;
@@ -87,7 +87,7 @@ public class TestScheduler {
 
     when(liveState.getCurrentAcquisitionPhase()).thenReturn(AcquisitionPhase.START_NAME_NODES);
     when(liveState.getNameNodeSize()).thenReturn(2);
-    when(liveState.getJournalNodeSize()).thenReturn(hdfsConfig.getJournalNodeCount());
+    when(liveState.getJournalNodeSize()).thenReturn(frameworkConfig.getJournalNodeCount());
     when(liveState.getFirstNameNodeTaskId()).thenReturn(taskId);
     when(liveState.getFirstNameNodeSlaveId()).thenReturn(slaveId);
 
@@ -100,7 +100,7 @@ public class TestScheduler {
   @Test
   public void statusUpdateTransitionFromFormatNameNodesToDataNodes() {
     when(liveState.getCurrentAcquisitionPhase()).thenReturn(AcquisitionPhase.FORMAT_NAME_NODES);
-    when(liveState.getJournalNodeSize()).thenReturn(hdfsConfig.getJournalNodeCount());
+    when(liveState.getJournalNodeSize()).thenReturn(frameworkConfig.getJournalNodeCount());
     when(liveState.getNameNodeSize()).thenReturn(HDFSConstants.TOTAL_NAME_NODES);
     when(liveState.isNameNode1Initialized()).thenReturn(true);
     when(liveState.isNameNode2Initialized()).thenReturn(true);
@@ -216,7 +216,7 @@ public class TestScheduler {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    this.scheduler = new HdfsScheduler(hdfsConfig, liveState, persistentState);
+    this.scheduler = new HdfsScheduler(frameworkConfig, liveState, persistentState);
   }
 
   private Protos.TaskID createTaskId(String id) {
