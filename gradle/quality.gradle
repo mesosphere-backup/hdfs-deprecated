@@ -12,7 +12,7 @@ pmd.sourceSets = [sourceSets.main]
 
 pmd {
     ruleSets = [
-            'java-basic',         // need brandon's http config to add in
+            'java-basic',
             'java-braces',
             'java-clone',
 //            'java-codesize',
