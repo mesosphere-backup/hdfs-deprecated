@@ -5,7 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The task class for use within the executor
+ * The task class for use within the executor.
  */
 public class Task {
 

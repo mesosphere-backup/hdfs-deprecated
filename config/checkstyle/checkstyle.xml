@@ -15,8 +15,7 @@ page at http://checkstyle.sourceforge.net/config.html -->
         -->
     </module>
 
-    <!--todo:(kgs) add back in-->
-    <!--<module name="NewlineAtEndOfFile"/>-->
+    <module name="NewlineAtEndOfFile"/>
 
     <module name="RegexpSingleline">
         <!-- Checks that FIXME is not used in comments.  TODO is preferred.
@@ -82,10 +81,9 @@ page at http://checkstyle.sourceforge.net/config.html -->
             <property name="severity" value="error"/>
         </module>
 
-        <!--todo:(kgs) add back in-->
-        <!--<module name="JavadocStyle">-->
-        <!--<property name="severity" value="warning"/>-->
-        <!--</module>-->
+        <module name="JavadocStyle">
+        <property name="severity" value="warning"/>
+        </module>
 
         <!--
 

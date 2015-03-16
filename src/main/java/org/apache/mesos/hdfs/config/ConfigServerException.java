@@ -1,7 +1,7 @@
 package org.apache.mesos.hdfs.config;
 
 /**
- * Indicates a failure to startup the config service, likely a jetty failure
+ * Indicates a failure to startup the config service, likely a jetty failure.
  */
 public class ConfigServerException extends RuntimeException {
 

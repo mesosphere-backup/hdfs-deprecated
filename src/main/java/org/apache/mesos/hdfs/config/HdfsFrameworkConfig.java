@@ -13,7 +13,7 @@ import java.util.Properties;
 
 /**
  * Provides executor configurations for launching processes at the slave leveraging hadoop
- * configurations
+ * configurations.
  */
 @Singleton
 public class HdfsFrameworkConfig {

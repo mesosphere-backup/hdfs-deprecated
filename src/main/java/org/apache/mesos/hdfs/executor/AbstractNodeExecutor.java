@@ -33,7 +33,7 @@ import java.nio.file.Paths;
 
 /**
  * Abstract executor for HDFS with common services for NameNode and NodeExecutors It also provides
- * the main() for executors
+ * the main() for executors.
  */
 public abstract class AbstractNodeExecutor implements Executor {
 

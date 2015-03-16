@@ -322,7 +322,7 @@ public class PersistentState {
   }
 
   /**
-   * Set serializable object in store
+   * Set serializable object in store.
    * 
    * @throws ExecutionException
    * @throws InterruptedException

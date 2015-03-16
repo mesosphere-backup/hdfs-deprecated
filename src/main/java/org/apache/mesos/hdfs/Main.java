@@ -5,7 +5,7 @@ import com.google.inject.Injector;
 import org.apache.mesos.hdfs.config.ConfigServer;
 
 /**
- * Main entry point for the Scheduler
+ * Main entry point for the Scheduler.
  */
 public final class Main {
 

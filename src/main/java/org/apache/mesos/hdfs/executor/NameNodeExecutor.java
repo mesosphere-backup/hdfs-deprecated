@@ -50,8 +50,11 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
   }
 
   /**
-   * Add tasks to the task list and then start the tasks in the following order : 1) Start Journal
-   * Node 2) Receive Activate Message 3) Start Name Node 4) Start ZKFC Node
+   * Add tasks to the task list and then start the tasks in the following order.
+   * 1) Start Journal Node
+   * 2) Receive Activate Message
+   * 3) Start Name Node
+   * 4) Start ZKFC Node
    */
   @Override
   public void launchTask(final ExecutorDriver driver, final TaskInfo taskInfo) {

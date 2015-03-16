@@ -1,7 +1,7 @@
 package org.apache.mesos.hdfs.util;
 
 /**
- * defines the constants shared between the scheduler and the executors
+ * defines the constants shared between the scheduler and the executors.
  */
 public interface HDFSConstants {
 
