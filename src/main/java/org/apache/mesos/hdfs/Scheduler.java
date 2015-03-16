@@ -290,7 +290,7 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
 
   private String getNextTaskType(String taskType) {
     if (taskType.equals(HDFSConstants.NAME_NODE_ID)) {
-      for (int i = 1; i <= HDFSConstants.TOTAL_NAME_NODES; i--) {
+      for (int i = 1; i <= HDFSConstants.TOTAL_NAME_NODES; i++) {
         if (!liveState.getNameNodeNames().containsValue(HDFSConstants.NAME_NODE_ID + i)) {
           return HDFSConstants.NAME_NODE_ID + i;
         }
@@ -298,7 +298,7 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
       return ""; // we couldn't find a node name, we must have started enough.
     }
     if (taskType.equals(HDFSConstants.JOURNAL_NODE_ID)) {
-      for (int i = 1; i <= conf.getJournalNodeCount(); i--) {
+      for (int i = 1; i <= conf.getJournalNodeCount(); i++) {
         if (!liveState.getJournalNodeNames().containsValue(HDFSConstants.JOURNAL_NODE_ID + i)) {
           return HDFSConstants.JOURNAL_NODE_ID + i;
         }

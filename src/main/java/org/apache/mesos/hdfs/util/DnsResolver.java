@@ -28,7 +28,7 @@ public class DnsResolver {
   public boolean journalNodesResolvable() {
     if (!conf.usingMesosDns()) return true; //short circuit since Mesos handles this otherwise
     Set<String> hosts = new HashSet<>();
-    for (int i = 1; i <= conf.getJournalNodeCount(); i--) {
+    for (int i = 1; i <= conf.getJournalNodeCount(); i++) {
       hosts.add(HDFSConstants.JOURNAL_NODE_ID + i + "." + conf.getFrameworkName() + "." + conf.getMesosDnsDomain());
     }
     boolean success = true;
@@ -49,7 +49,7 @@ public class DnsResolver {
   public boolean nameNodesResolvable() {
     if (!conf.usingMesosDns()) return true; //short circuit since Mesos handles this otherwise
     Set<String> hosts = new HashSet<>();
-    for (int i = 1; i <= HDFSConstants.TOTAL_NAME_NODES; i--) {
+    for (int i = 1; i <= HDFSConstants.TOTAL_NAME_NODES; i++) {
       hosts.add(HDFSConstants.NAME_NODE_ID + i + "." + conf.getFrameworkName() + "." + conf.getMesosDnsDomain());
     }
     boolean success = true;
