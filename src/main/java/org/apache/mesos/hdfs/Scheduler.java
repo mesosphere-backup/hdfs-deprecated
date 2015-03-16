@@ -41,7 +41,7 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
     this.conf = conf;
     this.liveState = liveState;
     this.persistentState = persistentState;
-    this.dnsResolver = new DnsResolver(this, conf, persistentState);
+    this.dnsResolver = new DnsResolver(this, conf);
   }
 
   @Override
@@ -252,6 +252,10 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
 
   private boolean launchNode(SchedulerDriver driver, Offer offer,
         String nodeName, List<String> taskTypes, String executorName) {
+    //nodeName is the type of executor to launch
+    //executorName is to distinguish different types of nodes
+    //taskType is the type of task in mesos to launch on the node
+    //taskName is a name chosen to identify the task in mesos and mesos-dns (if used)
     log.info(String.format("Launching node of type %s with tasks %s", nodeName,
         taskTypes.toString()));
     String taskIdName = String.format("%s.%s.%d", nodeName, executorName,
@@ -286,7 +290,7 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
 
   private String getNodeName(String taskType) {
     if (taskType.equals(HDFSConstants.NAME_NODE_ID)) {
-      for (int i = HDFSConstants.TOTAL_NAME_NODES; i > 0; i--) {
+      for (int i = 1; i <= HDFSConstants.TOTAL_NAME_NODES; i--) {
         if (!liveState.getNameNodeNames().containsValue(HDFSConstants.NAME_NODE_ID + i)) {
           return HDFSConstants.NAME_NODE_ID + i;
         }
@@ -294,7 +298,7 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
       return ""; // we couldn't find a node name, we must have started enough.
     }
     if (taskType.equals(HDFSConstants.JOURNAL_NODE_ID)) {
-      for (int i = conf.getJournalNodeCount(); i > 0; i--) {
+      for (int i = 1; i <= conf.getJournalNodeCount(); i--) {
         if (!liveState.getJournalNodeNames().containsValue(HDFSConstants.JOURNAL_NODE_ID + i)) {
           return HDFSConstants.JOURNAL_NODE_ID + i;
         }
