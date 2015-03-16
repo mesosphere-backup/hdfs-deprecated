@@ -1,0 +1,65 @@
+apply plugin: 'java'
+apply plugin: 'application'
+apply plugin: 'idea'
+apply from: 'gradle/quality.gradle'
+
+sourceCompatibility = '1.7'
+targetCompatibility = '1.7'
+
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+mainClassName = "org.apache.mesos.hdfs.Main"
+
+group = "org.apache.mesos"
+version = "0.0.2-SNAPSHOT"
+
+ext {
+    mesosVer = "0.21.1"
+    slf4jVersion = "1.7.10"
+    logback_classicVersion = "1.1.2"
+    hadoopVersion = "2.5.2"
+    jettyVersion = "9.2.2.v20140723"
+    joda_timeVersion = "2.4"
+    jmteVersion = "3.0"
+    guiceVersion = "3.0"
+    guavaVersion = "18.0"
+    junitVersion = "4.11"
+    mockitoVersion = "1.9.5"
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+    compile "org.apache.mesos:mesos:${mesosVer}"
+
+    compile "org.slf4j:log4j-over-slf4j:${slf4jVersion}"
+    compile "org.slf4j:jcl-over-slf4j:${slf4jVersion}"
+
+    compile "ch.qos.logback:logback-classic:${logback_classicVersion}"
+
+    compile("org.apache.hadoop:hadoop-common:${hadoopVersion}") {
+        exclude group: "log4j"
+        exclude group: "org.slf4j"
+        exclude group: "javax.servlet", module: "servlet-api"
+        exclude group: "commons-httpclient", module: "commons-httpclient"
+        exclude group: "net.java.dev.jets3t", module: "jets3t"
+    }
+
+    compile "org.eclipse.jetty:jetty-server:${jettyVersion}"
+    compile "joda-time:joda-time:${joda_timeVersion}"
+    compile "com.floreysoft:jmte:${jmteVersion}"
+    compile "com.google.inject:guice:${guiceVersion}"
+    compile "com.google.guava:guava:${guavaVersion}"
+
+    testCompile "junit:junit:${junitVersion}"
+    testCompile "org.mockito:mockito-all:${mockitoVersion}"
+
+}
+
+
+
+
+

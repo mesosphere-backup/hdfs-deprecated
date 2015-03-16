@@ -6,6 +6,7 @@ import org.apache.mesos.hdfs.state.LiveState;
 import org.apache.mesos.hdfs.util.HDFSConstants;
 import org.junit.Before;
 import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
 
 public class TestLiveState {

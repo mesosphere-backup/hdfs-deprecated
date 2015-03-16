@@ -7,7 +7,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.MesosNativeLibrary;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.FrameworkID;
-import org.apache.mesos.hdfs.config.SchedulerConf;
+import org.apache.mesos.hdfs.config.HdfsFrameworkConfig;
 import org.apache.mesos.hdfs.util.HDFSConstants;
 import org.apache.mesos.state.Variable;
 import org.apache.mesos.state.ZooKeeperState;
@@ -28,24 +28,28 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Provides the state of the framework as stored in zk. This is the expected state of the services.
+ */
 public class PersistentState {
-  public static final Log log = LogFactory.getLog(PersistentState.class);
-  private static String FRAMEWORK_ID_KEY = "frameworkId";
-  private static String NAMENODES_KEY = "nameNodes";
-  private static String JOURNALNODES_KEY = "journalNodes";
-  private static String DATANODES_KEY = "dataNodes";
+  public final Log log = LogFactory.getLog(PersistentState.class);
+  private static final String FRAMEWORK_ID_KEY = "frameworkId";
+  private static final String NAMENODES_KEY = "nameNodes";
+  private static final String JOURNALNODES_KEY = "journalNodes";
+  private static final String DATANODES_KEY = "dataNodes";
   private ZooKeeperState zkState;
-  private SchedulerConf conf;
+  private HdfsFrameworkConfig frameworkConfig;
 
   private Timestamp deadJournalNodeTimeStamp = null;
   private Timestamp deadNameNodeTimeStamp = null;
   private Timestamp deadDataNodeTimeStamp = null;
 
-  public PersistentState(SchedulerConf conf) {
-    MesosNativeLibrary.load(conf.getNativeLibrary());
-    this.zkState = new ZooKeeperState(conf.getStateZkServers(),
-        conf.getStateZkTimeout(), TimeUnit.MILLISECONDS, "/hdfs-mesos/" + conf.getFrameworkName());
-    this.conf = conf;
+  public PersistentState(HdfsFrameworkConfig frameworkConfig) {
+    MesosNativeLibrary.load(frameworkConfig.getNativeLibrary());
+    this.zkState = new ZooKeeperState(frameworkConfig.getStateZkServers(),
+        frameworkConfig.getStateZkTimeout(), TimeUnit.MILLISECONDS, "/hdfs-mesos/"
+        + frameworkConfig.getFrameworkName());
+    this.frameworkConfig = frameworkConfig;
   }
 
   public FrameworkID getFrameworkID() throws InterruptedException, ExecutionException,
@@ -67,7 +71,7 @@ public class PersistentState {
 
   private void removeDeadJournalNodes() {
     deadJournalNodeTimeStamp = null;
-    HashMap<String, String> journalNodes = getJournalNodes();
+    Map<String, String> journalNodes = getJournalNodes();
     List<String> deadJournalHosts = getDeadJournalNodes();
     for (String deadJournalHost : deadJournalHosts) {
       journalNodes.remove(deadJournalHost);
@@ -78,7 +82,7 @@ public class PersistentState {
 
   private void removeDeadNameNodes() {
     deadNameNodeTimeStamp = null;
-    HashMap<String, String> nameNodes = getNameNodes();
+    Map<String, String> nameNodes = getNameNodes();
     List<String> deadNameHosts = getDeadNameNodes();
     for (String deadNameHost : deadNameHosts) {
       nameNodes.remove(deadNameHost);
@@ -89,7 +93,7 @@ public class PersistentState {
 
   private void removeDeadDataNodes() {
     deadDataNodeTimeStamp = null;
-    HashMap<String, String> dataNodes = getDataNodes();
+    Map<String, String> dataNodes = getDataNodes();
     List<String> deadDataHosts = getDeadDataNodes();
     for (String deadDataHost : deadDataHosts) {
       dataNodes.remove(deadDataHost);
@@ -99,71 +103,71 @@ public class PersistentState {
   }
 
   public List<String> getDeadJournalNodes() {
-      if (deadJournalNodeTimeStamp != null && deadJournalNodeTimeStamp.before(new Date())) {
-          removeDeadJournalNodes();
-          return new ArrayList<>();
-      } else {
-        HashMap<String, String> journalNodes = getJournalNodes();
-        Set<String> journalHosts = journalNodes.keySet();
-        List<String> deadJournalHosts = new ArrayList<>();
-        for (String journalHost: journalHosts) {
-          if (journalNodes.get(journalHost) == null) {
-            deadJournalHosts.add(journalHost);
-          }
+    if (deadJournalNodeTimeStamp != null && deadJournalNodeTimeStamp.before(new Date())) {
+      removeDeadJournalNodes();
+      return new ArrayList<>();
+    } else {
+      Map<String, String> journalNodes = getJournalNodes();
+      Set<String> journalHosts = journalNodes.keySet();
+      List<String> deadJournalHosts = new ArrayList<>();
+      for (String journalHost : journalHosts) {
+        if (journalNodes.get(journalHost) == null) {
+          deadJournalHosts.add(journalHost);
         }
-        return deadJournalHosts;
       }
+      return deadJournalHosts;
+    }
   }
 
   public List<String> getDeadNameNodes() {
-      if (deadNameNodeTimeStamp != null && deadNameNodeTimeStamp.before(new Date())) {
-          removeDeadNameNodes();
-          return new ArrayList<>();
-      } else {
-        HashMap<String, String> nameNodes = getNameNodes();
-        Set<String> nameHosts = nameNodes.keySet();
-        List<String> deadNameHosts = new ArrayList<>();
-        for (String nameHost : nameHosts) {
-          if (nameNodes.get(nameHost) == null) {
-            deadNameHosts.add(nameHost);
-          }
+    if (deadNameNodeTimeStamp != null && deadNameNodeTimeStamp.before(new Date())) {
+      removeDeadNameNodes();
+      return new ArrayList<>();
+    } else {
+      Map<String, String> nameNodes = getNameNodes();
+      Set<String> nameHosts = nameNodes.keySet();
+      List<String> deadNameHosts = new ArrayList<>();
+      for (String nameHost : nameHosts) {
+        if (nameNodes.get(nameHost) == null) {
+          deadNameHosts.add(nameHost);
         }
-        return deadNameHosts;
       }
+      return deadNameHosts;
+    }
   }
 
   public List<String> getDeadDataNodes() {
-      if (deadDataNodeTimeStamp != null && deadDataNodeTimeStamp.before(new Date())) {
-          removeDeadDataNodes();
-          return new ArrayList<>();
-      } else {
-        HashMap<String, String> dataNodes = getDataNodes();
-        Set<String> dataHosts = dataNodes.keySet();
-        List<String> deadDataHosts = new ArrayList<>();
-        for (String dataHost : dataHosts) {
+    if (deadDataNodeTimeStamp != null && deadDataNodeTimeStamp.before(new Date())) {
+      removeDeadDataNodes();
+      return new ArrayList<>();
+    } else {
+      Map<String, String> dataNodes = getDataNodes();
+      Set<String> dataHosts = dataNodes.keySet();
+      List<String> deadDataHosts = new ArrayList<>();
+      for (String dataHost : dataHosts) {
         if (dataNodes.get(dataHost) == null) {
           deadDataHosts.add(dataHost);
         }
-       }
-       return deadDataHosts;
       }
+      return deadDataHosts;
+    }
   }
 
   // TODO (nicgrayson) add tests with in-memory state implementation for zookeeper
-  public HashMap<String, String> getJournalNodes() {
-    return getHashMap(JOURNALNODES_KEY);
+  public Map<String, String> getJournalNodes() {
+    return getMap(JOURNALNODES_KEY);
   }
 
-  public HashMap<String, String> getNameNodes() {
-    return getHashMap(NAMENODES_KEY);
+  public Map<String, String> getNameNodes() {
+    return getMap(NAMENODES_KEY);
   }
 
-  public HashMap<String, String> getDataNodes() {
-    return getHashMap(DATANODES_KEY);
+  public Map<String, String> getDataNodes() {
+    return getMap(DATANODES_KEY);
   }
 
   public Collection<String> getAllTaskIds() {
-    HashMap<String, String> allTasksIds = getJournalNodes();
+    Map<String, String> allTasksIds = getJournalNodes();
     allTasksIds.putAll(getNameNodes());
     allTasksIds.putAll(getDataNodes());
     return allTasksIds.values();
@@ -171,63 +175,66 @@ public class PersistentState {
 
   public void addHdfsNode(Protos.TaskID taskId, String hostname, String taskName) {
     switch (taskName) {
-      case HDFSConstants.NAME_NODE_ID :
-        HashMap<String, String> nameNodes = getNameNodes();
+      case HDFSConstants.NAME_NODE_ID:
+        Map<String, String> nameNodes = getNameNodes();
         nameNodes.put(hostname, taskId.getValue());
-        System.out.println("Saving the name node " + hostname + " " + taskId.getValue());
+        log.debug("Saving the name node " + hostname + " " + taskId.getValue());
         setNameNodes(nameNodes);
         break;
-      case HDFSConstants.JOURNAL_NODE_ID :
-        HashMap<String, String> journalNodes = getJournalNodes();
+      case HDFSConstants.JOURNAL_NODE_ID:
+        Map<String, String> journalNodes = getJournalNodes();
         journalNodes.put(hostname, taskId.getValue());
         setJournalNodes(journalNodes);
+        log.debug("Adding the journal node " + hostname + " " + taskId.getValue());
         break;
-      case HDFSConstants.DATA_NODE_ID :
-        HashMap<String, String> dataNodes = getDataNodes();
+      case HDFSConstants.DATA_NODE_ID:
+        Map<String, String> dataNodes = getDataNodes();
         dataNodes.put(hostname, taskId.getValue());
         setDataNodes(dataNodes);
+        log.debug("Adding the data node " + hostname + " " + taskId.getValue());
         break;
-      case HDFSConstants.ZKFC_NODE_ID :
+      case HDFSConstants.ZKFC_NODE_ID:
+        log.debug("ZKFC node " + hostname + " " + taskId.getValue());
         break;
-      default :
-        log.error("Task name unknown");
+      default:
+        log.error("Task name unknown for adding hdfs node");
     }
   }
 
   // TODO (elingg) optimize this method/ Possibly index by task id instead of hostname/
   // Possibly call removeTask(slaveId, taskId) to avoid iterating through all maps
   public void removeTaskId(String taskId) {
-    HashMap<String, String> journalNodes = getJournalNodes();
+    Map<String, String> journalNodes = getJournalNodes();
     if (journalNodes.values().contains(taskId)) {
       for (Map.Entry<String, String> entry : journalNodes.entrySet()) {
         if (entry.getValue() != null && entry.getValue().equals(taskId)) {
           journalNodes.put(entry.getKey(), null);
           setJournalNodes(journalNodes);
-          Date date = DateUtils.addSeconds(new Date(), conf.getDeadNodeTimeout());
+          Date date = DateUtils.addSeconds(new Date(), frameworkConfig.getDeadNodeTimeout());
           deadJournalNodeTimeStamp = new Timestamp(date.getTime());
           return;
         }
       }
     }
-    HashMap<String, String> nameNodes = getNameNodes();
+    Map<String, String> nameNodes = getNameNodes();
     if (nameNodes.values().contains(taskId)) {
       for (Map.Entry<String, String> entry : nameNodes.entrySet()) {
         if (entry.getValue() != null && entry.getValue().equals(taskId)) {
           nameNodes.put(entry.getKey(), null);
           setNameNodes(nameNodes);
-          Date date = DateUtils.addSeconds(new Date(), conf.getDeadNodeTimeout());
+          Date date = DateUtils.addSeconds(new Date(), frameworkConfig.getDeadNodeTimeout());
           deadNameNodeTimeStamp = new Timestamp(date.getTime());
           return;
         }
       }
     }
-    HashMap<String, String> dataNodes = getDataNodes();
+    Map<String, String> dataNodes = getDataNodes();
     if (dataNodes.values().contains(taskId)) {
       for (Map.Entry<String, String> entry : dataNodes.entrySet()) {
         if (entry.getValue() != null && entry.getValue().equals(taskId)) {
           dataNodes.put(entry.getKey(), null);
           setDataNodes(dataNodes);
-          Date date = DateUtils.addSeconds(new Date(), conf.getDeadNodeTimeout());
+          Date date = DateUtils.addSeconds(new Date(), frameworkConfig.getDeadNodeTimeout());
           deadDataNodeTimeStamp = new Timestamp(date.getTime());
           return;
         }
@@ -247,38 +254,39 @@ public class PersistentState {
     return getDataNodes().keySet().contains(hostname);
   }
 
-  private void setNameNodes(HashMap<String, String> nameNodes) {
+  private void setNameNodes(Map<String, String> nameNodes) {
     try {
       set(NAMENODES_KEY, nameNodes);
-    } catch (Exception e) {
+    } catch (InterruptedException | ExecutionException | IOException e) {
       log.error("Error while setting namenodes in persistent state", e);
     }
   }
 
-  private void setJournalNodes(HashMap<String, String> journalNodes) {
+  private void setJournalNodes(Map<String, String> journalNodes) {
     try {
       set(JOURNALNODES_KEY, journalNodes);
-    } catch (Exception e) {
+    } catch (InterruptedException | ExecutionException | IOException e) {
       log.error("Error while setting journalnodes in persistent state", e);
     }
   }
 
-  private void setDataNodes(HashMap<String, String> dataNodes) {
+  private void setDataNodes(Map<String, String> dataNodes) {
     try {
       set(DATANODES_KEY, dataNodes);
-    } catch (Exception e) {
+    } catch (InterruptedException | ExecutionException | IOException e) {
       log.error("Error while setting datanodes in persistent state", e);
     }
   }
 
-  private HashMap<String, String> getHashMap(String key) {
+  private Map<String, String> getMap(String key) {
     try {
-      HashMap<String, String> nodesMap = get(key);
+      Map<String, String> nodesMap = get(key);
       if (nodesMap == null) {
         return new HashMap<>();
       }
       return nodesMap;
-    } catch (Exception e) {
+      // todo:  (kensipe) remove ClassNotFoundException exception and probably not use generics in return of get(key)
+    } catch (InterruptedException | ExecutionException | IOException | ClassNotFoundException e) {
       log.error(String.format("Error while getting %s in persistent state", key), e);
       return new HashMap<>();
     }
@@ -286,7 +294,7 @@ public class PersistentState {
 
   /**
    * Get serializable object from store.
-   * 
+   *
    * @return serialized object or null if none
    * @throws ExecutionException
    * @throws InterruptedException
@@ -318,8 +326,8 @@ public class PersistentState {
   }
 
   /**
-   * Set serializable object in store
-   * 
+   * Set serializable object in store.
+   *
    * @throws ExecutionException
    * @throws InterruptedException
    * @throws IOException

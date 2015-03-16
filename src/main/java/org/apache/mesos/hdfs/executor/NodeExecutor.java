@@ -7,24 +7,26 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.MesosExecutorDriver;
-import org.apache.mesos.Protos.*;
-import org.apache.mesos.hdfs.config.SchedulerConf;
+import org.apache.mesos.Protos.Status;
+import org.apache.mesos.Protos.TaskID;
+import org.apache.mesos.Protos.TaskInfo;
+import org.apache.mesos.Protos.TaskState;
+import org.apache.mesos.Protos.TaskStatus;
+import org.apache.mesos.hdfs.config.HdfsFrameworkConfig;
 
 /**
  * The executor for a Basic Node (either a Journal Node or Data Node).
- * 
- **/
+ */
 public class NodeExecutor extends AbstractNodeExecutor {
-  public static final Log log = LogFactory.getLog(NodeExecutor.class);
+  public final Log log = LogFactory.getLog(NodeExecutor.class);
   private Task task;
 
   /**
    * The constructor for the node which saves the configuration.
-   * 
-   **/
+   */
   @Inject
-  NodeExecutor(SchedulerConf schedulerConf) {
-    super(schedulerConf);
+  NodeExecutor(HdfsFrameworkConfig hdfsConfig) {
+    super(hdfsConfig);
   }
 
   /**
@@ -44,6 +46,7 @@ public class NodeExecutor extends AbstractNodeExecutor {
   public void launchTask(final ExecutorDriver driver, final TaskInfo taskInfo) {
     executorInfo = taskInfo.getExecutor();
     task = new Task(taskInfo);
+    log.info(String.format("Launching task, taskId=%s cmd='%s'", taskInfo.getTaskId().getValue(), task.getCmd()));
     startProcess(driver, task);
     driver.sendStatusUpdate(TaskStatus.newBuilder()
         .setTaskId(taskInfo.getTaskId())
@@ -54,9 +57,9 @@ public class NodeExecutor extends AbstractNodeExecutor {
   @Override
   public void killTask(ExecutorDriver driver, TaskID taskId) {
     log.info("Killing task : " + taskId.getValue());
-    if (task.process != null && taskId.equals(task.taskInfo.getTaskId())) {
-      task.process.destroy();
-      task.process = null;
+    if (task.getProcess() != null && taskId.equals(task.getTaskInfo().getTaskId())) {
+      task.getProcess().destroy();
+      task.setProcess(null);
     }
   }
 }

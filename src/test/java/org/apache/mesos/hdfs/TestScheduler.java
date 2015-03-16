@@ -4,16 +4,13 @@ import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.mesos.Protos;
 import org.apache.mesos.SchedulerDriver;
-import org.apache.mesos.hdfs.config.SchedulerConf;
+import org.apache.mesos.hdfs.config.HdfsFrameworkConfig;
 import org.apache.mesos.hdfs.state.AcquisitionPhase;
 import org.apache.mesos.hdfs.state.LiveState;
 import org.apache.mesos.hdfs.state.PersistentState;
 import org.apache.mesos.hdfs.util.HDFSConstants;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
@@ -22,13 +19,15 @@ import org.mockito.MockitoAnnotations;
 import java.util.Arrays;
 import java.util.Collection;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
+@SuppressWarnings("unchecked")
 public class TestScheduler {
 
-  private final SchedulerConf schedulerConf = new SchedulerConf(new Configuration());
+  private final HdfsFrameworkConfig frameworkConfig = new HdfsFrameworkConfig(new Configuration());
 
   @Mock
   SchedulerDriver driver;
@@ -42,7 +41,7 @@ public class TestScheduler {
   @Captor
   ArgumentCaptor<Collection<Protos.TaskInfo>> taskInfosCapture;
 
-  Scheduler scheduler;
+  HdfsScheduler scheduler;
 
   @Test
   public void statusUpdateWasStagingNowRunning() {
@@ -88,7 +87,7 @@ public class TestScheduler {
 
     when(liveState.getCurrentAcquisitionPhase()).thenReturn(AcquisitionPhase.START_NAME_NODES);
     when(liveState.getNameNodeSize()).thenReturn(2);
-    when(liveState.getJournalNodeSize()).thenReturn(schedulerConf.getJournalNodeCount());
+    when(liveState.getJournalNodeSize()).thenReturn(frameworkConfig.getJournalNodeCount());
     when(liveState.getFirstNameNodeTaskId()).thenReturn(taskId);
     when(liveState.getFirstNameNodeSlaveId()).thenReturn(slaveId);
 
@@ -101,7 +100,7 @@ public class TestScheduler {
   @Test
   public void statusUpdateTransitionFromFormatNameNodesToDataNodes() {
     when(liveState.getCurrentAcquisitionPhase()).thenReturn(AcquisitionPhase.FORMAT_NAME_NODES);
-    when(liveState.getJournalNodeSize()).thenReturn(schedulerConf.getJournalNodeCount());
+    when(liveState.getJournalNodeSize()).thenReturn(frameworkConfig.getJournalNodeCount());
     when(liveState.getNameNodeSize()).thenReturn(HDFSConstants.TOTAL_NAME_NODES);
     when(liveState.isNameNode1Initialized()).thenReturn(true);
     when(liveState.isNameNode2Initialized()).thenReturn(true);
@@ -217,7 +216,7 @@ public class TestScheduler {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    this.scheduler = new Scheduler(schedulerConf, liveState, persistentState);
+    this.scheduler = new HdfsScheduler(frameworkConfig, liveState, persistentState);
   }
 
   private Protos.TaskID createTaskId(String id) {
