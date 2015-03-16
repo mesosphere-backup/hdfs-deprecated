@@ -71,16 +71,18 @@ public class ConfigServer {
     try {
       server.stop();
     } catch (Exception e) {
-      log.debug("unable to stop the jetty service", e);
+      final String msg = "unable to stop the jetty service";
+      log.debug(msg, e);
+      throw new ConfigServerException(msg);
     }
   }
 
   private class ServeHdfsConfigHandler extends AbstractHandler {
 
     public synchronized void handle(String target,
-                                    Request baseRequest,
-                                    HttpServletRequest request,
-                                    HttpServletResponse response) throws IOException {
+        Request baseRequest,
+        HttpServletRequest request,
+        HttpServletResponse response) throws IOException {
 
       File confFile = new File(frameworkConfig.getConfigPath());
 
