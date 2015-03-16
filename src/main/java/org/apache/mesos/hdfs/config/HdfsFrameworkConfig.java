@@ -21,16 +21,16 @@ public class HdfsFrameworkConfig {
   private Configuration hadoopConfig;
 
   private static final int DEFAULT_HEAP_SIZE = 256;
-  private static final int HADOOP_HEAP_SIZE = DEFAULT_HEAP_SIZE;
-  private static final int EXECUTOR_HEAP_SIZE = DEFAULT_HEAP_SIZE;
-  private static final int DATANODE_HEAP_SIZE = 1024;
-  private static final int NAMENODE_HEAP_SIZE = 1024;
+  private static final int DEFAULT_HADOOP_HEAP_SIZE = DEFAULT_HEAP_SIZE;
+  private static final int DEFAULT_EXECUTOR_HEAP_SIZE = DEFAULT_HEAP_SIZE;
+  private static final int DEFAULT_DATANODE_HEAP_SIZE = 1024;
+  private static final int DEFAULT_NAMENODE_HEAP_SIZE = 1024;
 
   private static final double DEFAULT_CPUS = 0.5;
-  private static final double EXECUTOR_CPUS = DEFAULT_CPUS;
-  private static final double NAMENODE_CPUS = 1;
-  private static final double JOURNAL_CPUS = 1;
-  private static final double DATANODE_CPUS = 1;
+  private static final double DEFAULT_EXECUTOR_CPUS = DEFAULT_CPUS;
+  private static final double DEFAULT_NAMENODE_CPUS = 1;
+  private static final double DEFAULT_JOURNAL_CPUS = 1;
+  private static final double DEFAULT_DATANODE_CPUS = 1;
 
   private static final double DEFAULT_JVM_OVERHEAD = 1.25;
   private static final int DEFAULT_JOURNAL_NODE_COUNT = 3;
@@ -71,11 +71,11 @@ public class HdfsFrameworkConfig {
   }
 
   public int getHadoopHeapSize() {
-    return getConf().getInt("mesos.hdfs.hadoop.heap.size", HADOOP_HEAP_SIZE);
+    return getConf().getInt("mesos.hdfs.hadoop.heap.size", DEFAULT_HADOOP_HEAP_SIZE);
   }
 
   public int getDataNodeHeapSize() {
-    return getConf().getInt("mesos.hdfs.datanode.heap.size", DATANODE_HEAP_SIZE);
+    return getConf().getInt("mesos.hdfs.datanode.heap.size", DEFAULT_DATANODE_HEAP_SIZE);
   }
 
   public int getJournalNodeHeapSize() {
@@ -83,11 +83,11 @@ public class HdfsFrameworkConfig {
   }
 
   public int getNameNodeHeapSize() {
-    return getConf().getInt("mesos.hdfs.namenode.heap.size", NAMENODE_HEAP_SIZE);
+    return getConf().getInt("mesos.hdfs.namenode.heap.size", DEFAULT_NAMENODE_HEAP_SIZE);
   }
 
   public int getExecutorHeap() {
-    return getConf().getInt("mesos.hdfs.executor.heap.size", EXECUTOR_HEAP_SIZE);
+    return getConf().getInt("mesos.hdfs.executor.heap.size", DEFAULT_EXECUTOR_HEAP_SIZE);
   }
 
   public int getZkfcHeapSize() {
@@ -138,7 +138,7 @@ public class HdfsFrameworkConfig {
   }
 
   public double getExecutorCpus() {
-    return getConf().getDouble("mesos.hdfs.executor.cpus", EXECUTOR_CPUS);
+    return getConf().getDouble("mesos.hdfs.executor.cpus", DEFAULT_EXECUTOR_CPUS);
   }
 
   public double getZkfcCpus() {
@@ -146,15 +146,15 @@ public class HdfsFrameworkConfig {
   }
 
   public double getNameNodeCpus() {
-    return getConf().getDouble("mesos.hdfs.namenode.cpus", NAMENODE_CPUS);
+    return getConf().getDouble("mesos.hdfs.namenode.cpus", DEFAULT_NAMENODE_CPUS);
   }
 
   public double getJournalNodeCpus() {
-    return getConf().getDouble("mesos.hdfs.journalnode.cpus", JOURNAL_CPUS);
+    return getConf().getDouble("mesos.hdfs.journalnode.cpus", DEFAULT_JOURNAL_CPUS);
   }
 
   public double getDataNodeCpus() {
-    return getConf().getDouble("mesos.hdfs.datanode.cpus", DATANODE_CPUS);
+    return getConf().getDouble("mesos.hdfs.datanode.cpus", DEFAULT_DATANODE_CPUS);
   }
 
   public double getTaskCpus(String taskName) {
