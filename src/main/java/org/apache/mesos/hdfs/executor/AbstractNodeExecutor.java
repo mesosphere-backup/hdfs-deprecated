@@ -88,9 +88,11 @@ public abstract class AbstractNodeExecutor implements Executor {
 
   private void createDir(File dataDir) {
     if (dataDir.exists()) {
-      LOG.warn("data dir exits:" + dataDir);
+      LOG.info("data dir exits: " + dataDir);
     } else if (!dataDir.mkdirs()) {
-      LOG.error("unable to create dir: " + dataDir);
+      final String msg = "unable to create dir: " + dataDir;
+      LOG.error(msg);
+      throw new ExecutorException(msg);
     }
   }
 
@@ -106,7 +108,10 @@ public abstract class AbstractNodeExecutor implements Executor {
       }
     }
     if (!fileToDelete.delete()) {
-      LOG.error("unable to delete file: " + fileToDelete);
+      final String msg = "unable to delete file: " + fileToDelete;
+      LOG.error(msg);
+      throw new ExecutorException(msg);
+
     }
   }
 
@@ -138,7 +143,7 @@ public abstract class AbstractNodeExecutor implements Executor {
           LOG.info("Unable to unlink old sym link. Link may not exist. Exit code: " + exitCode);
         }
       } catch (IOException | InterruptedException e) {
-        LOG.fatal("Could not unlink" + hdfsBinaryPath + ": " + e);
+        LOG.fatal("Could not unlink " + hdfsBinaryPath + ": " + e);
         System.exit(1);
       }
 

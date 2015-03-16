@@ -1,15 +1,11 @@
 package org.apache.mesos.hdfs.executor;
 
 import org.apache.mesos.Protos;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The task class for use within the executor.
  */
 public class Task {
-
-  private final Logger logger = LoggerFactory.getLogger(getClass());
 
   private Protos.TaskInfo taskInfo;
   private String cmd;
@@ -42,7 +38,6 @@ public class Task {
   Task(Protos.TaskInfo taskInfo) {
     this.taskInfo = taskInfo;
     this.cmd = taskInfo.getData().toStringUtf8();
-    logger.info(String.format("Launching task, taskId=%s cmd='%s'",
-        taskInfo.getTaskId().getValue(), cmd));
+
   }
 }

@@ -173,7 +173,7 @@ public class HdfsFrameworkConfig {
         cpus = getJournalNodeCpus();
         break;
       default:
-        final String msg = "Invalid request for CPUs for taskName=" + taskName;
+        final String msg = "Invalid request for CPUs for taskName= " + taskName;
         log.error(msg);
         throw new ConfigurationException(msg);
     }

@@ -82,26 +82,26 @@ public class HdfsScheduler implements org.apache.mesos.Scheduler, Runnable {
   public void executorLost(SchedulerDriver driver, ExecutorID executorID, SlaveID slaveID,
       int status) {
     log.info("Executor lost: executorId=" + executorID.getValue() + " slaveId="
-        + slaveID.getValue() + " status=" + status);
+        + slaveID.getValue() + " status= " + status);
   }
 
   @Override
   public void frameworkMessage(SchedulerDriver driver, ExecutorID executorID, SlaveID slaveID,
       byte[] data) {
     log.info("Framework message: executorId=" + executorID.getValue() + " slaveId="
-        + slaveID.getValue() + " data='" + Arrays.toString(data) + "'");
+        + slaveID.getValue() + " data= '" + Arrays.toString(data) + "'");
   }
 
   @Override
   public void offerRescinded(SchedulerDriver driver, OfferID offerId) {
-    log.info("Offer rescinded: offerId=" + offerId.getValue());
+    log.info("Offer rescinded: offerId= " + offerId.getValue());
   }
 
   @Override
   public void registered(SchedulerDriver driver, FrameworkID frameworkId, MasterInfo masterInfo) {
     try {
       persistentState.setFrameworkId(frameworkId);
-      log.info("Registered framework frameworkId=" + frameworkId.getValue());
+      log.info("Registered framework frameworkId= " + frameworkId.getValue());
 
     } catch (InterruptedException | ExecutionException e) {
       // these are zk exceptions... we are unable to maintain state.
@@ -248,7 +248,7 @@ public class HdfsScheduler implements org.apache.mesos.Scheduler, Runnable {
 
   @Override
   public void slaveLost(SchedulerDriver driver, SlaveID slaveId) {
-    log.info("Slave lost slaveId=" + slaveId.getValue());
+    log.info("Slave lost slaveId= " + slaveId.getValue());
   }
 
   @Override

@@ -48,7 +48,7 @@ public class PersistentState {
     MesosNativeLibrary.load(frameworkConfig.getNativeLibrary());
     this.zkState = new ZooKeeperState(frameworkConfig.getStateZkServers(),
         frameworkConfig.getStateZkTimeout(), TimeUnit.MILLISECONDS, "/hdfs-mesos/"
-            + frameworkConfig.getFrameworkName());
+        + frameworkConfig.getFrameworkName());
     this.frameworkConfig = frameworkConfig;
   }
 
@@ -175,26 +175,29 @@ public class PersistentState {
 
   public void addHdfsNode(Protos.TaskID taskId, String hostname, String taskName) {
     switch (taskName) {
-      case HDFSConstants.NAME_NODE_ID :
+      case HDFSConstants.NAME_NODE_ID:
         Map<String, String> nameNodes = getNameNodes();
         nameNodes.put(hostname, taskId.getValue());
-        log.info("Saving the name node " + hostname + " " + taskId.getValue());
+        log.debug("Saving the name node " + hostname + " " + taskId.getValue());
         setNameNodes(nameNodes);
         break;
-      case HDFSConstants.JOURNAL_NODE_ID :
+      case HDFSConstants.JOURNAL_NODE_ID:
         Map<String, String> journalNodes = getJournalNodes();
         journalNodes.put(hostname, taskId.getValue());
         setJournalNodes(journalNodes);
+        log.debug("Adding the journal node " + hostname + " " + taskId.getValue());
         break;
-      case HDFSConstants.DATA_NODE_ID :
+      case HDFSConstants.DATA_NODE_ID:
         Map<String, String> dataNodes = getDataNodes();
         dataNodes.put(hostname, taskId.getValue());
         setDataNodes(dataNodes);
+        log.debug("Adding the data node " + hostname + " " + taskId.getValue());
         break;
-      case HDFSConstants.ZKFC_NODE_ID :
+      case HDFSConstants.ZKFC_NODE_ID:
+        log.debug("ZKFC node " + hostname + " " + taskId.getValue());
         break;
-      default :
-        log.error("Task name unknown");
+      default:
+        log.error("Task name unknown for adding hdfs node");
     }
   }
 
@@ -291,7 +294,7 @@ public class PersistentState {
 
   /**
    * Get serializable object from store.
-   * 
+   *
    * @return serialized object or null if none
    * @throws ExecutionException
    * @throws InterruptedException
@@ -324,7 +327,7 @@ public class PersistentState {
 
   /**
    * Set serializable object in store.
-   * 
+   *
    * @throws ExecutionException
    * @throws InterruptedException
    * @throws IOException

@@ -25,9 +25,9 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
   public final Log log = LogFactory.getLog(NameNodeExecutor.class);
 
   private Task nameNodeTask;
-  // TODO (elingg) better handling in livestate and persistent state of zkfc task. Right now they
-  // are
-  // chained.
+  // TODO (elingg) better handling in livestate and persistent state of zkfc task.
+  // Right now they are chained.
+
   private Task zkfcNodeTask;
   private Task journalNodeTask;
 
@@ -57,6 +57,7 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
   public void launchTask(final ExecutorDriver driver, final TaskInfo taskInfo) {
     executorInfo = taskInfo.getExecutor();
     Task task = new Task(taskInfo);
+    log.info(String.format("Launching task, taskId=%s cmd='%s'", taskInfo.getTaskId().getValue(), task.getCmd()));
     if (taskInfo.getTaskId().getValue().contains(HDFSConstants.JOURNAL_NODE_ID)) {
       journalNodeTask = task;
       // Start the journal node
@@ -111,6 +112,7 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
                 nameDir));
       } else {
         deleteFile(nameDir);
+        nameDir.mkdirs();
         runCommand(driver, nameNodeTask, "bin/hdfs-mesos-namenode " + messageStr);
         startProcess(driver, nameNodeTask);
         startProcess(driver, zkfcNodeTask);
