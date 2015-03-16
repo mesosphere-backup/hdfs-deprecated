@@ -9,14 +9,25 @@ import org.apache.mesos.hdfs.config.ConfigServer;
  */
 public final class Main {
 
-  private Main() {
-  }
+  private SchedulerExceptionHandler schedulerExceptionHandler = new SchedulerExceptionHandler();
 
   public static void main(String[] args) {
+
+    new Main().start();
+  }
+
+  private void start() {
     Injector injector = Guice.createInjector();
-    Thread scheduler = new Thread(injector.getInstance(HdfsScheduler.class));
-    scheduler.start();
+    getSchedulerThread(injector).start();
 
     injector.getInstance(ConfigServer.class);
+  }
+
+  private Thread getSchedulerThread(Injector injector) {
+    Thread scheduler = new Thread(injector.getInstance(HdfsScheduler.class));
+    scheduler.setName("HdfsScheduler");
+
+    scheduler.setUncaughtExceptionHandler(schedulerExceptionHandler);
+    return scheduler;
   }
 }

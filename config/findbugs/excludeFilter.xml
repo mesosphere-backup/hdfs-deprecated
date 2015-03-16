@@ -20,6 +20,12 @@
     </Match>
 
     <Match>
+        <Class name="org.apache.mesos.hdfs.SchedulerExceptionHandler"/>
+        <Bug pattern="DM_EXIT"/>
+        <!-- don't like this, there are outstanding questions on if we need to system.exit for this method -->
+    </Match>
+
+    <Match>
         <Class name="org.apache.mesos.hdfs.executor.AbstractNodeExecutor"/>
         <Method name="runCommand"/>
         <Bug pattern="DM_EXIT"/>

@@ -61,7 +61,8 @@ public class HdfsScheduler implements org.apache.mesos.Scheduler, Runnable {
     this(conf, liveState, new PersistentState(conf));
   }
 
-  public HdfsScheduler(HdfsFrameworkConfig conf, LiveState liveState, PersistentState persistentState) {
+  public HdfsScheduler(HdfsFrameworkConfig conf, LiveState liveState,
+      PersistentState persistentState) {
     this.conf = conf;
     this.liveState = liveState;
     this.persistentState = persistentState;
@@ -103,7 +104,10 @@ public class HdfsScheduler implements org.apache.mesos.Scheduler, Runnable {
       log.info("Registered framework frameworkId=" + frameworkId.getValue());
 
     } catch (InterruptedException | ExecutionException e) {
-      log.error("Error setting framework id in persistent state", e);
+      // these are zk exceptions... we are unable to maintain state.
+      final String msg = "Error setting framework id in persistent state";
+      log.error(msg, e);
+      throw new SchedulerException(msg);
     }
     //reconcile tasks upon registration
     reconcileTasks(driver);
@@ -143,26 +147,26 @@ public class HdfsScheduler implements org.apache.mesos.Scheduler, Runnable {
           .getCurrentAcquisitionPhase().toString()));
 
       switch (liveState.getCurrentAcquisitionPhase()) {
-        case RECONCILING_TASKS:
+        case RECONCILING_TASKS :
           if (reconciliationComplete()) {
             correctCurrentPhase();
           }
           break;
-        case JOURNAL_NODES:
+        case JOURNAL_NODES :
           if (liveState.getJournalNodeSize() == conf.getJournalNodeCount()) {
             // TODO (elingg) move the reload to correctCurrentPhase and make it idempotent
             reloadConfigsOnAllRunningTasks(driver);
             correctCurrentPhase();
           }
           break;
-        case START_NAME_NODES:
+        case START_NAME_NODES :
           if (liveState.getNameNodeSize() == HDFSConstants.TOTAL_NAME_NODES) {
             // TODO (elingg) move the reload to correctCurrentPhase and make it idempotent
             reloadConfigsOnAllRunningTasks(driver);
             correctCurrentPhase();
           }
           break;
-        case FORMAT_NAME_NODES:
+        case FORMAT_NAME_NODES :
           if (!liveState.isNameNode1Initialized() && !liveState.isNameNode2Initialized()) {
             sendMessageTo(
                 driver,
@@ -186,7 +190,7 @@ public class HdfsScheduler implements org.apache.mesos.Scheduler, Runnable {
           }
           break;
         // TODO (elingg) add a configurable number of data nodes
-        case DATA_NODES:
+        case DATA_NODES :
           break;
       }
     } else {
@@ -209,28 +213,28 @@ public class HdfsScheduler implements org.apache.mesos.Scheduler, Runnable {
         driver.declineOffer(offer.getId());
       } else {
         switch (liveState.getCurrentAcquisitionPhase()) {
-          case RECONCILING_TASKS:
+          case RECONCILING_TASKS :
             log.info("Declining offers while reconciling tasks");
             driver.declineOffer(offer.getId());
             break;
-          case JOURNAL_NODES:
+          case JOURNAL_NODES :
             if (tryToLaunchJournalNode(driver, offer)) {
               acceptedOffer = true;
             } else {
               driver.declineOffer(offer.getId());
             }
             break;
-          case START_NAME_NODES:
+          case START_NAME_NODES :
             if (tryToLaunchNameNode(driver, offer)) {
               acceptedOffer = true;
             } else {
               driver.declineOffer(offer.getId());
             }
             break;
-          case FORMAT_NAME_NODES:
+          case FORMAT_NAME_NODES :
             driver.declineOffer(offer.getId());
             break;
-          case DATA_NODES:
+          case DATA_NODES :
             if (tryToLaunchDataNode(driver, offer)) {
               acceptedOffer = true;
             } else {
@@ -568,11 +572,10 @@ public class HdfsScheduler implements org.apache.mesos.Scheduler, Runnable {
   }
 
   private void reconcileTasks(SchedulerDriver driver) {
-    // TODO (elingg) run this method repeatedly with exponential backoff in the case that it takes
-    // time for
-    // different slaves to reregister upon master failover.
+    // TODO (elingg) run this method repeatedly with exponential backoff in the case that it
+    // takes time for different slaves to reregister upon master failover.
     reconciliationCompleted = false;
-    driver.reconcileTasks(Collections.<Protos.TaskStatus>emptyList());
+    driver.reconcileTasks(Collections.<Protos.TaskStatus> emptyList());
     Timer timer = new Timer();
     timer.schedule(new ReconcileStateTask(), conf.getReconciliationTimeout() * SECONDS_FROM_MILLIS);
   }

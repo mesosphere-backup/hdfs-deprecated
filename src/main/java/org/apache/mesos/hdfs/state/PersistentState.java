@@ -102,54 +102,54 @@ public class PersistentState {
   }
 
   public List<String> getDeadJournalNodes() {
-      if (deadJournalNodeTimeStamp != null && deadJournalNodeTimeStamp.before(new Date())) {
-          removeDeadJournalNodes();
-          return new ArrayList<>();
-      } else {
-        Map<String, String> journalNodes = getJournalNodes();
-        Set<String> journalHosts = journalNodes.keySet();
-        List<String> deadJournalHosts = new ArrayList<>();
-        for (String journalHost: journalHosts) {
-          if (journalNodes.get(journalHost) == null) {
-            deadJournalHosts.add(journalHost);
-          }
+    if (deadJournalNodeTimeStamp != null && deadJournalNodeTimeStamp.before(new Date())) {
+      removeDeadJournalNodes();
+      return new ArrayList<>();
+    } else {
+      Map<String, String> journalNodes = getJournalNodes();
+      Set<String> journalHosts = journalNodes.keySet();
+      List<String> deadJournalHosts = new ArrayList<>();
+      for (String journalHost : journalHosts) {
+        if (journalNodes.get(journalHost) == null) {
+          deadJournalHosts.add(journalHost);
         }
-        return deadJournalHosts;
       }
+      return deadJournalHosts;
+    }
   }
 
   public List<String> getDeadNameNodes() {
-      if (deadNameNodeTimeStamp != null && deadNameNodeTimeStamp.before(new Date())) {
-          removeDeadNameNodes();
-          return new ArrayList<>();
-      } else {
-        Map<String, String> nameNodes = getNameNodes();
-        Set<String> nameHosts = nameNodes.keySet();
-        List<String> deadNameHosts = new ArrayList<>();
-        for (String nameHost : nameHosts) {
-          if (nameNodes.get(nameHost) == null) {
-            deadNameHosts.add(nameHost);
-          }
+    if (deadNameNodeTimeStamp != null && deadNameNodeTimeStamp.before(new Date())) {
+      removeDeadNameNodes();
+      return new ArrayList<>();
+    } else {
+      Map<String, String> nameNodes = getNameNodes();
+      Set<String> nameHosts = nameNodes.keySet();
+      List<String> deadNameHosts = new ArrayList<>();
+      for (String nameHost : nameHosts) {
+        if (nameNodes.get(nameHost) == null) {
+          deadNameHosts.add(nameHost);
         }
-        return deadNameHosts;
       }
+      return deadNameHosts;
+    }
   }
 
   public List<String> getDeadDataNodes() {
-      if (deadDataNodeTimeStamp != null && deadDataNodeTimeStamp.before(new Date())) {
-          removeDeadDataNodes();
-          return new ArrayList<>();
-      } else {
-        Map<String, String> dataNodes = getDataNodes();
-        Set<String> dataHosts = dataNodes.keySet();
-        List<String> deadDataHosts = new ArrayList<>();
-        for (String dataHost : dataHosts) {
+    if (deadDataNodeTimeStamp != null && deadDataNodeTimeStamp.before(new Date())) {
+      removeDeadDataNodes();
+      return new ArrayList<>();
+    } else {
+      Map<String, String> dataNodes = getDataNodes();
+      Set<String> dataHosts = dataNodes.keySet();
+      List<String> deadDataHosts = new ArrayList<>();
+      for (String dataHost : dataHosts) {
         if (dataNodes.get(dataHost) == null) {
           deadDataHosts.add(dataHost);
         }
-       }
-       return deadDataHosts;
       }
+      return deadDataHosts;
+    }
   }
 
   // TODO (nicgrayson) add tests with in-memory state implementation for zookeeper
