@@ -63,6 +63,7 @@ public class LiveState {
     runningTasks.remove(taskId);
   }
 
+  @SuppressWarnings("PMD.UselessParentheses")
   public void updateTaskForStatus(Protos.TaskStatus status) {
     // TODO (elingg) Use Starting Status when the task is running, but not initialized. Use running
     // status when the task is initialized so that we can differentiate during the reconciliation
@@ -73,16 +74,16 @@ public class LiveState {
       // If initializing the first NN or reconciling the first NN or bootstrapping the first NN
       // set the status to initialized
       if (status.getMessage().equals(HDFSConstants.NAME_NODE_INIT_MESSAGE)
-          || (currentAcquisitionPhase.equals(AcquisitionPhase.RECONCILING_TASKS) && !isNameNode1Initialized())          //NOPMD  indicates useless parens
-          || (status.getMessage().equals(HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE) && !isNameNode1Initialized())) {    //NOPMD
+          || (currentAcquisitionPhase.equals(AcquisitionPhase.RECONCILING_TASKS) && !isNameNode1Initialized())
+          || (status.getMessage().equals(HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE) && !isNameNode1Initialized())) {
 
         nameNode1TaskMap.clear();
         nameNode1TaskMap.put(status, true);
 
         // If bootstrapping the second NN or reconciling the second NN,
         // set the status to initialized
-      } else if ((status.getMessage().equals(HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE) && !isNameNode2Initialized())   //NOPMD
-          || (currentAcquisitionPhase.equals(AcquisitionPhase.RECONCILING_TASKS) && !isNameNode2Initialized())) {       //NOPMD
+      } else if ((status.getMessage().equals(HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE) && !isNameNode2Initialized())
+          || (currentAcquisitionPhase.equals(AcquisitionPhase.RECONCILING_TASKS) && !isNameNode2Initialized())) {
         nameNode2TaskMap.clear();
         nameNode2TaskMap.put(status, true);
         // If the first NN is not running, set the status to running
