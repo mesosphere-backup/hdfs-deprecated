@@ -15,9 +15,6 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
-/**
- * Created by Abhay Agarwal on 3/12/15.
- */
 public class DnsResolver {
   public static final Log log = LogFactory.getLog(Scheduler.class);
 
@@ -32,12 +29,11 @@ public class DnsResolver {
   }
 
   public boolean journalNodesResolvable() {
+    if (!conf.usingMesosDns()) return true; //short circuit since Mesos handles this otherwise
     Set<String> hosts = new HashSet<>();
-    if (conf.usingMesosDns()) {
-      for (int i = conf.getJournalNodeCount(); i > 0; i--)
-        hosts.add(HDFSConstants.JOURNAL_NODE_ID + i + "." + conf.getFrameworkName() + "." + conf.getMesosDnsDomain());
-    } else hosts.addAll(persistentState.getJournalNodes().keySet());
-
+    for (int i = conf.getJournalNodeCount(); i > 0; i--) {
+      hosts.add(HDFSConstants.JOURNAL_NODE_ID + i + "." + conf.getFrameworkName() + "." + conf.getMesosDnsDomain());
+    }
     boolean success = true;
     for (String host : hosts) {
       log.info("Resolving DNS for " + host);
@@ -55,12 +51,11 @@ public class DnsResolver {
   }
 
   public boolean nameNodesResolvable() {
+    if (!conf.usingMesosDns()) return true; //short circuit since Mesos handles this otherwise
     Set<String> hosts = new HashSet<>();
-    if (conf.usingMesosDns()) {
-      for (int i = HDFSConstants.TOTAL_NAME_NODES; i > 0; i--)
-        hosts.add(HDFSConstants.NAME_NODE_ID + i + "." + conf.getFrameworkName() + "." + conf.getMesosDnsDomain());
-    } else hosts.addAll(persistentState.getNameNodes().keySet());
-
+    for (int i = HDFSConstants.TOTAL_NAME_NODES; i > 0; i--) {
+      hosts.add(HDFSConstants.NAME_NODE_ID + i + "." + conf.getFrameworkName() + "." + conf.getMesosDnsDomain());
+    }
     boolean success = true;
     for (String host : hosts) {
       log.info("Resolving DNS for " + host);
@@ -78,8 +73,12 @@ public class DnsResolver {
   }
 
   public void sendMessageAfterNNResolvable(final SchedulerDriver driver,
-      final Protos.TaskID taskId,
-      final Protos.SlaveID slaveID, final String message) {
+      final Protos.TaskID taskId, final Protos.SlaveID slaveID, final String message) {
+    if (!conf.usingMesosDns()) {
+      // short circuit since Mesos handles this otherwise
+      scheduler.sendMessageTo(driver, taskId, slaveID, message);
+      return;
+    }
     class PreNNInitTask extends TimerTask {
       @Override
       public void run() {
