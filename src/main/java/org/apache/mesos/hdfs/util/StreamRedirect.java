@@ -33,7 +33,7 @@ public class StreamRedirect extends Thread {
         outputStream.println(streamLine);
       }
     } catch (IOException ioe) {
-      log.error("stream redirect error", ioe);
+      log.error("Stream redirect error", ioe);
     }
   }
 }

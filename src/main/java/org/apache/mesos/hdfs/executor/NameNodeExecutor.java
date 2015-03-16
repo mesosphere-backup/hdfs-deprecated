@@ -112,7 +112,11 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
                 nameDir));
       } else {
         deleteFile(nameDir);
-        nameDir.mkdirs();
+        if (!nameDir.mkdirs()) {
+          final String errorMsg = "unable to make directory: " + nameDir;
+          log.error(errorMsg);
+          throw new ExecutorException(errorMsg);
+        }
         runCommand(driver, nameNodeTask, "bin/hdfs-mesos-namenode " + messageStr);
         startProcess(driver, nameNodeTask);
         startProcess(driver, zkfcNodeTask);
