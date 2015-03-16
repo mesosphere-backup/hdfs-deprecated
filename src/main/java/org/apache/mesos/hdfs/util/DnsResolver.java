@@ -41,8 +41,7 @@ public class DnsResolver {
         InetAddress.getByName(host);
         log.info("Successfully found " + host);
       } catch (SecurityException | IOException e) {
-        log.info("Couldn't resolve host " + host);
-        log.info("Sleeping before retrying.");
+        log.warn("Couldn't resolve host " + host);
         success = false;
         break;
       }
@@ -63,8 +62,7 @@ public class DnsResolver {
         InetAddress.getByName(host);
         log.info("Successfully found " + host);
       } catch (SecurityException | IOException e) {
-        log.info("Couldn't resolve host " + host);
-        log.info("Sleeping before retrying.");
+        log.warn("Couldn't resolve host " + host);
         success = false;
         break;
       }
