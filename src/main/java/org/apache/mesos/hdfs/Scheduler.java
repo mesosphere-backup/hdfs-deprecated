@@ -265,7 +265,7 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
     List<TaskInfo> tasks = new ArrayList<>();
     for (String taskType : taskTypes) {
       List<Resource> taskResources = getTaskResources(taskType);
-      String taskName = getNodeName(taskType);
+      String taskName = getNextTaskType(taskType);
       if (taskName.isEmpty()) return false;
       TaskID taskId = TaskID.newBuilder()
           .setValue(String.format("task.%s.%s", taskType, taskIdName))
@@ -288,7 +288,7 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
     return true;
   }
 
-  private String getNodeName(String taskType) {
+  private String getNextTaskType(String taskType) {
     if (taskType.equals(HDFSConstants.NAME_NODE_ID)) {
       for (int i = 1; i <= HDFSConstants.TOTAL_NAME_NODES; i--) {
         if (!liveState.getNameNodeNames().containsValue(HDFSConstants.NAME_NODE_ID + i)) {
