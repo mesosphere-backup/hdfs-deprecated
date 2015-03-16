@@ -14,7 +14,7 @@ public final class Main {
 
   public static void main(String[] args) {
     Injector injector = Guice.createInjector();
-    Thread scheduler = new Thread(injector.getInstance(HDFSScheduler.class));
+    Thread scheduler = new Thread(injector.getInstance(HDFSScheduler1.class));
     scheduler.start();
 
     injector.getInstance(ConfigServer.class);

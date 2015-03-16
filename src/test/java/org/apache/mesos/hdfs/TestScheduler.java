@@ -41,7 +41,7 @@ public class TestScheduler {
   @Captor
   ArgumentCaptor<Collection<Protos.TaskInfo>> taskInfosCapture;
 
-  HDFSScheduler scheduler;
+  HDFSScheduler1 scheduler;
 
   @Test
   public void statusUpdateWasStagingNowRunning() {
@@ -216,7 +216,7 @@ public class TestScheduler {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    this.scheduler = new HDFSScheduler(hdfsConfig, liveState, persistentState);
+    this.scheduler = new HDFSScheduler1(hdfsConfig, liveState, persistentState);
   }
 
   private Protos.TaskID createTaskId(String id) {
