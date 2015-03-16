@@ -44,10 +44,10 @@ import java.util.concurrent.ExecutionException;
 /**
  * The HDFS Scheduler implementation.
  */
-public class HDFSScheduler1 implements org.apache.mesos.Scheduler, Runnable {
+public class HdfsScheduler implements org.apache.mesos.Scheduler, Runnable {
   // TODO (elingg) remove as much logic as possible from Scheduler to clean up code
 
-  public final Log log = LogFactory.getLog(HDFSScheduler1.class);
+  public final Log log = LogFactory.getLog(HdfsScheduler.class);
 
   private static final int SECONDS_FROM_MILLIS = 1000;
 
@@ -57,11 +57,11 @@ public class HDFSScheduler1 implements org.apache.mesos.Scheduler, Runnable {
   private boolean reconciliationCompleted;
 
   @Inject
-  public HDFSScheduler1(HdfsFrameworkConfig conf, LiveState liveState) {
+  public HdfsScheduler(HdfsFrameworkConfig conf, LiveState liveState) {
     this(conf, liveState, new PersistentState(conf));
   }
 
-  public HDFSScheduler1(HdfsFrameworkConfig conf, LiveState liveState, PersistentState persistentState) {
+  public HdfsScheduler(HdfsFrameworkConfig conf, LiveState liveState, PersistentState persistentState) {
     this.conf = conf;
     this.liveState = liveState;
     this.persistentState = persistentState;
