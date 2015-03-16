@@ -42,11 +42,10 @@ public class LiveState {
 
   public void addStagingTask(Protos.TaskID taskId, String taskName) {
     stagingTasks.add(taskId);
-    if (taskId.getValue().contains(HDFSConstants.NAME_NODE_TASKID)) {
-      nameNodeNames.put(taskId.getValue(), taskName);
-    }
     if (taskId.getValue().contains(HDFSConstants.JOURNAL_NODE_ID)) {
       journalNodeNames.put(taskId.getValue(), taskName);
+    } else if (taskId.getValue().contains(HDFSConstants.NAME_NODE_TASKID)) {
+      nameNodeNames.put(taskId.getValue(), taskName);
     }
   }
 

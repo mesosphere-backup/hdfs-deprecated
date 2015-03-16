@@ -33,10 +33,10 @@ import java.util.concurrent.TimeUnit;
 @Singleton
 public class PersistentState {
   public static final Log log = LogFactory.getLog(PersistentState.class);
-  private static String FRAMEWORK_ID_KEY = "frameworkId";
-  private static String NAMENODES_KEY = "nameNodes";
-  private static String JOURNALNODES_KEY = "journalNodes";
-  private static String DATANODES_KEY = "dataNodes";
+  private String FRAMEWORK_ID_KEY = "frameworkId";
+  private String NAMENODES_KEY = "nameNodes";
+  private String JOURNALNODES_KEY = "journalNodes";
+  private String DATANODES_KEY = "dataNodes";
   private ZooKeeperState zkState;
   private SchedulerConf conf;
 
