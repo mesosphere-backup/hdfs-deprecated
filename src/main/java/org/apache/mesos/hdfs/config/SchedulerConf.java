@@ -219,4 +219,12 @@ public class SchedulerConf extends Configured {
   public int getDeadNodeTimeout() {
     return getConf().getInt("mesos.hdfs.deadnode.timeout.seconds", 90);
   }
+
+  public int getHealthCheckFrequency() {
+    return getConf().getInt("mesos.hdfs.healthcheck.frequency.ms", 60000);
+  }
+
+  public int getHealthCheckWaitingPeriod() {
+    return getConf().getInt("mesos.hdfs.healthcheck.waitingperiod.ms", 120000);
+  }
 }

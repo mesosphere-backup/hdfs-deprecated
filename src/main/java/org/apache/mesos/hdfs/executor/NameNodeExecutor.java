@@ -70,7 +70,8 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
           .setState(TaskState.TASK_RUNNING)
           .build());
       healthCheckJN = new TimedHealthCheck(driver, journalNodeTask);
-      timer.scheduleAtFixedRate(healthCheckJN, 120000, 60000);
+      timer.scheduleAtFixedRate(healthCheckJN, schedulerConf.getHealthCheckWaitingPeriod(),
+          schedulerConf.getHealthCheckFrequency());
     } else if (taskInfo.getTaskId().getValue().contains(HDFSConstants.NAME_NODE_TASKID)) {
       nameNodeTask = task;
       driver.sendStatusUpdate(TaskStatus.newBuilder()
@@ -78,7 +79,8 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
           .setState(TaskState.TASK_RUNNING)
           .build());
       healthCheckNN = new TimedHealthCheck(driver, nameNodeTask);
-      timer.scheduleAtFixedRate(healthCheckNN, 120000, 60000);
+      timer.scheduleAtFixedRate(healthCheckNN, schedulerConf.getHealthCheckWaitingPeriod(),
+          schedulerConf.getHealthCheckFrequency());
     } else if (taskInfo.getTaskId().getValue().contains(HDFSConstants.ZKFC_NODE_ID)) {
       zkfcNodeTask = task;
       driver.sendStatusUpdate(TaskStatus.newBuilder()
@@ -86,7 +88,8 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
           .setState(TaskState.TASK_RUNNING)
           .build());
       healthCheckZN = new TimedHealthCheck(driver, zkfcNodeTask);
-      timer.scheduleAtFixedRate(healthCheckZN, 120000, 60000);
+      timer.scheduleAtFixedRate(healthCheckZN, schedulerConf.getHealthCheckWaitingPeriod(),
+          schedulerConf.getHealthCheckFrequency());
     }
   }
 

@@ -15,7 +15,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class DnsResolver {
-  public static final Log log = LogFactory.getLog(Scheduler.class);
+  public static final Log log = LogFactory.getLog(DnsResolver.class);
 
   private final Scheduler scheduler;
   private final SchedulerConf conf;
@@ -29,7 +29,8 @@ public class DnsResolver {
     if (!conf.usingMesosDns()) return true; //short circuit since Mesos handles this otherwise
     Set<String> hosts = new HashSet<>();
     for (int i = 1; i <= conf.getJournalNodeCount(); i++) {
-      hosts.add(HDFSConstants.JOURNAL_NODE_ID + i + "." + conf.getFrameworkName() + "." + conf.getMesosDnsDomain());
+      hosts.add(HDFSConstants.JOURNAL_NODE_ID + i + "." + conf.getFrameworkName()
+          + "." + conf.getMesosDnsDomain());
     }
     boolean success = true;
     for (String host : hosts) {
@@ -50,7 +51,8 @@ public class DnsResolver {
     if (!conf.usingMesosDns()) return true; //short circuit since Mesos handles this otherwise
     Set<String> hosts = new HashSet<>();
     for (int i = 1; i <= HDFSConstants.TOTAL_NAME_NODES; i++) {
-      hosts.add(HDFSConstants.NAME_NODE_ID + i + "." + conf.getFrameworkName() + "." + conf.getMesosDnsDomain());
+      hosts.add(HDFSConstants.NAME_NODE_ID + i + "." + conf.getFrameworkName()
+          + "." + conf.getMesosDnsDomain());
     }
     boolean success = true;
     for (String host : hosts) {

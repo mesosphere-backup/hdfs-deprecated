@@ -210,66 +210,6 @@ public abstract class AbstractNodeExecutor implements Executor {
     }
   }
 
-  protected void runHealthChecks(ExecutorDriver driver, Task task) {
-    log.info("Performing health check for task: " + task.taskInfo.getTaskId().getValue());
-
-    Process healthCmd = null;
-    String nodeName = null;
-    String healthCheckCmd = "netstat -plnat | grep ";
-    // TODO this code is working, but it is a mess/ refactor and use utility methods
-    try {
-      if (task.taskInfo.getTaskId().getValue().contains(HDFSConstants.DATA_NODE_ID)) {
-        nodeName = HDFSConstants.DATA_NODE_ID;
-        healthCmd = Runtime.getRuntime().exec(healthCheckCmd + "50075");
-      } else if (task.taskInfo.getTaskId().getValue().contains(HDFSConstants.JOURNAL_NODE_ID)) {
-        nodeName = HDFSConstants.JOURNAL_NODE_ID;
-        healthCmd = Runtime.getRuntime().exec(healthCheckCmd + "8480");
-      } else if (task.taskInfo.getTaskId().getValue().contains(HDFSConstants.ZKFC_NODE_ID)) {
-        nodeName = HDFSConstants.ZKFC_NODE_ID;
-        healthCmd = Runtime.getRuntime().exec(healthCheckCmd + "50071");
-      } else if (task.taskInfo.getTaskId().getValue().contains(HDFSConstants.NAME_NODE_ID)) {
-        nodeName = HDFSConstants.NAME_NODE_ID;
-        healthCmd = Runtime.getRuntime().exec(healthCheckCmd + "50070");
-      }
-
-      if (healthCmd != null) {
-        boolean nodeRegistered = false;
-        InputStream inputStream = healthCmd.getInputStream();
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-        String line;
-        while ((line = bufferedReader.readLine()) != null) {
-          int endPortIndex = line.lastIndexOf("java"); // TODO change this to /
-          int beginPortIndex = endPortIndex > 0 ? line.lastIndexOf(" ", endPortIndex) : -1;
-          if (endPortIndex != -1) {
-            line = line.substring(beginPortIndex + 1, endPortIndex - 1);
-            Process psCmd = Runtime.getRuntime().exec("ps " + line);
-            if (psCmd != null) {
-              BufferedReader bufferedReaderPS =
-                  new BufferedReader(new InputStreamReader(psCmd.getInputStream()));
-              String psCmdOutput = bufferedReaderPS.readLine();
-              while ((psCmdOutput = bufferedReaderPS.readLine()) != null
-                  && psCmdOutput.contains(nodeName)) {
-                nodeRegistered = true;
-              }
-              psCmd.getInputStream().close();
-              bufferedReaderPS.close();
-            }
-          }
-
-        }
-        inputStream.close();
-        bufferedReader.close();
-        if (!nodeRegistered) {
-          log.fatal("Node health check failed for task: " + task.taskInfo.getTaskId().getValue());
-          killTask(driver, task.taskInfo.getTaskId());
-          System.exit(2);
-        }
-      }
-    } catch (IOException e) {
-      log.error("Error in the health check: ", e);
-    }
-  }
-
   /**
    * Redirects a process to STDERR and STDOUT for logging and debugging purposes.
    **/
@@ -343,6 +283,89 @@ public abstract class AbstractNodeExecutor implements Executor {
   public void shutdown(ExecutorDriver d) {
     // TODO(elingg) let's shut down the driver more gracefully
     log.info("Executor asked to shutdown");
+  }
+
+  protected void runHealthChecks(ExecutorDriver driver, Task task) {
+    log.info("Performing health check for task: " + task.taskInfo.getTaskId().getValue());
+
+    String nodeName = null;
+    String healthCheckCmd = "netstat -plnat | grep ";
+    String taskIdStr = task.taskInfo.getTaskId().getValue();
+
+    if (taskIdStr.contains(HDFSConstants.DATA_NODE_ID)) {
+      nodeName = HDFSConstants.DATA_NODE_ID;
+      healthCheckCmd = healthCheckCmd + HDFSConstants.DATA_NODE_PORT;
+    } else if (taskIdStr.contains(HDFSConstants.JOURNAL_NODE_ID)) {
+      nodeName = HDFSConstants.JOURNAL_NODE_ID;
+      healthCheckCmd = healthCheckCmd + HDFSConstants.JOURNAL_NODE_PORT;
+    } else if (taskIdStr.contains(HDFSConstants.ZKFC_NODE_ID)) {
+      nodeName = HDFSConstants.ZKFC_NODE_ID;
+      healthCheckCmd = healthCheckCmd + HDFSConstants.ZKFC_NODE_PORT;
+    } else if (taskIdStr.contains(HDFSConstants.NAME_NODE_ID)) {
+      nodeName = HDFSConstants.NAME_NODE_ID;
+      healthCheckCmd = healthCheckCmd + HDFSConstants.NAME_NODE_PORT;
+    }
+    try {
+      boolean nodeRegistered = false;
+      if (nodeName != null) {
+        nodeRegistered = runHealthCheckProcess(healthCheckCmd, nodeName);
+      }
+      if (!nodeRegistered) {
+        log.fatal("Node health check failed for task: " + task.taskInfo.getTaskId().getValue());
+        killTask(driver, task.taskInfo.getTaskId());
+        System.exit(2);
+      }
+    } catch (IOException e) {
+      log.error("Error running health check: ", e);
+    }
+
+  }
+
+  private boolean runHealthCheckProcess(String healthCheckCmd, String nodeName) throws IOException {
+    String javaKeyWord = "java";
+    String psStr = "ps";
+    boolean nodeRegistered = false;
+
+    Process healthCmd = Runtime.getRuntime().exec(healthCheckCmd);
+    if (healthCmd != null) {
+      InputStream inputStream = healthCmd.getInputStream();
+      BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+      String line;
+      while ((line = bufferedReader.readLine()) != null) {
+        // Parse output to find process id
+        int endPortIndex = line.lastIndexOf(javaKeyWord);
+        int beginPortIndex = endPortIndex > 0 ? line.lastIndexOf(" ", endPortIndex) : -1;
+        if (endPortIndex != -1) {
+          line = line.substring(beginPortIndex + 1, endPortIndex - 1);
+          // Run ps command with the process id and check to see if it's output contains
+          // the node name
+          Process psCmd = Runtime.getRuntime().exec(psStr + " " + line);
+          nodeRegistered = outputContainsNodeName(psCmd, nodeName);
+        }
+      }
+      inputStream.close();
+      bufferedReader.close();
+    }
+
+    return nodeRegistered;
+  }
+
+  private boolean outputContainsNodeName(Process psCmd, String nodeName) throws IOException {
+    boolean nodeRegistered = false;
+    if (psCmd != null) {
+      InputStream inputStream = psCmd.getInputStream();
+      BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+      String line;
+      while ((line = bufferedReader.readLine()) != null) {
+        // Check if the line contains the nodeName
+        if (line.contains(nodeName)) {
+          nodeRegistered = true;
+        }
+      }
+      inputStream.close();
+      bufferedReader.close();
+    }
+    return nodeRegistered;
   }
 
   public class TimedHealthCheck extends TimerTask {

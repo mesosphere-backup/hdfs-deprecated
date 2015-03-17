@@ -59,7 +59,8 @@ public class NodeExecutor extends AbstractNodeExecutor {
         .setData(taskInfo.getData()).build());
     timedHealthCheck = new TimedHealthCheck(driver, task);
     timer = new Timer(true);
-    timer.scheduleAtFixedRate(timedHealthCheck, 120000, 60000);
+    timer.scheduleAtFixedRate(timedHealthCheck, schedulerConf.getHealthCheckWaitingPeriod(),
+        schedulerConf.getHealthCheckFrequency());
   }
 
   @Override
