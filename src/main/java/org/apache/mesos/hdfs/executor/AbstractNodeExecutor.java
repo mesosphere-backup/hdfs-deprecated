@@ -315,55 +315,68 @@ public abstract class AbstractNodeExecutor implements Executor {
         killTask(driver, task.taskInfo.getTaskId());
         System.exit(2);
       }
-    } catch (IOException e) {
+    } catch (IOException | InterruptedException e) {
       log.error("Error running health check: ", e);
     }
 
   }
 
-  private boolean runHealthCheckProcess(String healthCheckCmd, String nodeName) throws IOException {
+  private boolean runHealthCheckProcess(String healthCheckCmd, String nodeName) throws IOException,
+      InterruptedException {
     String javaKeyWord = "java";
-    String psStr = "ps";
+    String psStr = "ps -efww";
     boolean nodeRegistered = false;
 
-    Process healthCmd = Runtime.getRuntime().exec(healthCheckCmd);
+    Process healthCmd = Runtime.getRuntime().exec(new String[]{
+        "sh", "-c", healthCheckCmd});
     if (healthCmd != null) {
-      InputStream inputStream = healthCmd.getInputStream();
-      BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-      String line;
-      while ((line = bufferedReader.readLine()) != null) {
-        // Parse output to find process id
-        int endPortIndex = line.lastIndexOf(javaKeyWord);
-        int beginPortIndex = endPortIndex > 0 ? line.lastIndexOf(" ", endPortIndex) : -1;
-        if (endPortIndex != -1) {
-          line = line.substring(beginPortIndex + 1, endPortIndex - 1);
-          // Run ps command with the process id and check to see if it's output contains
-          // the node name
-          Process psCmd = Runtime.getRuntime().exec(psStr + " " + line);
-          nodeRegistered = outputContainsNodeName(psCmd, nodeName);
+      int exitCode = healthCmd.waitFor();
+      if (exitCode != 0) {
+        log.error("Unable to run the health check command: " + healthCheckCmd + ", exit code: "
+            + exitCode);
+      } else {
+        InputStream inputStream = healthCmd.getInputStream();
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+        String line;
+        while ((line = bufferedReader.readLine()) != null) {
+          // Parse output to find process id
+          int endPortIndex = line.lastIndexOf(javaKeyWord);
+          int beginPortIndex = endPortIndex > 0 ? line.lastIndexOf(" ", endPortIndex) : -1;
+          if (endPortIndex != -1) {
+            line = line.substring(beginPortIndex + 1, endPortIndex - 1);
+            // Run ps command with the process id and check to see if it's output contains
+            // the node name
+            String psCmdStr = psStr + " " + line + " | grep " + nodeName;
+            if (outputContainsNodeName(psCmdStr, nodeName)) {
+              nodeRegistered = true;
+            }
+          }
         }
+        inputStream.close();
+        bufferedReader.close();
       }
-      inputStream.close();
-      bufferedReader.close();
     }
 
     return nodeRegistered;
   }
 
-  private boolean outputContainsNodeName(Process psCmd, String nodeName) throws IOException {
+  private boolean outputContainsNodeName(String psCmdStr, String nodeName) throws IOException,
+      InterruptedException {
     boolean nodeRegistered = false;
+    Process psCmd = Runtime.getRuntime().exec(new String[]{
+        "sh", "-c", psCmdStr});
     if (psCmd != null) {
-      InputStream inputStream = psCmd.getInputStream();
-      BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-      String line;
-      while ((line = bufferedReader.readLine()) != null) {
-        // Check if the line contains the nodeName
-        if (line.contains(nodeName)) {
+      int exitCode = psCmd.waitFor();
+      if (exitCode != 0) {
+        log.error("Unable to run the health check command: " + psCmdStr + ", exit code: "
+            + exitCode);
+      } else {
+        InputStream inputStream = psCmd.getInputStream();
+        if (psCmd.getInputStream().read() != -1) {
           nodeRegistered = true;
         }
+        inputStream.close();
       }
-      inputStream.close();
-      bufferedReader.close();
     }
     return nodeRegistered;
   }
