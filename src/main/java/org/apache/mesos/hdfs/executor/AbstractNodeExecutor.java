@@ -287,11 +287,11 @@ public abstract class AbstractNodeExecutor implements Executor {
 
   protected void runHealthChecks(ExecutorDriver driver, Task task) {
     log.info("Performing health check for task: " + task.taskInfo.getTaskId().getValue());
-
+    
     String nodeName = null;
     String healthCheckCmd = "netstat -plnat | grep ";
     String taskIdStr = task.taskInfo.getTaskId().getValue();
-
+      
     if (taskIdStr.contains(HDFSConstants.DATA_NODE_ID)) {
       nodeName = HDFSConstants.DATA_NODE_ID;
       healthCheckCmd = healthCheckCmd + HDFSConstants.DATA_NODE_PORT;
@@ -305,6 +305,7 @@ public abstract class AbstractNodeExecutor implements Executor {
       nodeName = HDFSConstants.NAME_NODE_ID;
       healthCheckCmd = healthCheckCmd + HDFSConstants.NAME_NODE_PORT;
     }
+      
     try {
       boolean nodeRegistered = false;
       if (nodeName != null) {
@@ -318,7 +319,6 @@ public abstract class AbstractNodeExecutor implements Executor {
     } catch (IOException | InterruptedException e) {
       log.error("Error running health check: ", e);
     }
-
   }
 
   private boolean runHealthCheckProcess(String healthCheckCmd, String nodeName) throws IOException,
@@ -326,9 +326,9 @@ public abstract class AbstractNodeExecutor implements Executor {
     String javaKeyWord = "java";
     String psStr = "ps -efww";
     boolean nodeRegistered = false;
-
     Process healthCmd = Runtime.getRuntime().exec(new String[]{
         "sh", "-c", healthCheckCmd});
+
     if (healthCmd != null) {
       int exitCode = healthCmd.waitFor();
       if (exitCode != 0) {
@@ -365,6 +365,7 @@ public abstract class AbstractNodeExecutor implements Executor {
     boolean nodeRegistered = false;
     Process psCmd = Runtime.getRuntime().exec(new String[]{
         "sh", "-c", psCmdStr});
+
     if (psCmd != null) {
       int exitCode = psCmd.waitFor();
       if (exitCode != 0) {
@@ -378,6 +379,7 @@ public abstract class AbstractNodeExecutor implements Executor {
         inputStream.close();
       }
     }
+
     return nodeRegistered;
   }
 
