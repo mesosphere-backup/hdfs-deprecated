@@ -225,6 +225,6 @@ public class SchedulerConf extends Configured {
   }
 
   public int getHealthCheckWaitingPeriod() {
-    return getConf().getInt("mesos.hdfs.healthcheck.waitingperiod.ms", 120000);
+    return getConf().getInt("mesos.hdfs.healthcheck.waitingperiod.ms", 240000);
   }
 }
