@@ -20,6 +20,10 @@ import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -287,102 +291,48 @@ public abstract class AbstractNodeExecutor implements Executor {
 
   protected void runHealthChecks(ExecutorDriver driver, Task task) {
     log.info("Performing health check for task: " + task.taskInfo.getTaskId().getValue());
-    
-    String nodeName = null;
-    String healthCheckCmd = "netstat -plnat | grep ";
+    boolean taskHealthy = false;
+    String localHostStr = "localhost";
     String taskIdStr = task.taskInfo.getTaskId().getValue();
-      
+    int healthCheckPort = -1;
+
     if (taskIdStr.contains(HDFSConstants.DATA_NODE_ID)) {
-      nodeName = HDFSConstants.DATA_NODE_ID;
-      healthCheckCmd = healthCheckCmd + HDFSConstants.DATA_NODE_PORT;
+      healthCheckPort = HDFSConstants.DATA_NODE_PORT;
     } else if (taskIdStr.contains(HDFSConstants.JOURNAL_NODE_ID)) {
-      nodeName = HDFSConstants.JOURNAL_NODE_ID;
-      healthCheckCmd = healthCheckCmd + HDFSConstants.JOURNAL_NODE_PORT;
+      healthCheckPort = HDFSConstants.JOURNAL_NODE_PORT;
     } else if (taskIdStr.contains(HDFSConstants.ZKFC_NODE_ID)) {
-      nodeName = HDFSConstants.ZKFC_NODE_ID;
-      healthCheckCmd = healthCheckCmd + HDFSConstants.ZKFC_NODE_PORT;
+      healthCheckPort = HDFSConstants.ZKFC_NODE_PORT;
     } else if (taskIdStr.contains(HDFSConstants.NAME_NODE_ID)) {
-      nodeName = HDFSConstants.NAME_NODE_ID;
-      healthCheckCmd = healthCheckCmd + HDFSConstants.NAME_NODE_PORT;
+      healthCheckPort = HDFSConstants.NAME_NODE_PORT;
+    } else {
+      log.error("Task unknown: " + taskIdStr);
     }
-      
-    try {
-      boolean nodeRegistered = false;
-      if (nodeName != null) {
-        nodeRegistered = runHealthCheckProcess(healthCheckCmd, nodeName);
-      }
-      if (!nodeRegistered) {
-        log.fatal("Node health check failed for task: " + task.taskInfo.getTaskId().getValue());
-        killTask(driver, task.taskInfo.getTaskId());
-        System.exit(2);
-      }
-    } catch (IOException | InterruptedException e) {
-      log.error("Error running health check: ", e);
-    }
-  }
-
-  private boolean runHealthCheckProcess(String healthCheckCmd, String nodeName) throws IOException,
-      InterruptedException {
-    String javaKeyWord = "java";
-    String psStr = "ps -efww";
-    boolean nodeRegistered = false;
-    Process healthCmd = Runtime.getRuntime().exec(new String[]{
-        "sh", "-c", healthCheckCmd});
-
-    if (healthCmd != null) {
-      int exitCode = healthCmd.waitFor();
-      if (exitCode != 0) {
-        log.error("Unable to run the health check command: " + healthCheckCmd + ", exit code: "
-            + exitCode);
-      } else {
-        InputStream inputStream = healthCmd.getInputStream();
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-        String line;
-        while ((line = bufferedReader.readLine()) != null) {
-          // Parse output to find process id
-          int endPortIndex = line.lastIndexOf(javaKeyWord);
-          int beginPortIndex = endPortIndex > 0 ? line.lastIndexOf(" ", endPortIndex) : -1;
-          if (endPortIndex != -1) {
-            line = line.substring(beginPortIndex + 1, endPortIndex - 1);
-            // Run ps command with the process id and check to see if it's output contains
-            // the node name
-            String psCmdStr = psStr + " " + line + " | grep " + nodeName;
-            if (outputContainsNodeName(psCmdStr, nodeName)) {
-              nodeRegistered = true;
-            }
+    if (healthCheckPort != -1) {
+      Socket socket = null;
+      try
+      {
+        localHostStr = InetAddress.getLocalHost().getHostAddress();
+        socket = new Socket();
+        socket.bind(new InetSocketAddress(localHostStr, healthCheckPort));
+      } catch (IOException | SecurityException | IllegalArgumentException e) {
+        taskHealthy = true;
+        log.info("Could not bind to port " + healthCheckPort + ", socket is in use as expected.");
+      } finally {
+        if (socket != null)
+          try {
+            socket.close();
+          } catch (IOException e) {
+            log.error("Error closing socket in health check: ", e);
           }
-        }
-        inputStream.close();
-        bufferedReader.close();
       }
     }
-
-    return nodeRegistered;
-  }
-
-  private boolean outputContainsNodeName(String psCmdStr, String nodeName) throws IOException,
-      InterruptedException {
-    boolean nodeRegistered = false;
-    Process psCmd = Runtime.getRuntime().exec(new String[]{
-        "sh", "-c", psCmdStr});
-
-    if (psCmd != null) {
-      int exitCode = psCmd.waitFor();
-      if (exitCode != 0) {
-        log.error("Unable to run the health check command: " + psCmdStr + ", exit code: "
-            + exitCode);
-      } else {
-        InputStream inputStream = psCmd.getInputStream();
-        if (psCmd.getInputStream().read() != -1) {
-          nodeRegistered = true;
-        }
-        inputStream.close();
-      }
+    if (!taskHealthy) {
+      log.fatal("Node health check failed for task: " + taskIdStr);
+      killTask(driver, task.taskInfo.getTaskId());
+      System.exit(2);
     }
 
-    return nodeRegistered;
   }
-
   public class TimedHealthCheck extends TimerTask {
     Task task;
     ExecutorDriver driver;

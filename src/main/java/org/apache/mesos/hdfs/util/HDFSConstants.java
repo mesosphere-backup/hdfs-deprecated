@@ -34,9 +34,9 @@ public class HDFSConstants {
   public static final String HDFS_CONFIG_FILE_NAME = "hdfs-site.xml";
 
   // Listening Ports
-  public static final String DATA_NODE_PORT = "50075";
-  public static final String JOURNAL_NODE_PORT = "8480";
-  public static final String ZKFC_NODE_PORT = "50071";
-  public static final String NAME_NODE_PORT = "50070";
+  public static final Integer DATA_NODE_PORT = 50075;
+  public static final Integer JOURNAL_NODE_PORT = 8480;
+  public static final Integer ZKFC_NODE_PORT = 8019;
+  public static final Integer NAME_NODE_PORT = 50070;
 
 }
