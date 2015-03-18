@@ -292,7 +292,6 @@ public abstract class AbstractNodeExecutor implements Executor {
   protected void runHealthChecks(ExecutorDriver driver, Task task) {
     log.info("Performing health check for task: " + task.taskInfo.getTaskId().getValue());
     boolean taskHealthy = false;
-    String localHostStr = "localhost";
     String taskIdStr = task.taskInfo.getTaskId().getValue();
     int healthCheckPort = -1;
 
@@ -311,9 +310,9 @@ public abstract class AbstractNodeExecutor implements Executor {
       Socket socket = null;
       try
       {
-        localHostStr = InetAddress.getLocalHost().getHostAddress();
+        String hostAddress = InetAddress.getLocalHost().getHostAddress();
         socket = new Socket();
-        socket.bind(new InetSocketAddress(localHostStr, healthCheckPort));
+        socket.bind(new InetSocketAddress(hostAddress, healthCheckPort));
       } catch (IOException | SecurityException | IllegalArgumentException e) {
         taskHealthy = true;
         log.info("Could not bind to port " + healthCheckPort + ", socket is in use as expected.");
