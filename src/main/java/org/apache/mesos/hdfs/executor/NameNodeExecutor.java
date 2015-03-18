@@ -9,11 +9,9 @@ import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.MesosExecutorDriver;
 import org.apache.mesos.Protos.*;
 import org.apache.mesos.hdfs.config.SchedulerConf;
-import org.apache.mesos.hdfs.executor.AbstractNodeExecutor.TimedHealthCheck;
 import org.apache.mesos.hdfs.util.HDFSConstants;
 
 import java.io.File;
-import java.util.Timer;
 
 /**
  * The executor for the Primary Name Node Machine.
@@ -21,18 +19,11 @@ import java.util.Timer;
 public class NameNodeExecutor extends AbstractNodeExecutor {
   public static final Log log = LogFactory.getLog(NameNodeExecutor.class);
 
-  // Node tasks run by the executor
   private Task nameNodeTask;
   // TODO better handling in livestate and persistent state of zkfc task. Right now they are
   // chained.
   private Task zkfcNodeTask;
   private Task journalNodeTask;
-
-  // Timed Health Check for node health monitoring
-  private TimedHealthCheck healthCheckJN;
-  private TimedHealthCheck healthCheckNN;
-  private TimedHealthCheck healthCheckZN;
-  private Timer timer;
 
   /**
    * The constructor for the primary name node which saves the configuration.
@@ -40,7 +31,6 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
   @Inject
   NameNodeExecutor(SchedulerConf schedulerConf) {
     super(schedulerConf);
-    timer = new Timer(true);
   }
 
   /**
@@ -69,30 +59,18 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
           .setTaskId(journalNodeTask.taskInfo.getTaskId())
           .setState(TaskState.TASK_RUNNING)
           .build());
-      healthCheckJN = new TimedHealthCheck(driver, journalNodeTask);
-      timer.scheduleAtFixedRate(healthCheckJN,
-          schedulerConf.getHealthCheckWaitingPeriod() * HDFSConstants.SEC_TO_MILLISEC,
-          schedulerConf.getHealthCheckFrequency() * HDFSConstants.SEC_TO_MILLISEC);
     } else if (taskInfo.getTaskId().getValue().contains(HDFSConstants.NAME_NODE_TASKID)) {
       nameNodeTask = task;
       driver.sendStatusUpdate(TaskStatus.newBuilder()
           .setTaskId(nameNodeTask.taskInfo.getTaskId())
           .setState(TaskState.TASK_RUNNING)
           .build());
-      healthCheckNN = new TimedHealthCheck(driver, nameNodeTask);
-      timer.scheduleAtFixedRate(healthCheckNN,
-          schedulerConf.getHealthCheckWaitingPeriod() * HDFSConstants.SEC_TO_MILLISEC,
-          schedulerConf.getHealthCheckFrequency() * HDFSConstants.SEC_TO_MILLISEC);
     } else if (taskInfo.getTaskId().getValue().contains(HDFSConstants.ZKFC_NODE_ID)) {
       zkfcNodeTask = task;
       driver.sendStatusUpdate(TaskStatus.newBuilder()
           .setTaskId(zkfcNodeTask.taskInfo.getTaskId())
           .setState(TaskState.TASK_RUNNING)
           .build());
-      healthCheckZN = new TimedHealthCheck(driver, zkfcNodeTask);
-      timer.scheduleAtFixedRate(healthCheckZN,
-          schedulerConf.getHealthCheckWaitingPeriod() * HDFSConstants.SEC_TO_MILLISEC,
-          schedulerConf.getHealthCheckFrequency() * HDFSConstants.SEC_TO_MILLISEC);
     }
   }
 

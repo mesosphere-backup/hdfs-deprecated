@@ -14,21 +14,12 @@ import org.apache.mesos.hdfs.util.HDFSConstants;
 import org.apache.mesos.hdfs.util.StreamRedirect;
 
 import java.io.File;
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Map;
-import java.util.TimerTask;
 
 public abstract class AbstractNodeExecutor implements Executor {
 
@@ -287,68 +278,6 @@ public abstract class AbstractNodeExecutor implements Executor {
   public void shutdown(ExecutorDriver d) {
     // TODO(elingg) let's shut down the driver more gracefully
     log.info("Executor asked to shutdown");
-  }
-
-  protected void runHealthChecks(ExecutorDriver driver, Task task) {
-    String taskIdStr = task.taskInfo.getTaskId().getValue();
-    log.info("Performing health check for task: " + taskIdStr);
-    boolean taskHealthy = false;
-    int healthCheckPort = -1;
-
-    if (taskIdStr.contains(HDFSConstants.DATA_NODE_ID)) {
-      healthCheckPort = HDFSConstants.DATA_NODE_PORT;
-    } else if (taskIdStr.contains(HDFSConstants.JOURNAL_NODE_ID)) {
-      healthCheckPort = HDFSConstants.JOURNAL_NODE_PORT;
-    } else if (taskIdStr.contains(HDFSConstants.ZKFC_NODE_ID)) {
-      healthCheckPort = HDFSConstants.ZKFC_NODE_PORT;
-    } else if (taskIdStr.contains(HDFSConstants.NAME_NODE_ID)) {
-      healthCheckPort = HDFSConstants.NAME_NODE_PORT;
-    } else {
-      log.error("Task unknown: " + taskIdStr);
-    }
-    if (healthCheckPort != -1) {
-      Socket socket = null;
-      try {
-        // TODO (elingg) with better process supervision, check which process is bound to the port.
-        // Also, possibly do a http check for the name node UI as an additional health check.
-        String localhostAddress = InetAddress.getLocalHost().getHostAddress();
-        socket = new Socket();
-        socket.bind(new InetSocketAddress(localhostAddress, healthCheckPort));
-      } catch (IOException e) {
-        taskHealthy = true;
-        log.info("Could not bind to port " + healthCheckPort + ", port is in use as expected.");
-      } catch (SecurityException | IllegalArgumentException e) {
-        log.error("Exception determining if a port is in use: ", e);
-      }  finally {
-        if (socket != null)
-          try {
-            socket.close();
-          } catch (IOException e) {
-            log.error("Error closing socket in health check: ", e);
-          }
-      }
-    }
-    if (!taskHealthy) {
-      log.fatal("Node health check failed for task: " + taskIdStr);
-      killTask(driver, task.taskInfo.getTaskId());
-      //TODO (elingg) with better process supervision, we do not need to exit the executors
-      System.exit(2);
-    }
-  }
-    
-  public class TimedHealthCheck extends TimerTask {
-    Task task;
-    ExecutorDriver driver;
-
-    public TimedHealthCheck(ExecutorDriver driver, Task task) {
-      this.driver = driver;
-      this.task = task;
-    }
-
-    @Override
-    public void run() {
-      runHealthChecks(driver, task);
-    }
   }
 
   /**

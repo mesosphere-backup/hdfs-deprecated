@@ -483,9 +483,9 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
 
     boolean launch = false;
     List<String> deadDataNodes = persistentState.getDeadDataNodes();
-    // TODO (elingg) Relax this constraint to only wait for DN's when the number of DN's is small
-    // What number of DN's should we try to recover or should we remove this constraint
-    // entirely?
+    //TODO (elingg) Relax this constraint to only wait for DN's when the number of DN's is small
+    //What number of DN's should we try to recover or should we remove this constraint
+    //entirely?
     if (deadDataNodes.isEmpty()) {
       if (persistentState.dataNodeRunningOnSlave(offer.getHostname())
           || persistentState.nameNodeRunningOnSlave(offer.getHostname())
@@ -577,8 +577,7 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
     reconciliationCompleted = false;
     driver.reconcileTasks(Collections.<Protos.TaskStatus> emptyList());
     Timer timer = new Timer();
-    timer.schedule(new ReconcileStateTask(),
-        conf.getReconciliationTimeout() * HDFSConstants.SEC_TO_MILLISEC);
+    timer.schedule(new ReconcileStateTask(), conf.getReconciliationTimeout() * 1000);
   }
 
   private boolean reconciliationComplete() {

@@ -9,9 +9,6 @@ import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.MesosExecutorDriver;
 import org.apache.mesos.Protos.*;
 import org.apache.mesos.hdfs.config.SchedulerConf;
-import org.apache.mesos.hdfs.executor.AbstractNodeExecutor.TimedHealthCheck;
-import org.apache.mesos.hdfs.util.HDFSConstants;
-import java.util.Timer;
 
 /**
  * The executor for a Basic Node (either a Journal Node or Data Node).
@@ -19,13 +16,7 @@ import java.util.Timer;
  **/
 public class NodeExecutor extends AbstractNodeExecutor {
   public static final Log log = LogFactory.getLog(NodeExecutor.class);
-
-  // Node task run by the executor
   private Task task;
-
-  // Timed Health Check for node health monitoring
-  private TimedHealthCheck timedHealthCheck;
-  private Timer timer;
 
   /**
    * The constructor for the node which saves the configuration.
@@ -58,11 +49,6 @@ public class NodeExecutor extends AbstractNodeExecutor {
         .setTaskId(taskInfo.getTaskId())
         .setState(TaskState.TASK_RUNNING)
         .setData(taskInfo.getData()).build());
-    timedHealthCheck = new TimedHealthCheck(driver, task);
-    timer = new Timer(true);
-    timer.scheduleAtFixedRate(timedHealthCheck,
-        schedulerConf.getHealthCheckWaitingPeriod() * HDFSConstants.SEC_TO_MILLISEC,
-        schedulerConf.getHealthCheckFrequency() * HDFSConstants.SEC_TO_MILLISEC);
   }
 
   @Override
