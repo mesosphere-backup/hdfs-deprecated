@@ -290,9 +290,9 @@ public abstract class AbstractNodeExecutor implements Executor {
   }
 
   protected void runHealthChecks(ExecutorDriver driver, Task task) {
-    log.info("Performing health check for task: " + task.taskInfo.getTaskId().getValue());
-    boolean taskHealthy = false;
     String taskIdStr = task.taskInfo.getTaskId().getValue();
+    log.info("Performing health check for task: " + taskIdStr);
+    boolean taskHealthy = false;
     int healthCheckPort = -1;
 
     if (taskIdStr.contains(HDFSConstants.DATA_NODE_ID)) {
@@ -308,15 +308,18 @@ public abstract class AbstractNodeExecutor implements Executor {
     }
     if (healthCheckPort != -1) {
       Socket socket = null;
-      try
-      {
-        String hostAddress = InetAddress.getLocalHost().getHostAddress();
+      try {
+        // TODO (elingg) with better process supervision, check which process is bound to the port.
+        // Also, possibly do a http check for the name node UI as an additional health check.
+        String localhostAddress = InetAddress.getLocalHost().getHostAddress();
         socket = new Socket();
-        socket.bind(new InetSocketAddress(hostAddress, healthCheckPort));
-      } catch (IOException | SecurityException | IllegalArgumentException e) {
+        socket.bind(new InetSocketAddress(localhostAddress, healthCheckPort));
+      } catch (IOException e) {
         taskHealthy = true;
-        log.info("Could not bind to port " + healthCheckPort + ", socket is in use as expected.");
-      } finally {
+        log.info("Could not bind to port " + healthCheckPort + ", port is in use as expected.");
+      } catch (SecurityException | IllegalArgumentException e) {
+        log.error("Exception determining if a port is in use: ", e);
+      }  finally {
         if (socket != null)
           try {
             socket.close();
@@ -328,10 +331,11 @@ public abstract class AbstractNodeExecutor implements Executor {
     if (!taskHealthy) {
       log.fatal("Node health check failed for task: " + taskIdStr);
       killTask(driver, task.taskInfo.getTaskId());
+      //TODO (elingg) with better process supervision, we do not need to exit the executors
       System.exit(2);
     }
-
   }
+    
   public class TimedHealthCheck extends TimerTask {
     Task task;
     ExecutorDriver driver;
