@@ -221,10 +221,10 @@ public class SchedulerConf extends Configured {
   }
 
   public int getHealthCheckFrequency() {
-    return getConf().getInt("mesos.hdfs.healthcheck.frequency.ms", 60000);
+    return getConf().getInt("mesos.hdfs.healthcheck.frequency.seconds", 60);
   }
 
   public int getHealthCheckWaitingPeriod() {
-    return getConf().getInt("mesos.hdfs.healthcheck.waitingperiod.ms", 240000);
+    return getConf().getInt("mesos.hdfs.healthcheck.waitingperiod.seconds", 240);
   }
 }

@@ -39,4 +39,7 @@ public class HDFSConstants {
   public static final Integer ZKFC_NODE_PORT = 8019;
   public static final Integer NAME_NODE_PORT = 50070;
 
+  // second to milisecond conversion
+  public static final Integer SEC_TO_MILLISEC = 1000;
+
 }

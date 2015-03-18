@@ -577,7 +577,8 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
     reconciliationCompleted = false;
     driver.reconcileTasks(Collections.<Protos.TaskStatus> emptyList());
     Timer timer = new Timer();
-    timer.schedule(new ReconcileStateTask(), conf.getReconciliationTimeout() * 1000);
+    timer.schedule(new ReconcileStateTask(),
+        conf.getReconciliationTimeout() * HDFSConstants.SEC_TO_MILLISEC);
   }
 
   private boolean reconciliationComplete() {

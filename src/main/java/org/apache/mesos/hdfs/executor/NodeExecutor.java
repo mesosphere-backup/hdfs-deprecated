@@ -10,6 +10,7 @@ import org.apache.mesos.MesosExecutorDriver;
 import org.apache.mesos.Protos.*;
 import org.apache.mesos.hdfs.config.SchedulerConf;
 import org.apache.mesos.hdfs.executor.AbstractNodeExecutor.TimedHealthCheck;
+import org.apache.mesos.hdfs.util.HDFSConstants;
 import java.util.Timer;
 
 /**
@@ -59,8 +60,9 @@ public class NodeExecutor extends AbstractNodeExecutor {
         .setData(taskInfo.getData()).build());
     timedHealthCheck = new TimedHealthCheck(driver, task);
     timer = new Timer(true);
-    timer.scheduleAtFixedRate(timedHealthCheck, schedulerConf.getHealthCheckWaitingPeriod(),
-        schedulerConf.getHealthCheckFrequency());
+    timer.scheduleAtFixedRate(timedHealthCheck,
+        schedulerConf.getHealthCheckWaitingPeriod() * HDFSConstants.SEC_TO_MILLISEC,
+        schedulerConf.getHealthCheckFrequency() * HDFSConstants.SEC_TO_MILLISEC);
   }
 
   @Override

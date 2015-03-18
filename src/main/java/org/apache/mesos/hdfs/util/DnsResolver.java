@@ -87,6 +87,6 @@ public class DnsResolver {
     }
     Timer timer = new Timer();
     PreNNInitTask task = new PreNNInitTask();
-    timer.scheduleAtFixedRate(task, 0, 10000);
+    timer.scheduleAtFixedRate(task, 0, HDFSConstants.SEC_TO_MILLISEC);
   }
 }

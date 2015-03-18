@@ -70,8 +70,9 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
           .setState(TaskState.TASK_RUNNING)
           .build());
       healthCheckJN = new TimedHealthCheck(driver, journalNodeTask);
-      timer.scheduleAtFixedRate(healthCheckJN, schedulerConf.getHealthCheckWaitingPeriod(),
-          schedulerConf.getHealthCheckFrequency());
+      timer.scheduleAtFixedRate(healthCheckJN,
+          schedulerConf.getHealthCheckWaitingPeriod() * HDFSConstants.SEC_TO_MILLISEC,
+          schedulerConf.getHealthCheckFrequency() * HDFSConstants.SEC_TO_MILLISEC);
     } else if (taskInfo.getTaskId().getValue().contains(HDFSConstants.NAME_NODE_TASKID)) {
       nameNodeTask = task;
       driver.sendStatusUpdate(TaskStatus.newBuilder()
@@ -79,8 +80,9 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
           .setState(TaskState.TASK_RUNNING)
           .build());
       healthCheckNN = new TimedHealthCheck(driver, nameNodeTask);
-      timer.scheduleAtFixedRate(healthCheckNN, schedulerConf.getHealthCheckWaitingPeriod(),
-          schedulerConf.getHealthCheckFrequency());
+      timer.scheduleAtFixedRate(healthCheckNN,
+          schedulerConf.getHealthCheckWaitingPeriod() * HDFSConstants.SEC_TO_MILLISEC,
+          schedulerConf.getHealthCheckFrequency() * HDFSConstants.SEC_TO_MILLISEC);
     } else if (taskInfo.getTaskId().getValue().contains(HDFSConstants.ZKFC_NODE_ID)) {
       zkfcNodeTask = task;
       driver.sendStatusUpdate(TaskStatus.newBuilder()
@@ -88,8 +90,9 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
           .setState(TaskState.TASK_RUNNING)
           .build());
       healthCheckZN = new TimedHealthCheck(driver, zkfcNodeTask);
-      timer.scheduleAtFixedRate(healthCheckZN, schedulerConf.getHealthCheckWaitingPeriod(),
-          schedulerConf.getHealthCheckFrequency());
+      timer.scheduleAtFixedRate(healthCheckZN,
+          schedulerConf.getHealthCheckWaitingPeriod() * HDFSConstants.SEC_TO_MILLISEC,
+          schedulerConf.getHealthCheckFrequency() * HDFSConstants.SEC_TO_MILLISEC);
     }
   }
 
