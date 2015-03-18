@@ -24,12 +24,13 @@ Starting HDFS-Mesos
 
 Using HDFS
 --------------------------
-See some of the many HDFS tutorials out there for more details and explore the web UI at <br>`http://<ActiveNameNode>:50070`.</br>
+See some of the many HDFS tutorials out there for more details and explore the web UI at <br>`http://<ActiveNameNode>:50070`.</br> 
+Note that you can access commands through `hdfs://<ConfigurableFrameworkName>/` where hdfs is the default framework name. 
 Also here is a quick sanity check:
 
-1. `hadoop fs -ls hdfs://<ActiveNameNode>:50071/` should show nothing for starters
-2. `hadoop fs -put /path/to/src_file hdfs://<ActiveNameNode>:50071/`
-3. `hadoop fs -ls hdfs://<ActiveNameNode>:50071/` should now list src_file
+1. `hadoop fs -ls hdfs://hdfs/` should show nothing for starters
+2. `hadoop fs -put /path/to/src_file hdfs://hdfs/`
+3. `hadoop fs -ls hdfs://hdfs/` should now list src_file
 
 Resource Reservation Instructions (Optional)
 --------------------------
