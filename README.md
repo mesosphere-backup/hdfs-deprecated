@@ -25,7 +25,7 @@ Starting HDFS-Mesos
 Using HDFS
 --------------------------
 See some of the many HDFS tutorials out there for more details and explore the web UI at <br>`http://<ActiveNameNode>:50070`.</br> 
-Note that you can access commands through `hdfs://<ConfigurableFrameworkName>/` where hdfs is the default framework name. 
+Note that you can access commands through `hdfs://<mesos.hdfs.framework.name>/ (default: hdfs://hdfs/)`. 
 Also here is a quick sanity check:
 
 1. `hadoop fs -ls hdfs://hdfs/` should show nothing for starters
