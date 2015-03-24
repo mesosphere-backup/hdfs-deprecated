@@ -8,13 +8,20 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.Executor;
 import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.MesosExecutorDriver;
-import org.apache.mesos.Protos.*;
+import org.apache.mesos.Protos.CommandInfo;
+import org.apache.mesos.Protos.ExecutorInfo;
+import org.apache.mesos.Protos.FrameworkInfo;
+import org.apache.mesos.Protos.SlaveInfo;
+import org.apache.mesos.Protos.Status;
+import org.apache.mesos.Protos.TaskInfo;
+import org.apache.mesos.Protos.TaskState;
+import org.apache.mesos.Protos.TaskStatus;
 import org.apache.mesos.hdfs.config.SchedulerConf;
 import org.apache.mesos.hdfs.util.HDFSConstants;
 import org.apache.mesos.hdfs.util.StreamRedirect;
 
-import java.io.File;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -29,7 +36,7 @@ public abstract class AbstractNodeExecutor implements Executor {
 
   /**
    * Constructor which takes in configuration.
-   **/
+   */
   @Inject
   AbstractNodeExecutor(SchedulerConf schedulerConf) {
     this.schedulerConf = schedulerConf;
@@ -37,7 +44,7 @@ public abstract class AbstractNodeExecutor implements Executor {
 
   /**
    * Main method which injects the configuration and state and creates the driver.
-   **/
+   */
   public static void main(String[] args) {
     Injector injector = Guice.createInjector();
     MesosExecutorDriver driver = new MesosExecutorDriver(
@@ -47,7 +54,7 @@ public abstract class AbstractNodeExecutor implements Executor {
 
   /**
    * Register the framework with the executor.
-   **/
+   */
   @Override
   public void registered(ExecutorDriver driver, ExecutorInfo executorInfo,
       FrameworkInfo frameworkInfo, SlaveInfo slaveInfo) {
@@ -59,7 +66,7 @@ public abstract class AbstractNodeExecutor implements Executor {
 
   /**
    * Delete and recreate the data directory.
-   **/
+   */
   private void setUpDataDir() {
     // Create primary data dir if it does not exist
     File dataDir = new File(schedulerConf.getDataDir());
@@ -76,7 +83,7 @@ public abstract class AbstractNodeExecutor implements Executor {
 
   /**
    * Delete a file or directory.
-   **/
+   */
   protected void deleteFile(File fileToDelete) {
     if (fileToDelete.isDirectory()) {
       String[] entries = fileToDelete.list();
@@ -90,7 +97,7 @@ public abstract class AbstractNodeExecutor implements Executor {
 
   /**
    * Create Symbolic Link for the HDFS binary.
-   **/
+   */
   private void createSymbolicLink() {
     log.info("Creating a symbolic link for HDFS binary");
     try {
@@ -144,7 +151,7 @@ public abstract class AbstractNodeExecutor implements Executor {
    * Add hdfs binary to the PATH environment variable by linking it to /usr/bin/hadoop. This
    * requires that /usr/bin/ is on the Mesos slave PATH, which is defined as part of the standard
    * Mesos slave packaging.
-   **/
+   */
   private void addBinaryToPath(String hdfsBinaryPath) throws IOException {
     String pathEnvVarLocation = "/usr/bin/hadoop";
     String scriptContent = "#!/bin/bash \n" + hdfsBinaryPath + "/bin/hadoop \"$@\"";
@@ -157,7 +164,7 @@ public abstract class AbstractNodeExecutor implements Executor {
 
   /**
    * Starts a task's process so it goes into running state.
-   **/
+   */
   protected void startProcess(ExecutorDriver driver, Task task) {
     reloadConfig();
     Process process = task.process;
@@ -178,7 +185,7 @@ public abstract class AbstractNodeExecutor implements Executor {
 
   /**
    * Reloads the cluster configuration so the executor has the correct configuration info.
-   **/
+   */
   protected void reloadConfig() {
     // Find config URI
     String configUri = "";
@@ -207,7 +214,7 @@ public abstract class AbstractNodeExecutor implements Executor {
 
   /**
    * Redirects a process to STDERR and STDOUT for logging and debugging purposes.
-   **/
+   */
   protected void redirectProcess(Process process) {
     StreamRedirect stdoutRedirect = new StreamRedirect(process.getInputStream(), System.out);
     stdoutRedirect.start();
@@ -217,7 +224,7 @@ public abstract class AbstractNodeExecutor implements Executor {
 
   /**
    * Run a command and wait for it's successful completion.
-   **/
+   */
   protected void runCommand(ExecutorDriver driver, Task task, String command) {
     reloadConfig();
     try {
@@ -239,12 +246,12 @@ public abstract class AbstractNodeExecutor implements Executor {
 
   /**
    * Abstract method to launch a task.
-   **/
+   */
   public abstract void launchTask(final ExecutorDriver driver, final TaskInfo taskInfo);
 
   /**
    * Let the scheduler know that the task has failed.
-   **/
+   */
   private void sendTaskFailed(ExecutorDriver driver, Task task) {
     driver.sendStatusUpdate(TaskStatus.newBuilder()
         .setTaskId(task.taskInfo.getTaskId())
@@ -282,7 +289,7 @@ public abstract class AbstractNodeExecutor implements Executor {
 
   /**
    * The task class for use within the executor
-   **/
+   */
   public class Task {
     public TaskInfo taskInfo;
     public String cmd;

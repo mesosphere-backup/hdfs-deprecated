@@ -7,21 +7,23 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.MesosExecutorDriver;
-import org.apache.mesos.Protos.*;
+import org.apache.mesos.Protos.Status;
+import org.apache.mesos.Protos.TaskID;
+import org.apache.mesos.Protos.TaskInfo;
+import org.apache.mesos.Protos.TaskState;
+import org.apache.mesos.Protos.TaskStatus;
 import org.apache.mesos.hdfs.config.SchedulerConf;
 
 /**
  * The executor for a Basic Node (either a Journal Node or Data Node).
- * 
- **/
+ */
 public class NodeExecutor extends AbstractNodeExecutor {
   public static final Log log = LogFactory.getLog(NodeExecutor.class);
   private Task task;
 
   /**
    * The constructor for the node which saves the configuration.
-   * 
-   **/
+   */
   @Inject
   NodeExecutor(SchedulerConf schedulerConf) {
     super(schedulerConf);
