@@ -7,7 +7,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.MesosExecutorDriver;
-import org.apache.mesos.Protos.*;
+import org.apache.mesos.Protos.Status;
+import org.apache.mesos.Protos.TaskID;
+import org.apache.mesos.Protos.TaskInfo;
+import org.apache.mesos.Protos.TaskState;
+import org.apache.mesos.Protos.TaskStatus;
 import org.apache.mesos.hdfs.config.SchedulerConf;
 import org.apache.mesos.hdfs.util.HDFSConstants;
 
@@ -15,7 +19,7 @@ import java.io.File;
 
 /**
  * The executor for the Primary Name Node Machine.
- **/
+ */
 public class NameNodeExecutor extends AbstractNodeExecutor {
   public static final Log log = LogFactory.getLog(NameNodeExecutor.class);
 
@@ -27,7 +31,7 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
 
   /**
    * The constructor for the primary name node which saves the configuration.
-   **/
+   */
   @Inject
   NameNodeExecutor(SchedulerConf schedulerConf) {
     super(schedulerConf);
@@ -46,7 +50,7 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
   /**
    * Add tasks to the task list and then start the tasks in the following order : 1) Start Journal
    * Node 2) Receive Activate Message 3) Start Name Node 4) Start ZKFC Node
-   **/
+   */
   @Override
   public void launchTask(final ExecutorDriver driver, final TaskInfo taskInfo) {
     executorInfo = taskInfo.getExecutor();

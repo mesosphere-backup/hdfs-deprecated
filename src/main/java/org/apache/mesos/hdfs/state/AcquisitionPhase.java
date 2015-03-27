@@ -6,5 +6,5 @@ public enum AcquisitionPhase {
   START_NAME_NODES, // Launches the both namenodes
   FORMAT_NAME_NODES, // Formats both namenodes (first with initialize, second with bootstrap
   DATA_NODES // If everything is healthy the scheduler stays here and tries to launch
-             // datanodes on any slave that doesn't have an hdfs task running on it
+  // datanodes on any slave that doesn't have an hdfs task running on it
 }

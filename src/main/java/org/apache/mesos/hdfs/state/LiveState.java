@@ -6,11 +6,8 @@ import com.google.inject.Singleton;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.Protos;
-import org.apache.mesos.hdfs.config.SchedulerConf;
 import org.apache.mesos.hdfs.util.HDFSConstants;
 
-
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -36,9 +33,13 @@ public class LiveState {
     return !nameNode2TaskMap.isEmpty() && nameNode2TaskMap.values().iterator().next();
   }
 
-  public HashMap<String, String> getJournalNodeNames() { return journalNodeNames; }
+  public HashMap<String, String> getJournalNodeNames() {
+    return journalNodeNames;
+  }
 
-  public HashMap<String, String> getNameNodeNames() { return nameNodeNames; }
+  public HashMap<String, String> getNameNodeNames() {
+    return nameNodeNames;
+  }
 
   public void addStagingTask(Protos.TaskID taskId, String taskName) {
     stagingTasks.add(taskId);
@@ -66,7 +67,7 @@ public class LiveState {
         && nameNode1TaskMap.keySet().iterator().next().getTaskId().equals(taskId)) {
       nameNode1TaskMap.clear();
     } else if (!nameNode2TaskMap.isEmpty()
-       && nameNode2TaskMap.keySet().iterator().next().getTaskId().equals(taskId)) {
+        && nameNode2TaskMap.keySet().iterator().next().getTaskId().equals(taskId)) {
       nameNode2TaskMap.clear();
     }
     runningTasks.remove(taskId.getValue());
@@ -85,24 +86,24 @@ public class LiveState {
       // set the status to initialized
       if (status.getMessage().equals(HDFSConstants.NAME_NODE_INIT_MESSAGE)
           || (currentAcquisitionPhase.equals(AcquisitionPhase.RECONCILING_TASKS)
-              && !isNameNode1Initialized())
+          && !isNameNode1Initialized())
           || (status.getMessage().equals(HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE)
-              && !isNameNode1Initialized())) {
+          && !isNameNode1Initialized())) {
         nameNode1TaskMap.clear();
         nameNode1TaskMap.put(status, true);
       } // If bootstrapping the second NN or reconciling the second NN,
-        // set the status to initialized
+      // set the status to initialized
       else if ((status.getMessage().equals(HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE)
           && !isNameNode2Initialized())
           || (currentAcquisitionPhase.equals(AcquisitionPhase.RECONCILING_TASKS)
-              && !isNameNode2Initialized())) {
+          && !isNameNode2Initialized())) {
         nameNode2TaskMap.clear();
         nameNode2TaskMap.put(status, true);
       } // If the first NN is not running, set the status to running
-       else if (nameNode1TaskMap.isEmpty()) {
+      else if (nameNode1TaskMap.isEmpty()) {
         nameNode1TaskMap.put(status, false);
       } // If the second NN is not running, set the status to running
-       else if (nameNode2TaskMap.isEmpty()) {
+      else if (nameNode2TaskMap.isEmpty()) {
         nameNode2TaskMap.put(status, false);
       }
     }

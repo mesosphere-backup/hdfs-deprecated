@@ -7,23 +7,38 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos;
-import org.apache.mesos.Protos.*;
+import org.apache.mesos.Protos.CommandInfo;
+import org.apache.mesos.Protos.Environment;
+import org.apache.mesos.Protos.ExecutorID;
+import org.apache.mesos.Protos.ExecutorInfo;
+import org.apache.mesos.Protos.FrameworkID;
+import org.apache.mesos.Protos.FrameworkInfo;
+import org.apache.mesos.Protos.MasterInfo;
+import org.apache.mesos.Protos.Offer;
+import org.apache.mesos.Protos.OfferID;
+import org.apache.mesos.Protos.Resource;
+import org.apache.mesos.Protos.SlaveID;
+import org.apache.mesos.Protos.TaskID;
+import org.apache.mesos.Protos.TaskInfo;
+import org.apache.mesos.Protos.TaskState;
+import org.apache.mesos.Protos.TaskStatus;
+import org.apache.mesos.Protos.Value;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.hdfs.config.SchedulerConf;
 import org.apache.mesos.hdfs.state.AcquisitionPhase;
 import org.apache.mesos.hdfs.state.LiveState;
 import org.apache.mesos.hdfs.state.PersistentState;
-import org.apache.mesos.hdfs.util.HDFSConstants;
 import org.apache.mesos.hdfs.util.DnsResolver;
+import org.apache.mesos.hdfs.util.HDFSConstants;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.HashMap;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
 
 //TODO remove as much logic as possible from Scheduler to clean up code
@@ -251,7 +266,7 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
   }
 
   private boolean launchNode(SchedulerDriver driver, Offer offer,
-        String nodeName, List<String> taskTypes, String executorName) {
+      String nodeName, List<String> taskTypes, String executorName) {
     //nodeName is the type of executor to launch
     //executorName is to distinguish different types of nodes
     //taskType is the type of task in mesos to launch on the node
