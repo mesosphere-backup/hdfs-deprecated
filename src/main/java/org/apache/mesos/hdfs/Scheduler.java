@@ -182,6 +182,10 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
     }
     // TODO within each phase, accept offers based on the number of nodes you need
     boolean acceptedOffer = false;
+    boolean journalNodesResolvable = false;
+    if (liveState.getCurrentAcquisitionPhase() == AcquisitionPhase.START_NAME_NODES) {
+      journalNodesResolvable = dnsResolver.journalNodesResolvable();
+    }
     for (Offer offer : offers) {
       if (acceptedOffer) {
         driver.declineOffer(offer.getId());
@@ -199,8 +203,7 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
             }
             break;
           case START_NAME_NODES :
-            if (dnsResolver.journalNodesResolvable()
-                && tryToLaunchNameNode(driver, offer)) {
+            if (journalNodesResolvable && tryToLaunchNameNode(driver, offer)) {
               acceptedOffer = true;
             } else {
               driver.declineOffer(offer.getId());
@@ -562,11 +565,11 @@ public class Scheduler implements org.apache.mesos.Scheduler, Runnable {
   private boolean offerNotEnoughResources(Offer offer, double cpus, int mem) {
     for (Resource offerResource : offer.getResourcesList()) {
       if (offerResource.getName().equals("cpus") &&
-          cpus > offerResource.getScalar().getValue()) {
+          cpus + conf.getExecutorCpus() > offerResource.getScalar().getValue()) {
         return true;
       }
       if (offerResource.getName().equals("mem") &&
-          mem > offerResource.getScalar().getValue()) {
+          mem + conf.getExecutorHeap() > offerResource.getScalar().getValue()) {
         return true;
       }
     }
