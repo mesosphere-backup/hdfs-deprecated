@@ -2,3 +2,7 @@ language: java
 jdk:
   - openjdk7
   - oraclejdk7
+notifications:
+  email: false
+  slack:
+    secure: KUqJxA9ibJxzB6apYaMu4wsyHD3thaltBLTN97RLv4wU0xCzbra8edf4Xe0nyWG040SLWZwBn/ewou+SzHUGAzcxArnl8yFmI38skFzFdH/wKAXH2RdlifHbjJOHftZQIIAR3d8TA6LmyvvWn7vFi/BQULxuj5mYFFGnoSubZrE=
