@@ -19,7 +19,7 @@ Building HDFS-Mesos
 4. To remove the project build output and downloaded binaries, run `./bin/build-hdfs clean`.
 
 **NOTE:** The build process builds the artifacts under the `$PROJ_DIR/build` directory.  A number of zip and tar files are cached under the `cache` directory for faster subsequent builds.   The tarball used for installation is hdfs-mesos-x.x.x.tgz which contains the scheduler and the executor to be distributed.
-
+**NOTE:** It is possible to build for DCOS from the build script using: `./bin/build-hdfs dcos` it also works with the other parameters such as: `./bin/build-hdfs nocompile dcos`
 
 Installing HDFS-Mesos on your Cluster
 --------------------------

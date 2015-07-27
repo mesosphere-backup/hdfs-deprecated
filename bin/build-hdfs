@@ -104,7 +104,7 @@ cp $PROJ_DIR/bin/* bin/
 cp $PROJ_DIR/hdfs-executor/build/libs/*-uber.jar lib/
 cp $PROJ_DIR/conf/$CONF/* etc/hadoop/
 cd -
-echo "Configured for $CONF build using $CONF xml configuration files"
+echo "Configured for **$CONF** build using $CONF xml configuration files"
 
 # Compress tarball
 echo "Compressing to $EXECUTOR.tgz"
