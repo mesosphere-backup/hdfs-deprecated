@@ -21,12 +21,6 @@ NATIVE=native
 DIST=hdfs-mesos-$VERSION
 EXECUTOR=hdfs-mesos-executor-$VERSION
 
-# config xml file location is dynamic for standard mesos + dcos
-CONF=mesos
-if [ "$1" == "dcos" ] || [ "$2" == "dcos" ]; then
-  CONF=dcos
-fi
-
 # Remove cached binaries and exit
 if [ "$1" == "clean" ]; then
   rm -rf $BUILD_DIR
@@ -37,6 +31,13 @@ fi
 # Build and package hdfs-mesos project
 if [ "$1" != "nocompile" ]; then
   $PROJ_DIR/gradlew shadowJar || exit
+fi
+
+# check for conf dir, if it doesn't exist, create it and populate with standard mesos xml files
+if [ ! -d $PROJ_DIR/conf ]; then
+  echo "config/ directory missing... creating and using the default mesos configuration"
+  mkdir $PROJ_DIR/conf
+  cp $PROJ_DIR/example-conf/mesos/*.xml $PROJ_DIR/conf
 fi
 
 # Download hadoop binary
@@ -102,9 +103,8 @@ echo "Copying build output into $BUILD_CACHE_DIR/$DIST"
 cd $BUILD_CACHE_DIR/$EXECUTOR
 cp $PROJ_DIR/bin/* bin/
 cp $PROJ_DIR/hdfs-executor/build/libs/*-uber.jar lib/
-cp $PROJ_DIR/conf/$CONF/* etc/hadoop/
+cp $PROJ_DIR/conf/* etc/hadoop/
 cd -
-echo "Configured for **$CONF** build using $CONF xml configuration files"
 
 # Compress tarball
 echo "Compressing to $EXECUTOR.tgz"
@@ -132,7 +132,7 @@ mkdir -p $BUILD_DIR/$DIST/lib
 cp $PROJ_DIR/hdfs-scheduler/build/libs/*-uber.jar $BUILD_DIR/$DIST/lib
 cp $BUILD_CACHE_DIR/$EXECUTOR.tgz $BUILD_DIR/$DIST
 mkdir -p $BUILD_DIR/$DIST/etc/hadoop
-cp $PROJ_DIR/conf/$CONF/*.xml $BUILD_DIR/$DIST/etc/hadoop
+cp $PROJ_DIR/conf/*.xml $BUILD_DIR/$DIST/etc/hadoop
 
 echo "Copying required hadoop dependencies into $BUILD_DIR/$DIST for the scheduler"
 cp $BUILD_CACHE_DIR/$HADOOP_DIR/bin/* $BUILD_DIR/$DIST/bin
