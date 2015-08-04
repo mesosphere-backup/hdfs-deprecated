@@ -33,6 +33,13 @@ if [ "$1" != "nocompile" ]; then
   $PROJ_DIR/gradlew clean shadowJar || exit
 fi
 
+# check for conf dir, if it doesn't exist, create it and populate with standard mesos xml files
+if [ ! -d $PROJ_DIR/conf ]; then
+  echo "config/ directory missing... creating and using the default mesos configuration"
+  mkdir $PROJ_DIR/conf
+  cp $PROJ_DIR/example-conf/mesos/*.xml $PROJ_DIR/conf
+fi
+
 # Download hadoop binary
 if [ ! -f $BUILD_CACHE_DIR/$HADOOP_ZIP ]; then
   echo "Downloading $HADOOP_URL"

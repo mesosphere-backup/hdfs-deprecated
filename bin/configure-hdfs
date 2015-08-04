@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# this script simplifies the setup of configuration files in hdfs
+
+PROJ_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/..  && pwd )"
+
+if [ ! -d $PROJ_DIR/conf ]; then
+  echo "config/ directory missing... creating"
+  mkdir $PROJ_DIR/conf
+else
+  echo "config/ directory exists"
+fi
+
+rm $PROJ_DIR/conf/*.xml &> /dev/null
+
+# DCOS if passed
+if [ "$1" == "dcos" ]; then
+  echo "configuring for DCOS config files"
+  cp $PROJ_DIR/example-conf/dcos/*.xml $PROJ_DIR/conf
+else
+  echo "configuring for standard mesos config files"
+  cp $PROJ_DIR/example-conf/mesos/*.xml $PROJ_DIR/conf
+fi

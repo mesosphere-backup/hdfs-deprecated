@@ -3,6 +3,8 @@ hadoop-*
 hdfs-mesos-*
 native/
 
+conf/
+
 # idea
 *.i??
 .idea/
