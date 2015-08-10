@@ -551,8 +551,7 @@ public class HdfsScheduler implements org.apache.mesos.Scheduler, Runnable {
         log.info(String.format("Already running %s datanodes", hdfsFrameworkConfig.getDataNodeCount()));
       } else if (persistenceStore.dataNodeRunningOnSlave(offer.getHostname())
         || persistenceStore.nameNodeRunningOnSlave(offer.getHostname())
-        || persistenceStore.journalNodeRunningOnSlave(offer.getHostname())
-        ) {
+        || persistenceStore.journalNodeRunningOnSlave(offer.getHostname())) {
         log.info(String.format("Already running hdfs task on %s", offer.getHostname()));
       } else {
         launch = true;
@@ -607,11 +606,6 @@ public class HdfsScheduler implements org.apache.mesos.Scheduler, Runnable {
     for (Protos.TaskStatus taskStatus : liveState.getRunningTasks().values()) {
       sendMessageTo(driver, taskStatus.getTaskId(), taskStatus.getSlaveId(),
         HDFSConstants.RELOAD_CONFIG);
-      try {
-        Thread.sleep(1000);
-      } catch (Throwable t) {
-        t.printStackTrace();
-      }
     }
   }
 
