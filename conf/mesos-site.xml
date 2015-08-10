@@ -89,6 +89,12 @@
     <value>3</value>
   </property>
 
+  <property>
+    <name>mesos.hdfs.datanode.count</name>
+    <description>Number of data nodes (must be >= dfs.replication, which is 3 by default)</description>
+    <value>3</value>
+  </property>
+
   <!-- Additional settings for fine-tuning -->
   <!--
   <property>

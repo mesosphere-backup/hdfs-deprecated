@@ -37,6 +37,7 @@ public class PersistentStateStore implements IPersistentStateStore {
   private static final String FRAMEWORK_ID_KEY = "frameworkId";
   private static final String NAMENODE_TASKNAMES_KEY = "nameNodeTaskNames";
   private static final String JOURNALNODE_TASKNAMES_KEY = "journalNodeTaskNames";
+  private static final String DATANODE_TASKNAMES_KEY = "dataNodeTaskNames";
   // TODO (elingg) we need to also track ZKFC's state
   // TODO (nicgrayson) add tests with in-memory state implementation for zookeeper
 
@@ -107,7 +108,7 @@ public class PersistentStateStore implements IPersistentStateStore {
         addJournalNode(taskId, hostname, taskName);
         break;
       case HDFSConstants.DATA_NODE_ID:
-        addDataNode(taskId, hostname);
+        addDataNode(taskId, hostname, taskName);
         break;
       case HDFSConstants.ZKFC_NODE_ID:
         break;
@@ -116,10 +117,13 @@ public class PersistentStateStore implements IPersistentStateStore {
     }
   }
 
-  private void addDataNode(Protos.TaskID taskId, String hostname) {
+  private void addDataNode(Protos.TaskID taskId, String hostname, String taskName) {
     Map<String, String> dataNodes = getDataNodes();
     dataNodes.put(hostname, taskId.getValue());
     setDataNodes(dataNodes);
+    Map<String, String> dataNodeTaskNames = getDataNodeTaskNames();
+    dataNodeTaskNames.put(taskId.getValue(), taskName);
+    setDataNodeTaskNames(dataNodeTaskNames);
   }
 
   private void addJournalNode(Protos.TaskID taskId, String hostname, String taskName) {
@@ -148,6 +152,11 @@ public class PersistentStateStore implements IPersistentStateStore {
   @Override
   public Map<String, String> getJournalNodeTaskNames() {
     return getNodesMap(JOURNALNODE_TASKNAMES_KEY);
+  }
+
+  @Override
+  public Map<String, String> getDataNodeTaskNames() {
+    return getNodesMap(DATANODE_TASKNAMES_KEY);
   }
 
   @Override
@@ -346,6 +355,9 @@ public class PersistentStateStore implements IPersistentStateStore {
         if (entry.getValue() != null && entry.getValue().equals(taskId)) {
           dataNodes.put(entry.getKey(), null);
           setDataNodes(dataNodes);
+          Map<String, String> dataNodeTaskNames = getDataNodeTaskNames();
+          dataNodeTaskNames.remove(taskId);
+          setDataNodeTaskNames(dataNodeTaskNames);
 
           deadNodeTracker.resetDataNodeTimeStamp();
           nodesModified = true;
@@ -392,6 +404,14 @@ public class PersistentStateStore implements IPersistentStateStore {
       hdfsStore.set(DATANODES_KEY, dataNodes);
     } catch (Exception e) {
       logger.error("Error while setting data nodes in persistent state", e);
+    }
+  }
+
+  private void setDataNodeTaskNames(Map<String, String> dataNodeTaskNames) {
+    try {
+      hdfsStore.set(DATANODE_TASKNAMES_KEY, dataNodeTaskNames);
+    } catch (Exception e) {
+      logger.error("Error while setting data node task names in persistent state", e);
     }
   }
 }

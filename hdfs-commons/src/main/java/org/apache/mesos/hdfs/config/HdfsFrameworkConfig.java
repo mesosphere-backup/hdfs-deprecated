@@ -32,10 +32,14 @@ public class HdfsFrameworkConfig {
 
   private static final double DEFAULT_JVM_OVERHEAD = 1.35;
   private static final int DEFAULT_JOURNAL_NODE_COUNT = 3;
+  private static final int DEFAULT_DATA_NODE_COUNT = 3;
   private static final int DEFAULT_FAILOVER_TIMEOUT = 31449600;
   private static final int DEFAULT_ZK_TIME_MS = 20000;
   private static final int DEFAULT_RECONCILIATION_TIMEOUT = 30;
   private static final int DEFAULT_DEADNODE_TIMEOUT = 90;
+  private static final int DEFAULT_DFS_REPLICATION = 3;
+  @SuppressWarnings("PMD")
+  private static final String DEFAULT_SERVER_HOST = "0.0.0.0";
 
   private final Log log = LogFactory.getLog(HdfsFrameworkConfig.class);
 
@@ -195,6 +199,14 @@ public class HdfsFrameworkConfig {
     return getConf().getInt("mesos.hdfs.journalnode.count", DEFAULT_JOURNAL_NODE_COUNT);
   }
 
+  public int getDataNodeCount() {
+    return getConf().getInt("mesos.hdfs.datanode.count", DEFAULT_DATA_NODE_COUNT);
+  }
+
+  public void setDataNodeCount(int count) {
+    getConf().setInt("mesos.hdfs.datanode.count", count);
+  }
+
   public String getFrameworkName() {
     return getConf().get("mesos.hdfs.framework.name", "hdfs");
   }
@@ -257,6 +269,14 @@ public class HdfsFrameworkConfig {
     return hostAddress;
   }
 
+  public String getConfigServerHost() {
+    String configServerHost = System.getProperty("mesos.hdfs.config.server.host");
+    if (configServerHost == null) {
+      configServerHost = getConf().get("mesos.hdfs.config.server.host", DEFAULT_SERVER_HOST);
+    }
+    return configServerHost;
+  }
+
   // The port can be changed by setting the PORT0 environment variable
   // See /bin/hdfs-mesos for more details
   public int getConfigServerPort() {
@@ -273,6 +293,14 @@ public class HdfsFrameworkConfig {
 
   public int getDeadNodeTimeout() {
     return getConf().getInt("mesos.hdfs.deadnode.timeout.seconds", DEFAULT_DEADNODE_TIMEOUT);
+  }
+
+  public int getDFSReplication() {
+    String dfsReplicationString = System.getProperty("dfs.replication");
+    if (dfsReplicationString == null) {
+      return getConf().getInt("dfs.replication", DEFAULT_DFS_REPLICATION);
+    }
+    return Integer.parseInt(dfsReplicationString);
   }
 
   public String getJreUrl() {

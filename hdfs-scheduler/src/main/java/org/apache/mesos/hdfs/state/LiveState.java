@@ -105,10 +105,15 @@ public class LiveState {
 
   public void transitionTo(AcquisitionPhase phase) {
     this.currentAcquisitionPhase = phase;
+    log.info(String.format("Transitioned to Phase: %s", phase.toString()));
   }
 
   public int getJournalNodeSize() {
     return countOfRunningTasksWith(HDFSConstants.JOURNAL_NODE_ID);
+  }
+
+  public int getDataNodeSize() {
+    return countOfRunningTasksWith(HDFSConstants.DATA_NODE_ID);
   }
 
   public int getNameNodeSize() {
