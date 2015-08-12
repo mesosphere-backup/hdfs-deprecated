@@ -2,5 +2,12 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+function run_datanode() {
+  while [ true ] ; do
+    $DIR/hdfs datanode
+    sleep 10
+  done
+}
+
 $DIR/hdfs-mesos-env
-$DIR/hdfs datanode
+run_datanode
