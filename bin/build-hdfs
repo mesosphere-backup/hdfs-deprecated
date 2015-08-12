@@ -114,7 +114,7 @@ cd -
 echo "Compressing to $EXECUTOR.tgz"
 rm -f $BUILD_CACHE_DIR/$EXECUTOR.tgz
 cd $BUILD_CACHE_DIR
-tar czf $EXECUTOR.tgz $EXECUTOR/*
+tar czf $EXECUTOR.tgz $EXECUTOR
 cd -
 
 #####  Framework / scheduler build
