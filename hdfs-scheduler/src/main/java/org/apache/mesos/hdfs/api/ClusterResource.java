@@ -41,20 +41,6 @@ public class ClusterResource {
     return scale(instances);
   }
 
-  @POST
-  @Path("scaledown")
-  public Response scaleDown(@QueryParam("instances") int instances) {
-    log.info("Received ScaleDown Request");
-    log.info(String.format(" Instances: %d", instances));
-    if (instances >= liveState.getDataNodeSize() 
-      || instances < config.getDFSReplication()) {
-      return Response.status(Status.BAD_REQUEST).build();
-    }
-    // TODO (llparse) change once scheduler can gracefully decommission datanodes
-    return Response.status(Status.FORBIDDEN).build();
-    //return scale(instances);
-  }
-
   private Response scale(int instances) {
     config.setDataNodeCount(instances);
     liveState.transitionTo(AcquisitionPhase.DATA_NODES);
