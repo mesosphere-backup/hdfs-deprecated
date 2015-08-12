@@ -21,7 +21,7 @@ public class HttpConnectorProvider implements Provider<Connector> {
   @Override
   public Connector get() {
     SelectChannelConnector scc = new SelectChannelConnector();
-    scc.setHost(config.getConfigServerHost());
+    scc.setHost(config.getFrameworkHostAddress());
     scc.setPort(config.getConfigServerPort());
     return scc;
   }

@@ -38,8 +38,6 @@ public class HdfsFrameworkConfig {
   private static final int DEFAULT_RECONCILIATION_TIMEOUT = 30;
   private static final int DEFAULT_DEADNODE_TIMEOUT = 90;
   private static final int DEFAULT_DFS_REPLICATION = 3;
-  @SuppressWarnings("PMD")
-  private static final String DEFAULT_SERVER_HOST = "0.0.0.0";
 
   private final Log log = LogFactory.getLog(HdfsFrameworkConfig.class);
 
@@ -269,14 +267,6 @@ public class HdfsFrameworkConfig {
     return hostAddress;
   }
 
-  public String getConfigServerHost() {
-    String configServerHost = System.getProperty("mesos.hdfs.config.server.host");
-    if (configServerHost == null) {
-      configServerHost = getConf().get("mesos.hdfs.config.server.host", DEFAULT_SERVER_HOST);
-    }
-    return configServerHost;
-  }
-
   // The port can be changed by setting the PORT0 environment variable
   // See /bin/hdfs-mesos for more details
   public int getConfigServerPort() {
@@ -296,11 +286,7 @@ public class HdfsFrameworkConfig {
   }
 
   public int getDFSReplication() {
-    String dfsReplicationString = System.getProperty("dfs.replication");
-    if (dfsReplicationString == null) {
-      return getConf().getInt("dfs.replication", DEFAULT_DFS_REPLICATION);
-    }
-    return Integer.parseInt(dfsReplicationString);
+    return getConf().getInt("dfs.replication", DEFAULT_DFS_REPLICATION);
   }
 
   public String getJreUrl() {
