@@ -51,7 +51,7 @@ public class ClusterResource {
       return Response.status(Status.BAD_REQUEST).build();
     }
     // TODO (llparse) change once scheduler can gracefully decommission datanodes
-    return Response.status(Status.METHOD_NOT_ALLOWED).build();
+    return Response.status(Status.FORBIDDEN).build();
     //return scale(instances);
   }
 
