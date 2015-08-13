@@ -71,6 +71,7 @@ public class HdfsFrameworkConfig {
     try {
       out = new FileOutputStream("etc/hadoop/mesos-site.xml");
       getConf().writeXml(out);
+      log.info("Rewrote mesos-site.xml");
     } catch (IOException e) {
       log.error("Failed to write config: " + e.getMessage());
     } finally {
