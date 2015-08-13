@@ -6,6 +6,9 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 
+import java.io.IOException;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Properties;
@@ -61,6 +64,24 @@ public class HdfsFrameworkConfig {
     Configuration configuration = new Configuration();
     configuration.addResource(configPath);
     setConf(configuration);
+  }
+
+  public void writeXml() {
+    OutputStream out = null;
+    try {
+      out = new FileOutputStream("etc/hadoop/mesos-site.xml");
+      getConf().writeXml(out);
+    } catch (IOException e) {
+      log.error("Failed to write config: " + e.getMessage());
+    } finally {
+      if (out != null) {
+        try {
+          out.close();
+        } catch (IOException e) {
+          log.error(e.getMessage());
+        }
+      }
+    }
   }
 
   public boolean usingMesosDns() {
