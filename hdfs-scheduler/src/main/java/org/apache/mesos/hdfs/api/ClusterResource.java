@@ -43,7 +43,11 @@ public class ClusterResource {
 
   private Response scale(int instances) {
     config.setDataNodeCount(instances);
-    liveState.transitionTo(AcquisitionPhase.DATA_NODES);
+    synchronized (liveState) {
+      if (liveState.getCurrentAcquisitionPhase() == AcquisitionPhase.ACTIVE) {
+        liveState.transitionTo(AcquisitionPhase.DATA_NODES);
+      }
+    }
     return Response.ok().build();
   }
 
