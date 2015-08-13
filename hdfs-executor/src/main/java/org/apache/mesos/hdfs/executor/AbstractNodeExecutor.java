@@ -28,6 +28,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -203,36 +204,35 @@ public abstract class AbstractNodeExecutor implements Executor {
    * Reloads the cluster configuration so the executor has the correct configuration info.
    */
   protected void reloadConfig() {
+    reloadConfig("hdfs-site.xml");
+    reloadConfig("mesos-site.xml");
+  }
+
+  protected void reloadConfig(String filename) {
     if (hdfsFrameworkConfig.usingNativeHadoopBinaries()) {
       return;
     }
     // Find config URI
     String configUri = "";
     for (CommandInfo.URI uri : executorInfo.getCommand().getUrisList()) {
-      if (uri.getValue().contains("hdfs-site.xml")) {
+      if (uri.getValue().contains(filename)) {
         configUri = uri.getValue();
       }
     }
     if (configUri.isEmpty()) {
-      log.error("Couldn't find hdfs-site.xml URI");
+      log.error(String.format("Couldn't find %s URI", filename));
       return;
     }
     try {
-      log.info(String.format("Reloading hdfs-site.xml from %s", configUri));
-      ProcessBuilder processBuilder = new ProcessBuilder("sh", "-c",
-        String.format("curl -o hdfs-site.xml %s && mv hdfs-site.xml etc/hadoop/", configUri));
-      Process process = processBuilder.start();
-      //TODO(nicgrayson) check if the config has changed
-      redirectProcess(process);
-      int exitCode = process.waitFor();
-      if (exitCode == 0) {
-        log.info("Finished reloading hdfs-site.xml, exited with status " + exitCode);
-      } else {
-        log.error("Error reloading hdfs-site.xml.");
-      }
-    } catch (InterruptedException | IOException e) {
+      log.info(String.format("Reloading %s from %s", filename, configUri));
+
+      URL url = new URL(configUri);
+      File file = new File("etc/hadoop/" + filename);
+      org.apache.commons.io.FileUtils.copyURLToFile(url, file);
+
+    } catch (IOException e) {
       log.error("Caught exception", e);
-    }
+    }    
   }
 
   /**

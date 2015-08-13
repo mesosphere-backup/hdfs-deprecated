@@ -391,6 +391,13 @@ public class HdfsScheduler implements org.apache.mesos.Scheduler, Runnable {
               CommandInfo.URI
                 .newBuilder()
                 .setValue(
+                  String.format("http://%s:%d/etc/hadoop/%s", hdfsFrameworkConfig.getFrameworkHostAddress(),
+                    confServerPort,
+                    HDFSConstants.MESOS_CONFIG_FILE_NAME))
+                .build(),
+              CommandInfo.URI
+                .newBuilder()
+                .setValue(
                   String.format("http://%s:%d/%s", hdfsFrameworkConfig.getFrameworkHostAddress(),
                     confServerPort,
                     HDFSConstants.JRE_BINARY_FILE_NAME))

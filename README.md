@@ -6,8 +6,7 @@ Starts 1 active NameNode (with JournalNode and ZKFC), 1 standby NN (+JN,ZKFC), 1
 Prerequisites
 --------------------------
 1. Install `tar`, `unzip`, `wget` in your build host. Set proxy for maven / gradle and wget if needed.
-2. Install `curl` for all hosts in cluster.
-3. `$JAVA_HOME` needs to be set on the host running your HDFS scheduler. This can be set through setting the environment variable on the host, `export JAVA_HOME=/path/to/jre`, or specifying the environment variable in Marathon.
+2. `$JAVA_HOME` needs to be set on the host running your HDFS scheduler. This can be set through setting the environment variable on the host, `export JAVA_HOME=/path/to/jre`, or specifying the environment variable in Marathon.
 
 **NOTE:** The build process current supports maven and gradle.   The gradle wrapper meta-data is included in the project and is self boot-straping (meaning it isn't a prerequisite install).  Maven as the build system is being deprecated.
 
