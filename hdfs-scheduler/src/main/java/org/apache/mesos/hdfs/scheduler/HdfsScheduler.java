@@ -610,17 +610,19 @@ public class HdfsScheduler implements org.apache.mesos.Scheduler, Runnable {
   }
 
   private void correctCurrentPhase() {
-    if (liveState.getJournalNodeSize() < hdfsFrameworkConfig.getJournalNodeCount()) {
-      liveState.transitionTo(AcquisitionPhase.JOURNAL_NODES);
-    } else if (liveState.getNameNodeSize() < HDFSConstants.TOTAL_NAME_NODES) {
-      liveState.transitionTo(AcquisitionPhase.START_NAME_NODES);
-    } else if (!liveState.isNameNode1Initialized()
-      || !liveState.isNameNode2Initialized()) {
-      liveState.transitionTo(AcquisitionPhase.FORMAT_NAME_NODES);
-    } else if (liveState.getDataNodeSize() < hdfsFrameworkConfig.getDataNodeCount()) {
-      liveState.transitionTo(AcquisitionPhase.DATA_NODES);
-    } else {
-      liveState.transitionTo(AcquisitionPhase.ACTIVE);
+    synchronized (liveState) {
+      if (liveState.getJournalNodeSize() < hdfsFrameworkConfig.getJournalNodeCount()) {
+        liveState.transitionTo(AcquisitionPhase.JOURNAL_NODES);
+      } else if (liveState.getNameNodeSize() < HDFSConstants.TOTAL_NAME_NODES) {
+        liveState.transitionTo(AcquisitionPhase.START_NAME_NODES);
+      } else if (!liveState.isNameNode1Initialized()
+        || !liveState.isNameNode2Initialized()) {
+        liveState.transitionTo(AcquisitionPhase.FORMAT_NAME_NODES);
+      } else if (liveState.getDataNodeSize() < hdfsFrameworkConfig.getDataNodeCount()) {
+        liveState.transitionTo(AcquisitionPhase.DATA_NODES);
+      } else {
+        liveState.transitionTo(AcquisitionPhase.ACTIVE);
+      }
     }
   }
 
