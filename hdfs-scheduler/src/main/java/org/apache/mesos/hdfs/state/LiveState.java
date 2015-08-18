@@ -65,7 +65,7 @@ public class LiveState {
   }
 
   @SuppressWarnings("PMD")
-  public void updateTaskForStatus(Protos.TaskStatus status) {
+  public synchronized void updateTaskForStatus(Protos.TaskStatus status) {
     // todo:  (kgs) refactor to remove the pmd challenges with this code
     // TODO (elingg) Use Starting Status when the task is running, but not initialized. Use running
     // status when the task is initialized so that we can differentiate during the reconciliation
@@ -99,16 +99,21 @@ public class LiveState {
     runningTasks.put(status.getTaskId().getValue(), status);
   }
 
-  public AcquisitionPhase getCurrentAcquisitionPhase() {
+  public synchronized AcquisitionPhase getCurrentAcquisitionPhase() {
     return currentAcquisitionPhase;
   }
 
-  public void transitionTo(AcquisitionPhase phase) {
+  public synchronized void transitionTo(AcquisitionPhase phase) {
     this.currentAcquisitionPhase = phase;
+    log.info(String.format("Transitioned to Phase: %s", phase.toString()));
   }
 
   public int getJournalNodeSize() {
     return countOfRunningTasksWith(HDFSConstants.JOURNAL_NODE_ID);
+  }
+
+  public int getDataNodeSize() {
+    return countOfRunningTasksWith(HDFSConstants.DATA_NODE_ID);
   }
 
   public int getNameNodeSize() {

@@ -36,6 +36,12 @@ public final class HDFSConstants {
   // HDFS Config File Name
   public static final String HDFS_CONFIG_FILE_NAME = "hdfs-site.xml";
 
+  // Mesos Config File Name
+  public static final String MESOS_CONFIG_FILE_NAME = "mesos-site.xml";
+
+  // JRE binary File Name
+  public static final String JRE_BINARY_FILE_NAME = "jre-7u76-linux-x64.tar.gz";
+
   private HDFSConstants() {
   }
 }

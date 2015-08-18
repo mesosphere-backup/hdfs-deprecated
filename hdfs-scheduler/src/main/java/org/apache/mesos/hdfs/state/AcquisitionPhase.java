@@ -26,8 +26,13 @@ public enum AcquisitionPhase {
   FORMAT_NAME_NODES,
 
   /**
-   * If everything is healthy the scheduler stays here and tries to launch
-   * datanodes on any slave that doesn't have an hdfs task running on it.
+   * Launches a configurable amount of datanodes.
    */
-  DATA_NODES
+  DATA_NODES,
+
+  /**
+   * If everything is healthy, the scheduler stays here and awaits further 
+   * instruction.
+   */
+  ACTIVE
 }

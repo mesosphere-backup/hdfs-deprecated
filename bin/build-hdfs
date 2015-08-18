@@ -15,6 +15,8 @@ HADOOP_URL=http://archive.cloudera.com/cdh5/cdh/5/$HADOOP_ZIP
 IMPALA_VER=cdh5.3.1-release
 IMPALA_ZIP=$IMPALA_VER.zip
 IMPALA_URL=https://github.com/cloudera/Impala/archive/$IMPALA_ZIP
+JRE_ZIP=jre-7u76-linux-x64.tar.gz
+JRE_URL=https://downloads.mesosphere.io/java/$JRE_ZIP
 NATIVE=native
 
 # the full distro is in the $DIST dir or $DIST.tzg
@@ -31,6 +33,14 @@ fi
 # Build and package hdfs-mesos project
 if [ "$1" != "nocompile" ]; then
   $PROJ_DIR/gradlew clean shadowJar || exit
+fi
+
+# Download java runtime
+if [ ! -f $BUILD_CACHE_DIR/$JRE_ZIP ]; then
+  echo "Downloading $JRE_URL"
+  wget -P $BUILD_CACHE_DIR $JRE_URL || exit
+else
+  echo "($JRE_ZIP already exists, skipping dl)"
 fi
 
 # Download hadoop binary
@@ -139,6 +149,7 @@ cp -R $BUILD_CACHE_DIR/$HADOOP_DIR/share/hadoop/hdfs/webapps $BUILD_DIR/$DIST/sh
 ## hdfs scheduler project needs
 cp $PROJ_DIR/bin/hdfs-mesos $BUILD_DIR/$DIST/bin
 cp $PROJ_DIR/hdfs-scheduler/build/libs/*-uber.jar $BUILD_DIR/$DIST/lib
+cp $BUILD_CACHE_DIR/$JRE_ZIP $BUILD_DIR/$DIST
 cp $BUILD_CACHE_DIR/$EXECUTOR.tgz $BUILD_DIR/$DIST
 cp $PROJ_DIR/conf/*.xml $BUILD_DIR/$DIST/etc/hadoop
 

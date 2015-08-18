@@ -6,6 +6,9 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 
+import java.io.IOException;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Properties;
@@ -32,10 +35,12 @@ public class HdfsFrameworkConfig {
 
   private static final double DEFAULT_JVM_OVERHEAD = 1.35;
   private static final int DEFAULT_JOURNAL_NODE_COUNT = 3;
+  private static final int DEFAULT_DATA_NODE_COUNT = 3;
   private static final int DEFAULT_FAILOVER_TIMEOUT = 31449600;
   private static final int DEFAULT_ZK_TIME_MS = 20000;
   private static final int DEFAULT_RECONCILIATION_TIMEOUT = 30;
   private static final int DEFAULT_DEADNODE_TIMEOUT = 90;
+  private static final int DEFAULT_DFS_REPLICATION = 3;
 
   private final Log log = LogFactory.getLog(HdfsFrameworkConfig.class);
 
@@ -59,6 +64,25 @@ public class HdfsFrameworkConfig {
     Configuration configuration = new Configuration();
     configuration.addResource(configPath);
     setConf(configuration);
+  }
+
+  public void writeXml() {
+    OutputStream out = null;
+    try {
+      out = new FileOutputStream("etc/hadoop/mesos-site.xml");
+      getConf().writeXml(out);
+      log.info("Rewrote mesos-site.xml");
+    } catch (IOException e) {
+      log.error("Failed to write config: " + e.getMessage());
+    } finally {
+      if (out != null) {
+        try {
+          out.close();
+        } catch (IOException e) {
+          log.error(e.getMessage());
+        }
+      }
+    }
   }
 
   public boolean usingMesosDns() {
@@ -195,6 +219,14 @@ public class HdfsFrameworkConfig {
     return getConf().getInt("mesos.hdfs.journalnode.count", DEFAULT_JOURNAL_NODE_COUNT);
   }
 
+  public int getDataNodeCount() {
+    return getConf().getInt("mesos.hdfs.datanode.count", DEFAULT_DATA_NODE_COUNT);
+  }
+
+  public void setDataNodeCount(int count) {
+    getConf().setInt("mesos.hdfs.datanode.count", count);
+  }
+
   public String getFrameworkName() {
     return getConf().get("mesos.hdfs.framework.name", "hdfs");
   }
@@ -273,6 +305,10 @@ public class HdfsFrameworkConfig {
 
   public int getDeadNodeTimeout() {
     return getConf().getInt("mesos.hdfs.deadnode.timeout.seconds", DEFAULT_DEADNODE_TIMEOUT);
+  }
+
+  public int getDFSReplication() {
+    return getConf().getInt("dfs.replication", DEFAULT_DFS_REPLICATION);
   }
 
   public String getJreUrl() {

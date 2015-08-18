@@ -68,7 +68,7 @@ public class TestScheduler {
     Protos.TaskID taskId = createTaskId("1");
 
     when(liveState.getCurrentAcquisitionPhase()).thenReturn(AcquisitionPhase.JOURNAL_NODES);
-    when(liveState.getJournalNodeSize()).thenReturn(3);
+    when(liveState.getJournalNodeSize()).thenReturn(hdfsFrameworkConfig.getJournalNodeCount());
 
     scheduler.statusUpdate(driver,
         createTaskStatus(taskId, Protos.TaskState.TASK_RUNNING));
@@ -81,7 +81,7 @@ public class TestScheduler {
     Protos.TaskID taskId = createTaskId("1");
 
     when(liveState.getCurrentAcquisitionPhase()).thenReturn(AcquisitionPhase.JOURNAL_NODES);
-    when(liveState.getJournalNodeSize()).thenReturn(2);
+    when(liveState.getJournalNodeSize()).thenReturn(HDFSConstants.TOTAL_NAME_NODES);
 
     scheduler.statusUpdate(driver,
         createTaskStatus(taskId, Protos.TaskState.TASK_RUNNING));
@@ -95,7 +95,7 @@ public class TestScheduler {
     Protos.SlaveID slaveId = createSlaveId("1");
 
     when(liveState.getCurrentAcquisitionPhase()).thenReturn(AcquisitionPhase.START_NAME_NODES);
-    when(liveState.getNameNodeSize()).thenReturn(2);
+    when(liveState.getNameNodeSize()).thenReturn(HDFSConstants.TOTAL_NAME_NODES);
     when(liveState.getJournalNodeSize()).thenReturn(hdfsFrameworkConfig.getJournalNodeCount());
     when(liveState.getFirstNameNodeTaskId()).thenReturn(taskId);
     when(liveState.getFirstNameNodeSlaveId()).thenReturn(slaveId);
@@ -123,10 +123,28 @@ public class TestScheduler {
   }
 
   @Test
-  public void statusUpdateAquiringDataNodesJustStays() {
+  public void statusUpdateTransitionFromDataNodesToActive() {
+    when(liveState.getCurrentAcquisitionPhase()).thenReturn(AcquisitionPhase.DATA_NODES);
+    when(liveState.getJournalNodeSize()).thenReturn(hdfsFrameworkConfig.getJournalNodeCount());
+    when(liveState.getNameNodeSize()).thenReturn(HDFSConstants.TOTAL_NAME_NODES);
+    when(liveState.isNameNode1Initialized()).thenReturn(true);
+    when(liveState.isNameNode2Initialized()).thenReturn(true);
+    when(liveState.getDataNodeSize()).thenReturn(hdfsFrameworkConfig.getDataNodeCount());
+
+    scheduler.statusUpdate(
+        driver,
+        createTaskStatus(
+            createTaskId(HDFSConstants.DATA_NODE_ID), 
+                Protos.TaskState.TASK_RUNNING));
+
+    verify(liveState).transitionTo(AcquisitionPhase.ACTIVE);
+  }
+
+  @Test
+  public void statusUpdateActiveJustStays() {
     Protos.TaskID taskId = createTaskId("1");
 
-    when(liveState.getCurrentAcquisitionPhase()).thenReturn(AcquisitionPhase.DATA_NODES);
+    when(liveState.getCurrentAcquisitionPhase()).thenReturn(AcquisitionPhase.ACTIVE);
 
     scheduler.statusUpdate(driver,
         createTaskStatus(taskId, Protos.TaskState.TASK_RUNNING));

@@ -3,15 +3,18 @@ plugins {
 }
 
 ext {
-  jettyVer = "9.2.2.v20140723"
+  jaxwsVer = "1.1.1"
   jmteVer = "3.0"
+  jerGuiceVer = "1.19"
 }
 
 
 dependencies {
   compile project(':hdfs-commons')
+  compile "javax.ws.rs:jsr311-api:${jaxwsVer}"
   compile "com.floreysoft:jmte:${jmteVer}"
-  compile "org.eclipse.jetty:jetty-server:${jettyVer}"
+  compile "com.google.inject.extensions:guice-servlet:${guiceVer}"
+  compile "com.sun.jersey.contribs:jersey-guice:${jerGuiceVer}"
 }
 
 

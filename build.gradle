@@ -59,7 +59,6 @@ subprojects {
     compile("org.apache.hadoop:hadoop-common:${hadoopVer}") {
       exclude group: "log4j", module: "log4j"
       exclude group: "org.slf4j", module: "slf4j-log4j12"
-      exclude group: "javax.servlet", module: "servlet-api"
       exclude group: "commons-httpclient", module: "commons-httpclient"
       exclude group: "net.java.dev.jets3t", module: "jets3t"
     }
