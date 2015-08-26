@@ -104,6 +104,12 @@ public class LiveState {
   }
 
   public void transitionTo(AcquisitionPhase phase) {
+    if (currentAcquisitionPhase.equals(phase)) {
+      log.info(String.format("Acquisition phase is already '%s'", currentAcquisitionPhase));
+      return;
+    }
+
+    log.info(String.format("Transitioning from acquisition phase '%s' to '%s'", currentAcquisitionPhase, phase));
     this.currentAcquisitionPhase = phase;
   }
 
