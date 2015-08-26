@@ -89,6 +89,12 @@
     <value>3</value>
   </property>
 
+  <property>
+    <name>mesos.hdfs.datanode.exclusive</name>
+    <value>true</value>
+  </property>
+
+
   <!-- Additional settings for fine-tuning -->
   <!--
   <property>
