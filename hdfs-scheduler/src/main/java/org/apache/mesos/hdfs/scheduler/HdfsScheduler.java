@@ -558,10 +558,12 @@ public class HdfsScheduler implements org.apache.mesos.Scheduler, Runnable {
     // What number of DN's should we try to recover or should we remove this constraint
     // entirely?
     if (deadDataNodes.isEmpty()) {
-      if (persistenceStore.dataNodeRunningOnSlave(offer.getHostname())
-        || persistenceStore.nameNodeRunningOnSlave(offer.getHostname())
-        || persistenceStore.journalNodeRunningOnSlave(offer.getHostname())) {
-        log.info(String.format("Already running hdfs task on %s", offer.getHostname()));
+      if (persistenceStore.dataNodeRunningOnSlave(offer.getHostname())) {
+        log.info(String.format("Already running datanode hdfs task on %s", offer.getHostname()));
+      } else if ( hdfsFrameworkConfig.getRunDatanodeExclusively() && 
+            (persistenceStore.nameNodeRunningOnSlave(offer.getHostname())
+           || persistenceStore.journalNodeRunningOnSlave(offer.getHostname()))) {
+        log.info(String.format("Already running namenode/journal node hdfs task on %s", offer.getHostname()));
       } else {
         launch = true;
       }

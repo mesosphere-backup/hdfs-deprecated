@@ -303,4 +303,8 @@ public class HdfsFrameworkConfig {
   public String getJreVersion() {
     return getConf().get("mesos.hdfs.jre-version", "jre1.7.0_76");
   }
+
+  public boolean getRunDatanodeExclusively() {
+    return getConf().getBoolean("mesos.hdfs.deadnode.exclusive", true);
+  }
 }
