@@ -6,23 +6,17 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos;
-import org.apache.mesos.Protos.CommandInfo;
 import org.apache.mesos.Protos.Credential;
-import org.apache.mesos.Protos.Environment;
 import org.apache.mesos.Protos.ExecutorID;
-import org.apache.mesos.Protos.ExecutorInfo;
 import org.apache.mesos.Protos.FrameworkID;
 import org.apache.mesos.Protos.FrameworkInfo;
 import org.apache.mesos.Protos.MasterInfo;
 import org.apache.mesos.Protos.Offer;
 import org.apache.mesos.Protos.OfferID;
-import org.apache.mesos.Protos.Resource;
 import org.apache.mesos.Protos.SlaveID;
 import org.apache.mesos.Protos.TaskID;
-import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.TaskState;
 import org.apache.mesos.Protos.TaskStatus;
-import org.apache.mesos.Protos.Value;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.hdfs.config.HdfsFrameworkConfig;
 import org.apache.mesos.hdfs.state.AcquisitionPhase;
@@ -34,9 +28,7 @@ import org.apache.mesos.hdfs.util.HDFSConstants;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Observable;
 
@@ -46,24 +38,25 @@ import java.util.Observable;
 public class HdfsScheduler extends Observable implements org.apache.mesos.Scheduler, Runnable {
   // TODO (elingg) remove as much logic as possible from Scheduler to clean up code
   private final Log log = LogFactory.getLog(HdfsScheduler.class);
-
-  private static final int SECONDS_FROM_MILLIS = 1000;
-
-  private final HdfsFrameworkConfig hdfsFrameworkConfig;
+  private final HdfsFrameworkConfig config;
   private final LiveState liveState;
   private final IPersistentStateStore persistenceStore;
   private final DnsResolver dnsResolver;
   private final Reconciler reconciler;
+  private final ResourceFactory resourceFactory;
+  private final NodeLauncher nodeLauncher;
 
   @Inject
-  public HdfsScheduler(HdfsFrameworkConfig hdfsFrameworkConfig,
+  public HdfsScheduler(HdfsFrameworkConfig config,
     LiveState liveState, IPersistentStateStore persistenceStore) {
 
-    this.hdfsFrameworkConfig = hdfsFrameworkConfig;
+    this.config = config;
     this.liveState = liveState;
     this.persistenceStore = persistenceStore;
-    this.dnsResolver = new DnsResolver(this, hdfsFrameworkConfig);
-    this.reconciler = new Reconciler(hdfsFrameworkConfig, persistenceStore);
+    this.dnsResolver = new DnsResolver(this, config);
+    this.reconciler = new Reconciler(config, persistenceStore);
+    this.resourceFactory = new ResourceFactory(config.getHdfsRole());
+    this.nodeLauncher = new NodeLauncher();
 
     addObserver(reconciler);
   }
@@ -152,7 +145,7 @@ public class HdfsScheduler extends Observable implements org.apache.mesos.Schedu
         case RECONCILING_TASKS:
           break;
         case JOURNAL_NODES:
-          if (liveState.getJournalNodeSize() == hdfsFrameworkConfig.getJournalNodeCount()) {
+          if (liveState.getJournalNodeSize() == config.getJournalNodeCount()) {
             // TODO (elingg) move the reload to correctCurrentPhase and make it idempotent
             reloadConfigsOnAllRunningTasks(driver);
             correctCurrentPhase();
@@ -199,9 +192,29 @@ public class HdfsScheduler extends Observable implements org.apache.mesos.Schedu
     }
   }
 
+  private void logOffers(List<Offer> offers) {
+    log.info(String.format("Received %d offers", offers.size()));
+
+    for (Offer offer : offers) {
+      log.info(String.format("%s", offer.getId()));
+    }
+  }
+
+  private void declineOffer(SchedulerDriver driver, Offer offer) {
+    OfferID offerId = offer.getId();
+
+    log.info(
+      String.format(
+        "Scheduler in phase: %s, declining offer: %s",
+        liveState.getCurrentAcquisitionPhase(),
+        offerId));
+
+    driver.declineOffer(offerId);
+  }
+
   @Override
   public void resourceOffers(SchedulerDriver driver, List<Offer> offers) {
-    log.info(String.format("Received %d offers", offers.size()));
+    logOffers(offers);
 
     if (liveState.getCurrentAcquisitionPhase() == AcquisitionPhase.RECONCILING_TASKS && reconciler.complete()) {
       correctCurrentPhase();
@@ -209,42 +222,28 @@ public class HdfsScheduler extends Observable implements org.apache.mesos.Schedu
 
     // TODO (elingg) within each phase, accept offers based on the number of nodes you need
     boolean acceptedOffer = false;
-    boolean journalNodesResolvable = false;
-    if (liveState.getCurrentAcquisitionPhase() == AcquisitionPhase.START_NAME_NODES) {
-      journalNodesResolvable = dnsResolver.journalNodesResolvable();
-    }
     for (Offer offer : offers) {
       if (acceptedOffer) {
-        driver.declineOffer(offer.getId());
+        declineOffer(driver, offer);
       } else {
         switch (liveState.getCurrentAcquisitionPhase()) {
           case RECONCILING_TASKS:
-            log.info("Declining offers while reconciling tasks");
-            driver.declineOffer(offer.getId());
+            declineOffer(driver, offer);
             break;
           case JOURNAL_NODES:
-            if (tryToLaunchJournalNode(driver, offer)) {
-              acceptedOffer = true;
-            } else {
-              driver.declineOffer(offer.getId());
-            }
+            JournalNode jn = new JournalNode(liveState, persistenceStore, config);
+            acceptedOffer = nodeLauncher.launch(driver, jn, offer);
             break;
           case START_NAME_NODES:
-            if (journalNodesResolvable && tryToLaunchNameNode(driver, offer)) {
-              acceptedOffer = true;
-            } else {
-              driver.declineOffer(offer.getId());
-            }
+            NameNode nn = new NameNode(liveState, persistenceStore, dnsResolver, config);
+            acceptedOffer = nodeLauncher.launch(driver, nn, offer);
             break;
           case FORMAT_NAME_NODES:
-            driver.declineOffer(offer.getId());
+            declineOffer(driver, offer);
             break;
           case DATA_NODES:
-            if (tryToLaunchDataNode(driver, offer)) {
-              acceptedOffer = true;
-            } else {
-              driver.declineOffer(offer.getId());
-            }
+            DataNode dn = new DataNode(liveState, persistenceStore, config);
+            acceptedOffer = nodeLauncher.launch(driver, dn, offer);
             break;
         }
       }
@@ -259,10 +258,10 @@ public class HdfsScheduler extends Observable implements org.apache.mesos.Schedu
   @Override
   public void run() {
     FrameworkInfo.Builder frameworkInfo = FrameworkInfo.newBuilder()
-      .setName(hdfsFrameworkConfig.getFrameworkName())
-      .setFailoverTimeout(hdfsFrameworkConfig.getFailoverTimeout())
-      .setUser(hdfsFrameworkConfig.getHdfsUser())
-      .setRole(hdfsFrameworkConfig.getHdfsRole())
+      .setName(config.getFrameworkName())
+      .setFailoverTimeout(config.getFailoverTimeout())
+      .setUser(config.getHdfsUser())
+      .setRole(config.getHdfsRole())
       .setCheckpoint(true);
 
     try {
@@ -276,7 +275,7 @@ public class HdfsScheduler extends Observable implements org.apache.mesos.Schedu
       throw new SchedulerException(msg, e);
     }
 
-    registerFramework(this, frameworkInfo.build(), hdfsFrameworkConfig.getMesosMasterUri());
+    registerFramework(this, frameworkInfo.build(), config.getMesosMasterUri());
   }
 
   private void registerFramework(HdfsScheduler sched, FrameworkInfo fInfo, String masterUri) {
@@ -292,11 +291,11 @@ public class HdfsScheduler extends Observable implements org.apache.mesos.Schedu
   }
 
   private Credential getCredential() {
-    if (hdfsFrameworkConfig.cramCredentialsEnabled()) {
+    if (config.cramCredentialsEnabled()) {
       try {
         Credential.Builder credentialBuilder = Credential.newBuilder()
-          .setPrincipal(hdfsFrameworkConfig.getPrincipal())
-          .setSecret(ByteString.copyFrom(hdfsFrameworkConfig.getSecret().getBytes("UTF-8")));
+          .setPrincipal(config.getPrincipal())
+          .setSecret(ByteString.copyFrom(config.getSecret().getBytes("UTF-8")));
 
         return credentialBuilder.build();
 
@@ -306,283 +305,6 @@ public class HdfsScheduler extends Observable implements org.apache.mesos.Schedu
     }
 
     return null;
-  }
-
-  private boolean launchNode(SchedulerDriver driver, Offer offer,
-    String nodeName, List<String> taskTypes, String executorName) {
-    // nodeName is the type of executor to launch
-    // executorName is to distinguish different types of nodes
-    // taskType is the type of task in mesos to launch on the node
-    // taskName is a name chosen to identify the task in mesos and mesos-dns (if used)
-    log.info(String.format("Launching node of type %s with tasks %s", nodeName,
-      taskTypes.toString()));
-    String taskIdName = String.format("%s.%s.%d", nodeName, executorName,
-      System.currentTimeMillis());
-    ExecutorInfo executorInfo = createExecutor(taskIdName, nodeName, executorName);
-    List<TaskInfo> tasks = new ArrayList<>();
-    for (String taskType : taskTypes) {
-      List<Resource> taskResources = getTaskResources(taskType);
-      String taskName = getNextTaskName(taskType);
-      TaskID taskId = TaskID.newBuilder()
-        .setValue(String.format("task.%s.%s", taskType, taskIdName))
-        .build();
-      TaskInfo task = TaskInfo.newBuilder()
-        .setExecutor(executorInfo)
-        .setName(taskName)
-        .setTaskId(taskId)
-        .setSlaveId(offer.getSlaveId())
-        .addAllResources(taskResources)
-        .setData(ByteString.copyFromUtf8(
-          String.format("bin/hdfs-mesos-%s", taskType)))
-        .build();
-      tasks.add(task);
-
-      liveState.addStagingTask(task.getTaskId());
-      persistenceStore.addHdfsNode(taskId, offer.getHostname(), taskType, taskName);
-    }
-    driver.launchTasks(Arrays.asList(offer.getId()), tasks);
-    return true;
-  }
-
-  private String getNextTaskName(String taskType) {
-
-    if (taskType.equals(HDFSConstants.NAME_NODE_ID)) {
-      Collection<String> nameNodeTaskNames = persistenceStore.getNameNodeTaskNames().values();
-      for (int i = 1; i <= HDFSConstants.TOTAL_NAME_NODES; i++) {
-        if (!nameNodeTaskNames.contains(HDFSConstants.NAME_NODE_ID + i)) {
-          return HDFSConstants.NAME_NODE_ID + i;
-        }
-      }
-      String errorStr = "Cluster is in inconsistent state. " +
-        "Trying to launch more namenodes, but they are all already running.";
-      log.error(errorStr);
-      throw new SchedulerException(errorStr);
-    }
-    if (taskType.equals(HDFSConstants.JOURNAL_NODE_ID)) {
-      Collection<String> journalNodeTaskNames = persistenceStore.getJournalNodeTaskNames().values();
-      for (int i = 1; i <= hdfsFrameworkConfig.getJournalNodeCount(); i++) {
-        if (!journalNodeTaskNames.contains(HDFSConstants.JOURNAL_NODE_ID + i)) {
-          return HDFSConstants.JOURNAL_NODE_ID + i;
-        }
-      }
-      String errorStr = "Cluster is in inconsistent state. " +
-        "Trying to launch more journalnodes, but they all are already running.";
-      log.error(errorStr);
-      throw new SchedulerException(errorStr);
-    }
-    return taskType;
-  }
-
-  private ExecutorInfo createExecutor(String taskIdName, String nodeName, String executorName) {
-    int confServerPort = hdfsFrameworkConfig.getConfigServerPort();
-
-    String cmd = "export JAVA_HOME=$MESOS_DIRECTORY/" + hdfsFrameworkConfig.getJreVersion()
-      + " && env ; cd hdfs-mesos-* && "
-      + "exec `if [ -z \"$JAVA_HOME\" ]; then echo java; "
-      + "else echo $JAVA_HOME/bin/java; fi` "
-      + "$HADOOP_OPTS "
-      + "$EXECUTOR_OPTS "
-      + "-cp lib/*.jar org.apache.mesos.hdfs.executor." + executorName;
-
-    return ExecutorInfo
-      .newBuilder()
-      .setName(nodeName + " executor")
-      .setExecutorId(ExecutorID.newBuilder().setValue("executor." + taskIdName).build())
-      .addAllResources(getExecutorResources())
-      .setCommand(
-        CommandInfo
-          .newBuilder()
-          .addAllUris(
-            Arrays.asList(
-              CommandInfo.URI
-                .newBuilder()
-                .setValue(
-                  String.format("http://%s:%d/%s", hdfsFrameworkConfig.getFrameworkHostAddress(),
-                    confServerPort,
-                    HDFSConstants.HDFS_BINARY_FILE_NAME))
-                .build(),
-              CommandInfo.URI
-                .newBuilder()
-                .setValue(
-                  String.format("http://%s:%d/%s", hdfsFrameworkConfig.getFrameworkHostAddress(),
-                    confServerPort,
-                    HDFSConstants.HDFS_CONFIG_FILE_NAME))
-                .build(),
-              CommandInfo.URI
-                .newBuilder()
-                .setValue(hdfsFrameworkConfig.getJreUrl())
-                .build()))
-          .setEnvironment(Environment.newBuilder()
-            .addAllVariables(Arrays.asList(
-              Environment.Variable.newBuilder()
-                .setName("LD_LIBRARY_PATH")
-                .setValue(hdfsFrameworkConfig.getLdLibraryPath()).build(),
-              Environment.Variable.newBuilder()
-                .setName("HADOOP_OPTS")
-                .setValue(hdfsFrameworkConfig.getJvmOpts()).build(),
-              Environment.Variable.newBuilder()
-                .setName("HADOOP_HEAPSIZE")
-                .setValue(String.format("%d", hdfsFrameworkConfig.getHadoopHeapSize())).build(),
-              Environment.Variable.newBuilder()
-                .setName("HADOOP_NAMENODE_OPTS")
-                .setValue("-Xmx" + hdfsFrameworkConfig.getNameNodeHeapSize()
-                  + "m -Xms" + hdfsFrameworkConfig.getNameNodeHeapSize() + "m").build(),
-              Environment.Variable.newBuilder()
-                .setName("HADOOP_DATANODE_OPTS")
-                .setValue("-Xmx" + hdfsFrameworkConfig.getDataNodeHeapSize()
-                  + "m -Xms" + hdfsFrameworkConfig.getDataNodeHeapSize() + "m").build(),
-              Environment.Variable.newBuilder()
-                .setName("EXECUTOR_OPTS")
-                .setValue("-Xmx" + hdfsFrameworkConfig.getExecutorHeap()
-                  + "m -Xms" + hdfsFrameworkConfig.getExecutorHeap() + "m").build())))
-          .setValue(cmd).build())
-      .build();
-  }
-
-  private List<Resource> getExecutorResources() {
-    return Arrays.asList(
-      Resource.newBuilder()
-        .setName("cpus")
-        .setType(Value.Type.SCALAR)
-        .setScalar(Value.Scalar.newBuilder()
-          .setValue(hdfsFrameworkConfig.getExecutorCpus()).build())
-        .setRole(hdfsFrameworkConfig.getHdfsRole())
-        .build(),
-      Resource.newBuilder()
-        .setName("mem")
-        .setType(Value.Type.SCALAR)
-        .setScalar(Value.Scalar.newBuilder()
-          .setValue(hdfsFrameworkConfig.getExecutorHeap() * hdfsFrameworkConfig.getJvmOverhead()).build())
-        .setRole(hdfsFrameworkConfig.getHdfsRole())
-        .build());
-  }
-
-  private List<Resource> getTaskResources(String taskName) {
-    return Arrays.asList(
-      Resource.newBuilder()
-        .setName("cpus")
-        .setType(Value.Type.SCALAR)
-        .setScalar(Value.Scalar.newBuilder()
-          .setValue(hdfsFrameworkConfig.getTaskCpus(taskName)).build())
-        .setRole(hdfsFrameworkConfig.getHdfsRole())
-        .build(),
-      Resource.newBuilder()
-        .setName("mem")
-        .setType(Value.Type.SCALAR)
-        .setScalar(Value.Scalar.newBuilder()
-          .setValue(hdfsFrameworkConfig.getTaskHeapSize(taskName) *
-            hdfsFrameworkConfig.getJvmOverhead()).build())
-        .setRole(hdfsFrameworkConfig.getHdfsRole())
-        .build());
-  }
-
-  private boolean tryToLaunchJournalNode(SchedulerDriver driver, Offer offer) {
-    if (offerNotEnoughResources(offer, hdfsFrameworkConfig.getJournalNodeCpus(),
-      hdfsFrameworkConfig.getJournalNodeHeapSize())) {
-      log.info("Offer does not have enough resources");
-      return false;
-    }
-
-    boolean launch = false;
-    List<String> deadJournalNodes = persistenceStore.getDeadJournalNodes();
-
-    log.info(deadJournalNodes);
-
-    if (deadJournalNodes.isEmpty()) {
-      if (persistenceStore.getJournalNodes().size() == hdfsFrameworkConfig.getJournalNodeCount()) {
-        log.info(String.format("Already running %s journalnodes", hdfsFrameworkConfig.getJournalNodeCount()));
-      } else if (persistenceStore.journalNodeRunningOnSlave(offer.getHostname())) {
-        log.info(String.format("Already running journalnode on %s", offer.getHostname()));
-      } else if (persistenceStore.dataNodeRunningOnSlave(offer.getHostname())) {
-        log.info(String.format("Cannot colocate journalnode and datanode on %s",
-          offer.getHostname()));
-      } else {
-        launch = true;
-      }
-    } else if (deadJournalNodes.contains(offer.getHostname())) {
-      launch = true;
-    }
-    if (launch) {
-      return launchNode(
-        driver,
-        offer,
-        HDFSConstants.JOURNAL_NODE_ID,
-        Arrays.asList(HDFSConstants.JOURNAL_NODE_ID),
-        HDFSConstants.NODE_EXECUTOR_ID);
-    }
-    return false;
-  }
-
-  private boolean tryToLaunchNameNode(SchedulerDriver driver, Offer offer) {
-    if (offerNotEnoughResources(offer,
-      (hdfsFrameworkConfig.getNameNodeCpus() + hdfsFrameworkConfig.getZkfcCpus()),
-      (hdfsFrameworkConfig.getNameNodeHeapSize() + hdfsFrameworkConfig.getZkfcHeapSize()))) {
-      log.info("Offer does not have enough resources");
-      return false;
-    }
-
-    boolean launch = false;
-    List<String> deadNameNodes = persistenceStore.getDeadNameNodes();
-
-    if (deadNameNodes.isEmpty()) {
-      if (persistenceStore.getNameNodes().size() == HDFSConstants.TOTAL_NAME_NODES) {
-        log.info(String.format("Already running %s namenodes", HDFSConstants.TOTAL_NAME_NODES));
-      } else if (persistenceStore.nameNodeRunningOnSlave(offer.getHostname())) {
-        log.info(String.format("Already running namenode on %s", offer.getHostname()));
-      } else if (persistenceStore.dataNodeRunningOnSlave(offer.getHostname())) {
-        log.info(String.format("Cannot colocate namenode and datanode on %s", offer.getHostname()));
-      } else if (!persistenceStore.journalNodeRunningOnSlave(offer.getHostname())) {
-        log.info(String.format("We need to coloate the namenode with a journalnode and there is"
-          + "no journalnode running on this host. %s", offer.getHostname()));
-      } else {
-        launch = true;
-      }
-    } else if (deadNameNodes.contains(offer.getHostname())) {
-      launch = true;
-    }
-    if (launch) {
-      return launchNode(
-        driver,
-        offer,
-        HDFSConstants.NAME_NODE_ID,
-        Arrays.asList(HDFSConstants.NAME_NODE_ID, HDFSConstants.ZKFC_NODE_ID),
-        HDFSConstants.NAME_NODE_EXECUTOR_ID);
-    }
-    return false;
-  }
-
-  private boolean tryToLaunchDataNode(SchedulerDriver driver, Offer offer) {
-    if (offerNotEnoughResources(offer, hdfsFrameworkConfig.getDataNodeCpus(),
-      hdfsFrameworkConfig.getDataNodeHeapSize())) {
-      log.info("Offer does not have enough resources");
-      return false;
-    }
-
-    boolean launch = false;
-    List<String> deadDataNodes = persistenceStore.getDeadDataNodes();
-    // TODO (elingg) Relax this constraint to only wait for DN's when the number of DN's is small
-    // What number of DN's should we try to recover or should we remove this constraint
-    // entirely?
-    if (deadDataNodes.isEmpty()) {
-      if (persistenceStore.dataNodeRunningOnSlave(offer.getHostname())
-        || persistenceStore.nameNodeRunningOnSlave(offer.getHostname())
-        || persistenceStore.journalNodeRunningOnSlave(offer.getHostname())) {
-        log.info(String.format("Already running hdfs task on %s", offer.getHostname()));
-      } else {
-        launch = true;
-      }
-    } else if (deadDataNodes.contains(offer.getHostname())) {
-      launch = true;
-    }
-    if (launch) {
-      return launchNode(
-        driver,
-        offer,
-        HDFSConstants.DATA_NODE_ID,
-        Arrays.asList(HDFSConstants.DATA_NODE_ID),
-        HDFSConstants.NODE_EXECUTOR_ID);
-    }
-    return false;
   }
 
   public void sendMessageTo(SchedulerDriver driver, TaskID taskId,
@@ -615,7 +337,7 @@ public class HdfsScheduler extends Observable implements org.apache.mesos.Schedu
   }
 
   private void reloadConfigsOnAllRunningTasks(SchedulerDriver driver) {
-    if (hdfsFrameworkConfig.usingNativeHadoopBinaries()) {
+    if (config.usingNativeHadoopBinaries()) {
       return;
     }
     for (Protos.TaskStatus taskStatus : liveState.getRunningTasks().values()) {
@@ -625,7 +347,7 @@ public class HdfsScheduler extends Observable implements org.apache.mesos.Schedu
   }
 
   private void correctCurrentPhase() {
-    if (liveState.getJournalNodeSize() < hdfsFrameworkConfig.getJournalNodeCount()) {
+    if (liveState.getJournalNodeSize() < config.getJournalNodeCount()) {
       liveState.transitionTo(AcquisitionPhase.JOURNAL_NODES);
     } else if (liveState.getNameNodeSize() < HDFSConstants.TOTAL_NAME_NODES) {
       liveState.transitionTo(AcquisitionPhase.START_NAME_NODES);
@@ -635,22 +357,6 @@ public class HdfsScheduler extends Observable implements org.apache.mesos.Schedu
     } else {
       liveState.transitionTo(AcquisitionPhase.DATA_NODES);
     }
-  }
-
-  private boolean offerNotEnoughResources(Offer offer, double cpus, int mem) {
-    for (Resource offerResource : offer.getResourcesList()) {
-      if (offerResource.getName().equals("cpus") &&
-        cpus + hdfsFrameworkConfig.getExecutorCpus() > offerResource.getScalar().getValue()) {
-        return true;
-      }
-      if (offerResource.getName().equals("mem") &&
-        (mem * hdfsFrameworkConfig.getJvmOverhead())
-          + (hdfsFrameworkConfig.getExecutorHeap() * hdfsFrameworkConfig.getJvmOverhead())
-          > offerResource.getScalar().getValue()) {
-        return true;
-      }
-    }
-    return false;
   }
 
   private void reconcile(SchedulerDriver driver) {

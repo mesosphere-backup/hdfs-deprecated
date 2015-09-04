@@ -123,29 +123,6 @@ public class HdfsFrameworkConfig {
     return getHadoopHeapSize();
   }
 
-  public int getTaskHeapSize(String taskName) {
-    int size;
-    switch (taskName) {
-      case "zkfc":
-        size = getZkfcHeapSize();
-        break;
-      case "namenode":
-        size = getNameNodeHeapSize();
-        break;
-      case "datanode":
-        size = getDataNodeHeapSize();
-        break;
-      case "journalnode":
-        size = getJournalNodeHeapSize();
-        break;
-      default:
-        final String msg = "Invalid request for heapsize for taskName = " + taskName;
-        log.error(msg);
-        throw new ConfigurationException(msg);
-    }
-    return size;
-  }
-
   public double getJvmOverhead() {
     return getConf().getDouble("mesos.hdfs.jvm.overhead", DEFAULT_JVM_OVERHEAD);
   }
@@ -207,6 +184,29 @@ public class HdfsFrameworkConfig {
         throw new ConfigurationException(msg);
     }
     return cpus;
+  }
+
+  public int getTaskHeapSize(String taskName) {
+    int size;
+    switch (taskName) {
+      case "zkfc":
+        size = getZkfcHeapSize();
+        break;
+      case "namenode":
+        size = getNameNodeHeapSize();
+        break;
+      case "datanode":
+        size = getDataNodeHeapSize();
+        break;
+      case "journalnode":
+        size = getJournalNodeHeapSize();
+        break;
+      default:
+        final String msg = "Invalid request for heapsize for taskName = " + taskName;
+        log.error(msg);
+        throw new ConfigurationException(msg);
+    }
+    return size;
   }
 
   public int getJournalNodeCount() {

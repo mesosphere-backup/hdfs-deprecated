@@ -183,6 +183,7 @@ public abstract class AbstractNodeExecutor implements Executor {
    * Starts a task's process so it goes into running state.
    */
   protected void startProcess(ExecutorDriver driver, Task task) {
+    log.info(String.format("Starting process: %s", task.getCmd()));
     reloadConfig();
     if (task.getProcess() == null) {
       try {

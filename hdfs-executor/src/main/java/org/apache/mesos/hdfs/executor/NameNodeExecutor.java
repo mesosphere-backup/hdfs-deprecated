@@ -111,6 +111,9 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
   public void frameworkMessage(ExecutorDriver driver, byte[] msg) {
     super.frameworkMessage(driver, msg);
     String messageStr = new String(msg, Charset.defaultCharset());
+
+    log.info(String.format("Received framework message: %s", messageStr));
+
     File nameDir = new File(hdfsFrameworkConfig.getDataDir() + "/name");
     if (messageStr.equals(HDFSConstants.NAME_NODE_INIT_MESSAGE)
         || messageStr.equals(HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE)) {
