@@ -55,6 +55,7 @@ subprojects {
     compile "org.slf4j:log4j-over-slf4j:${slf4jVer}"
     compile "org.slf4j:jcl-over-slf4j:${slf4jVer}"
     compile "ch.qos.logback:logback-classic:${logbackVer}"
+    compile "com.google.code.findbugs:annotations:3.0.0"
 
     compile("org.apache.hadoop:hadoop-common:${hadoopVer}") {
       exclude group: "log4j", module: "log4j"
