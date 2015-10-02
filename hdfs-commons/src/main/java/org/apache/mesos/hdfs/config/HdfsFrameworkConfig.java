@@ -274,6 +274,10 @@ public class HdfsFrameworkConfig {
     return getConf().get("mesos.hdfs.secondary.data.dir", "/var/run/hadoop-hdfs");
   }
 
+  public String getBackupDir() {
+    return getConf().get("mesos.hdfs.backup.dir");
+  }
+
   public String getHaZookeeperQuorum() {
     return getConf().get("mesos.hdfs.zkfc.ha.zookeeper.quorum", "localhost:2181");
   }

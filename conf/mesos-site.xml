@@ -29,6 +29,14 @@
     <value>/var/run/hadoop-hdfs</value>
   </property>
 
+  <!-- Uncomment this to enable backup
+  <property>
+    <name>mesos.hdfs.backup.dir</name>
+    <description>Backup dir for HDFS</description>
+    <value>/tmp/nfs</value>
+  </property>
+  -->
+
   <property>
     <name>mesos.hdfs.native-hadoop-binaries</name>
     <description>Mark true if you have hadoop pre-installed on your host machines (otherwise it will be distributed by the scheduler)</description>
