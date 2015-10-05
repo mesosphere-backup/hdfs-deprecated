@@ -7,11 +7,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.MesosExecutorDriver;
-import org.apache.mesos.Protos.Status;
-import org.apache.mesos.Protos.TaskID;
-import org.apache.mesos.Protos.TaskInfo;
-import org.apache.mesos.Protos.TaskState;
-import org.apache.mesos.Protos.TaskStatus;
+import org.apache.mesos.Protos;
+import org.apache.mesos.Protos.*;
 import org.apache.mesos.hdfs.config.HdfsFrameworkConfig;
 import org.apache.mesos.hdfs.file.FileUtils;
 import org.apache.mesos.hdfs.util.HDFSConstants;
@@ -124,6 +121,8 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
     log.info(String.format("Received framework message: %s", messageStr));
 
     File nameDir = new File(hdfsFrameworkConfig.getDataDir() + "/name");
+    File backupDir = hdfsFrameworkConfig.getBackupDir() != null ? new File(hdfsFrameworkConfig.getBackupDir() + "/" + getNodeId()) : null;
+
     if (messageStr.equals(HDFSConstants.NAME_NODE_INIT_MESSAGE)
       || messageStr.equals(HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE)) {
       FileUtils.deleteDirectory(nameDir);
@@ -132,6 +131,16 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
         log.error(errorMsg);
         throw new ExecutorException(errorMsg);
       }
+
+      if (backupDir != null) {
+        FileUtils.deleteDirectory(backupDir);
+        if (!backupDir.mkdirs()) {
+          final String errorMsg = "unable to make directory: " + backupDir;
+          log.error(errorMsg);
+          throw new ExecutorException(errorMsg);
+        }
+      }
+
       runCommand(driver, nameNodeTask, "bin/hdfs-mesos-namenode " + messageStr);
       // todo:  (kgs) we need to separate out the launching of these tasks
       if (!processRunning(nameNodeTask)) {
@@ -146,6 +155,25 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
         .setMessage(messageStr)
         .build());
     }
+  }
+
+  private String getNodeId() {
+    String id = null;
+
+    for (Protos.CommandInfo.URI uri : nameNodeTask.getTaskInfo().getExecutor().getCommand().getUrisList()) {
+      String value = uri.getValue();
+      String param = "node=";
+
+      int paramIdx = value.indexOf(param);
+      if (paramIdx != -1) {
+        int paramEnd = value.indexOf('&', paramIdx);
+        if (paramEnd == -1) paramEnd = value.length();
+        id = value.substring(paramIdx + param.length(), paramEnd);
+      }
+    }
+
+    if (id == null) throw new ExecutorException("Can't find node id from executor.command.uris");
+    return id;
   }
 
   private boolean processRunning(Task task) {

@@ -106,6 +106,12 @@ public class ConfigServer {
       model.put("dataDir", hdfsFrameworkConfig.getDataDir());
       model.put("haZookeeperQuorum", hdfsFrameworkConfig.getHaZookeeperQuorum());
 
+      String node = request.getParameter("node");
+      if (hdfsFrameworkConfig.getBackupDir() != null && node != null && node.startsWith(HDFSConstants.NAME_NODE_ID)) {
+        model.put("backupDir", hdfsFrameworkConfig.getBackupDir());
+        model.put("node", node);
+      }
+
       content = engine.transform(content, model);
 
       response.setContentType("application/octet-stream;charset=utf-8");
