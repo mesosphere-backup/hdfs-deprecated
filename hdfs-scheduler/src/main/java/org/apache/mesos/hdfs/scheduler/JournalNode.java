@@ -38,7 +38,7 @@ public class JournalNode extends HdfsNode {
           log.info(String.format("Already running %s journalnodes", config.getJournalNodeCount()));
         } else if (persistenceStore.journalNodeRunningOnSlave(offer.getHostname())) {
           log.info(String.format("Already running journalnode on %s", offer.getHostname()));
-        } else if (persistenceStore.dataNodeRunningOnSlave(offer.getHostname())) {
+        } else if (config.getRunDatanodeExclusively() && persistenceStore.dataNodeRunningOnSlave(offer.getHostname())) {
           log.info(String.format("Cannot colocate journalnode and datanode on %s",
             offer.getHostname()));
         } else {

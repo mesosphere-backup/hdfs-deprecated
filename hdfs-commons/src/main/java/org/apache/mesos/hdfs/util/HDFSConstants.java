@@ -13,6 +13,7 @@ public final class HDFSConstants {
   // Messages
   public static final String NAME_NODE_INIT_MESSAGE = "-i";
   public static final String NAME_NODE_BOOTSTRAP_MESSAGE = "-b";
+  public static final String JOURNAL_NODE_INIT_MESSAGE = "-s";
   public static final String RELOAD_CONFIG = "reload config";
 
   // NodeIds

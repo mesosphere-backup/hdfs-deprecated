@@ -288,7 +288,7 @@ public abstract class AbstractNodeExecutor implements Executor {
       if (exitCode == 0) {
         log.info("Finished running command, exited with status " + exitCode);
       } else {
-        log.error("Unable to run command: " + command);
+        log.error("Unable to run command, exit code:" + exitCode);
         if (task.getProcess() != null) {
           task.getProcess().destroy();
         }

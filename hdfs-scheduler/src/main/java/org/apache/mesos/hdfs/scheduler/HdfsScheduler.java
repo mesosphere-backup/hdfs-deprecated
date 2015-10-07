@@ -6,26 +6,17 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos;
-import org.apache.mesos.Protos.Credential;
-import org.apache.mesos.Protos.ExecutorID;
-import org.apache.mesos.Protos.FrameworkID;
-import org.apache.mesos.Protos.FrameworkInfo;
-import org.apache.mesos.Protos.MasterInfo;
-import org.apache.mesos.Protos.Offer;
-import org.apache.mesos.Protos.OfferID;
-import org.apache.mesos.Protos.SlaveID;
-import org.apache.mesos.Protos.TaskID;
-import org.apache.mesos.Protos.TaskState;
-import org.apache.mesos.Protos.TaskStatus;
+import org.apache.mesos.Protos.*;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.hdfs.config.HdfsFrameworkConfig;
 import org.apache.mesos.hdfs.state.AcquisitionPhase;
+import org.apache.mesos.hdfs.state.IPersistentStateStore;
 import org.apache.mesos.hdfs.state.LiveState;
 import org.apache.mesos.hdfs.state.PersistenceException;
-import org.apache.mesos.hdfs.state.IPersistentStateStore;
 import org.apache.mesos.hdfs.util.DnsResolver;
 import org.apache.mesos.hdfs.util.HDFSConstants;
-import java.io.UnsupportedEncodingException;
+
+import java.io.*;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
@@ -156,25 +147,12 @@ public class HdfsScheduler extends Observable implements org.apache.mesos.Schedu
           }
           break;
         case FORMAT_NAME_NODES:
-          if (!liveState.isNameNode1Initialized()
-            && !liveState.isNameNode2Initialized()) {
-            dnsResolver.sendMessageAfterNNResolvable(
-              driver,
-              liveState.getFirstNameNodeTaskId(),
-              liveState.getFirstNameNodeSlaveId(),
-              HDFSConstants.NAME_NODE_INIT_MESSAGE);
+          if (!liveState.isNameNode1Initialized() && !liveState.isNameNode2Initialized()) {
+            initActiveNN(driver);
           } else if (!liveState.isNameNode1Initialized()) {
-            dnsResolver.sendMessageAfterNNResolvable(
-              driver,
-              liveState.getFirstNameNodeTaskId(),
-              liveState.getFirstNameNodeSlaveId(),
-              HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE);
+            initStandbyNN(driver, liveState.getFirstNameNodeTaskId(), liveState.getFirstNameNodeSlaveId());
           } else if (!liveState.isNameNode2Initialized()) {
-            dnsResolver.sendMessageAfterNNResolvable(
-              driver,
-              liveState.getSecondNameNodeTaskId(),
-              liveState.getSecondNameNodeSlaveId(),
-              HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE);
+            initStandbyNN(driver, liveState.getSecondNameNodeTaskId(), liveState.getSecondNameNodeSlaveId());
           } else {
             correctCurrentPhase();
           }
@@ -187,6 +165,52 @@ public class HdfsScheduler extends Observable implements org.apache.mesos.Schedu
       log.warn(String.format("Don't know how to handle state=%s for taskId=%s",
         status.getState(), status.getTaskId().getValue()));
     }
+  }
+
+  private void initActiveNN(SchedulerDriver driver) {
+    TaskID taskId = liveState.getFirstNameNodeTaskId();
+    SlaveID slaveId = liveState.getFirstNameNodeSlaveId();
+
+    if (isNN2BackupMoreRecent()) {
+      taskId = liveState.getSecondNameNodeTaskId();
+      slaveId = liveState.getSecondNameNodeSlaveId();
+    }
+
+    String message = hasNNBackup() ? HDFSConstants.JOURNAL_NODE_INIT_MESSAGE : HDFSConstants.NAME_NODE_INIT_MESSAGE;
+    dnsResolver.sendMessageAfterNNResolvable(driver, taskId, slaveId, message);
+  }
+
+  private void initStandbyNN(SchedulerDriver driver, TaskID taskId, SlaveID slaveId) {
+    dnsResolver.sendMessageAfterNNResolvable(
+        driver,
+        taskId,
+        slaveId,
+        HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE);
+  }
+
+  private boolean hasNNBackup() {
+    return config.getBackupDir() != null && new File(config.getBackupDir() + "/namenode1").exists();
+  }
+
+  @SuppressWarnings("SimplifiableIfStatement")
+  private boolean isNN2BackupMoreRecent() {
+    if (config.getBackupDir() == null) return false;
+
+    File nn1TxFile = new File(config.getBackupDir() + "/namenode1/current/seen_txid");
+    File nn2TxFile = new File(config.getBackupDir() + "/namenode2/current/seen_txid");
+    if (!nn1TxFile.exists() || !nn2TxFile.exists()) return false;
+
+    return readTxNum(nn2TxFile) > readTxNum(nn1TxFile);
+  }
+
+  private int readTxNum(File txFile) {
+    int tx = 0;
+
+    try (BufferedReader reader = new BufferedReader(new FileReader(txFile))) {
+      tx = Integer.parseInt(reader.readLine());
+    } catch (IOException ignore) {}
+
+    return tx;
   }
 
   private void logOffers(List<Offer> offers) {

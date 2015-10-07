@@ -120,11 +120,23 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
 
     log.info(String.format("Received framework message: %s", messageStr));
 
+    if (processRunning(nameNodeTask) && messageStr.equals(HDFSConstants.JOURNAL_NODE_INIT_MESSAGE)) {
+      log.info("Ignoring message " + messageStr + " while NN is running");
+
+      driver.sendStatusUpdate(TaskStatus.newBuilder()
+          .setTaskId(nameNodeTask.getTaskInfo().getTaskId())
+          .setState(TaskState.TASK_RUNNING)
+          .setMessage(messageStr)
+          .build());
+      return;
+    }
+
     File nameDir = new File(hdfsFrameworkConfig.getDataDir() + "/name");
     File backupDir = hdfsFrameworkConfig.getBackupDir() != null ? new File(hdfsFrameworkConfig.getBackupDir() + "/" + getNodeId()) : null;
 
     if (messageStr.equals(HDFSConstants.NAME_NODE_INIT_MESSAGE)
-      || messageStr.equals(HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE)) {
+        || messageStr.equals(HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE)
+        || messageStr.equals(HDFSConstants.JOURNAL_NODE_INIT_MESSAGE)) {
       FileUtils.deleteDirectory(nameDir);
       if (!nameDir.mkdirs()) {
         final String errorMsg = "unable to make directory: " + nameDir;
@@ -132,8 +144,8 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
         throw new ExecutorException(errorMsg);
       }
 
-      if (backupDir != null) {
-        FileUtils.deleteDirectory(backupDir);
+      boolean backupExists = backupDir != null && backupDir.exists();
+      if (backupDir != null && !backupExists) {
         if (!backupDir.mkdirs()) {
           final String errorMsg = "unable to make directory: " + backupDir;
           log.error(errorMsg);
@@ -142,6 +154,7 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
       }
 
       runCommand(driver, nameNodeTask, "bin/hdfs-mesos-namenode " + messageStr);
+
       // todo:  (kgs) we need to separate out the launching of these tasks
       if (!processRunning(nameNodeTask)) {
         startProcess(driver, nameNodeTask);

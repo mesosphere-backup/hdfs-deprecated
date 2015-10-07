@@ -74,7 +74,7 @@ public class LiveState {
     if (status.getTaskId().getValue().contains(HDFSConstants.NAME_NODE_TASKID)) {
       // If initializing the first NN or reconciling the first NN or bootstrapping the first NN
       // set the status to initialized
-      if (status.getMessage().equals(HDFSConstants.NAME_NODE_INIT_MESSAGE)
+      if (status.getMessage().equals(HDFSConstants.NAME_NODE_INIT_MESSAGE) || status.getMessage().equals(HDFSConstants.JOURNAL_NODE_INIT_MESSAGE)
           || (currentAcquisitionPhase.equals(AcquisitionPhase.RECONCILING_TASKS) && !isNameNode1Initialized())
           || (status.getMessage().equals(HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE) && !isNameNode1Initialized())) {
         setNewNameNodeInitialized(status);

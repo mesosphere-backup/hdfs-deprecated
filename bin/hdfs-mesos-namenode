@@ -31,7 +31,7 @@ function format_namenode() {
 
 function initialize_shared_edits() {
   echo "Asked to initialize shared edits"
-  exec $DIR/hdfs namenode -initializeSharedEdits
+  exec $DIR/hdfs namenode -initializeSharedEdits -force
 }
 
 function run_namenode() {
