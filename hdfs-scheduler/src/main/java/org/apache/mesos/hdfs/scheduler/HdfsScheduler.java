@@ -194,21 +194,28 @@ public class HdfsScheduler extends Observable implements org.apache.mesos.Schedu
 
   @SuppressWarnings("SimplifiableIfStatement")
   private boolean isNN2BackupMoreRecent() {
-    if (config.getBackupDir() == null) return false;
+    if (config.getBackupDir() == null) {
+      return false;
+    }
 
     File nn1TxFile = new File(config.getBackupDir() + "/namenode1/current/seen_txid");
     File nn2TxFile = new File(config.getBackupDir() + "/namenode2/current/seen_txid");
-    if (!nn1TxFile.exists() || !nn2TxFile.exists()) return false;
+    if (!nn1TxFile.exists() || !nn2TxFile.exists()) {
+      return false;
+    }
 
     return readTxNum(nn2TxFile) > readTxNum(nn1TxFile);
   }
 
   private int readTxNum(File txFile) {
-    int tx = 0;
+    int tx;
 
-    try (BufferedReader reader = new BufferedReader(new FileReader(txFile))) {
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+        new FileInputStream(txFile), Charset.defaultCharset()))) {
       tx = Integer.parseInt(reader.readLine());
-    } catch (IOException ignore) {}
+    } catch (IOException e) {
+      tx = 0;
+    }
 
     return tx;
   }

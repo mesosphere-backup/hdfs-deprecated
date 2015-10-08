@@ -223,7 +223,9 @@ public abstract class HdfsNode implements IOfferEvaluator, ILauncher {
     String nodeId = null;
     for (String type : getTaskTypes()) {
       String taskName = getNextTaskName(type);
-      if (nodeId == null) nodeId = taskName;
+      if (nodeId == null) {
+        nodeId = taskName;
+      }
 
       List<Resource> resources = getTaskResources(type);
       ExecutorInfo execInfo = createExecutor(taskIdName, name, nodeId, executorName);

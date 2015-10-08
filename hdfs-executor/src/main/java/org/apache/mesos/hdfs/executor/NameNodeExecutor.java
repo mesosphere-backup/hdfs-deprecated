@@ -132,7 +132,9 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
     }
 
     File nameDir = new File(hdfsFrameworkConfig.getDataDir() + "/name");
-    File backupDir = hdfsFrameworkConfig.getBackupDir() != null ? new File(hdfsFrameworkConfig.getBackupDir() + "/" + getNodeId()) : null;
+    File backupDir = hdfsFrameworkConfig.getBackupDir() != null
+        ? new File(hdfsFrameworkConfig.getBackupDir() + "/" + getNodeId())
+        : null;
 
     if (messageStr.equals(HDFSConstants.NAME_NODE_INIT_MESSAGE)
         || messageStr.equals(HDFSConstants.NAME_NODE_BOOTSTRAP_MESSAGE)
@@ -145,12 +147,10 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
       }
 
       boolean backupExists = backupDir != null && backupDir.exists();
-      if (backupDir != null && !backupExists) {
-        if (!backupDir.mkdirs()) {
-          final String errorMsg = "unable to make directory: " + backupDir;
-          log.error(errorMsg);
-          throw new ExecutorException(errorMsg);
-        }
+      if (backupDir != null && !backupExists && !backupDir.mkdirs()) {
+        final String errorMsg = "unable to make directory: " + backupDir;
+        log.error(errorMsg);
+        throw new ExecutorException(errorMsg);
       }
 
       runCommand(driver, nameNodeTask, "bin/hdfs-mesos-namenode " + messageStr);
@@ -180,12 +180,18 @@ public class NameNodeExecutor extends AbstractNodeExecutor {
       int paramIdx = value.indexOf(param);
       if (paramIdx != -1) {
         int paramEnd = value.indexOf('&', paramIdx);
-        if (paramEnd == -1) paramEnd = value.length();
+        if (paramEnd == -1) {
+          paramEnd = value.length();
+        }
+
         id = value.substring(paramIdx + param.length(), paramEnd);
       }
     }
 
-    if (id == null) throw new ExecutorException("Can't find node id from executor.command.uris");
+    if (id == null) {
+      throw new ExecutorException("Can't find node id from executor.command.uris");
+    }
+
     return id;
   }
 
