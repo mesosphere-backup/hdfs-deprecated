@@ -2,15 +2,7 @@ package org.apache.mesos.hdfs.scheduler;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.mesos.Protos.CommandInfo;
-import org.apache.mesos.Protos.Environment;
-import org.apache.mesos.Protos.ExecutorID;
-import org.apache.mesos.Protos.ExecutorInfo;
-import org.apache.mesos.Protos.Offer;
-import org.apache.mesos.Protos.OfferID;
-import org.apache.mesos.Protos.Resource;
-import org.apache.mesos.Protos.TaskID;
-import org.apache.mesos.Protos.TaskInfo;
+import org.apache.mesos.Protos.*;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.hdfs.config.HdfsFrameworkConfig;
 import org.apache.mesos.hdfs.config.NodeConfig;
@@ -95,7 +87,7 @@ public abstract class HdfsNode implements IOfferEvaluator, ILauncher {
     }
   }
 
-  private ExecutorInfo createExecutor(String taskIdName, String nodeName, String executorName) {
+  private ExecutorInfo createExecutor(String taskIdName, String nodeName, String nodeId, String executorName) {
     int confServerPort = config.getConfigServerPort();
 
     String cmd = "export JAVA_HOME=$MESOS_DIRECTORY/" + config.getJreVersion()
@@ -126,9 +118,9 @@ public abstract class HdfsNode implements IOfferEvaluator, ILauncher {
               CommandInfo.URI
                 .newBuilder()
                 .setValue(
-                  String.format("http://%s:%d/%s", config.getFrameworkHostAddress(),
+                  String.format("http://%s:%d/%s?node=%s", config.getFrameworkHostAddress(),
                     confServerPort,
-                    HDFSConstants.HDFS_CONFIG_FILE_NAME))
+                    HDFSConstants.HDFS_CONFIG_FILE_NAME, nodeId))
                 .build(),
               CommandInfo.URI
                 .newBuilder()
@@ -228,10 +220,15 @@ public abstract class HdfsNode implements IOfferEvaluator, ILauncher {
     String taskIdName = String.format("%s.%s.%d", name, executorName, System.currentTimeMillis());
     List<Task> tasks = new ArrayList<Task>();
 
+    String nodeId = null;
     for (String type : getTaskTypes()) {
-      List<Resource> resources = getTaskResources(type);
-      ExecutorInfo execInfo = createExecutor(taskIdName, name, executorName);
       String taskName = getNextTaskName(type);
+      if (nodeId == null) {
+        nodeId = taskName;
+      }
+
+      List<Resource> resources = getTaskResources(type);
+      ExecutorInfo execInfo = createExecutor(taskIdName, name, nodeId, executorName);
 
       tasks.add(new Task(resources, execInfo, offer, taskName, type, taskIdName));
     }

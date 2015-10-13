@@ -79,7 +79,7 @@
 
   <property>
     <name>dfs.namenode.name.dir</name>
-    <value>file://${dataDir}/name</value>
+    <value>${dataDir}/name${if backupDir},${backupDir}/${node}${end}</value>
   </property>
 
   <property>
