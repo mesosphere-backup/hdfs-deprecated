@@ -14,4 +14,4 @@ else
   JAVA_CMD=$JAVA_HOME/bin/java
 fi
 
-exec $JAVA_CMD -cp lib/*.jar -Dmesos.conf.path=etc/hadoop/mesos-site.xml -Dmesos.hdfs.config.server.port=$PORT0 org.apache.mesos.hdfs.scheduler.Main
+exec $JAVA_CMD -cp lib/*.jar -Dmesos.hdfs.data.dir=/tmp/data -Dmesos.conf.path=etc/hadoop/mesos-site.xml -Dmesos.hdfs.config.server.port=$PORT0 org.apache.mesos.hdfs.scheduler.Main
