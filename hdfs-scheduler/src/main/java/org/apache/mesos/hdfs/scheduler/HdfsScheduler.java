@@ -231,8 +231,11 @@ public class HdfsScheduler extends Observable implements org.apache.mesos.Schedu
       .setFailoverTimeout(config.getFailoverTimeout())
       .setUser(config.getHdfsUser())
       .setRole(config.getHdfsRole())
-      .setPrincipal(config.getPrincipal())
       .setCheckpoint(true);
+
+    if (!"".equals(config.getPrincipal())) {
+      frameworkInfo.setPrincipal(config.getPrincipal());
+    }
 
     try {
       FrameworkID frameworkID = state.getFrameworkId();
