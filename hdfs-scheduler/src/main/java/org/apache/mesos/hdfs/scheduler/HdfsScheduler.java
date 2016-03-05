@@ -303,8 +303,9 @@ public class HdfsScheduler extends Observable implements org.apache.mesos.Schedu
     for (Task task : tasks) {
       TaskStatus status = task.getStatus();
       if (status != null) {
+        String message = String.format("%s %s" + HDFSConstants.HOST_PORT_SEPARATOR + "%s", HDFSConstants.RELOAD_CONFIG, config.getFrameworkHostAddress(), config.getConfigServerPort());
         sendMessageTo(driver, status.getTaskId(), status.getSlaveId(),
-          HDFSConstants.RELOAD_CONFIG);
+          message);
       }
     }
   }

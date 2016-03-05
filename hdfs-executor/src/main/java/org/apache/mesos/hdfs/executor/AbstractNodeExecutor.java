@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.mesos.Executor;
 import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.Protos.CommandInfo;
@@ -27,6 +28,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -199,7 +202,7 @@ public abstract class AbstractNodeExecutor implements Executor {
   protected Process startProcess(ExecutorDriver driver, Task task) {
     log.info(String.format("Starting process: %s", task.getCmd()));
     Process proc = task.getProcess();
-    reloadConfig();
+    reloadConfig(null);
     if (proc == null) {
       try {
         Map<String, String> envMap = createHdfsNodeEnvironment(task);
@@ -238,7 +241,7 @@ public abstract class AbstractNodeExecutor implements Executor {
   /**
    * Reloads the cluster configuration so the executor has the correct configuration info.
    */
-  protected void reloadConfig() {
+  protected void reloadConfig(String message) {
     if (config.usingNativeHadoopBinaries()) {
       return;
     }
@@ -255,8 +258,14 @@ public abstract class AbstractNodeExecutor implements Executor {
     }
     try {
       log.info(String.format("Reloading hdfs-site.xml from %s", configUri));
+      String updatedConfigUri = configUri;
+      if (message != null && message.startsWith(HDFSConstants.RELOAD_CONFIG)){
+        String[] hostPort = message.replaceAll(HDFSConstants.RELOAD_CONFIG,"").trim().split(HDFSConstants.HOST_PORT_SEPARATOR);
+        URI uri = new URIBuilder(configUri).setHost(hostPort[0]).setPort(new Integer(hostPort[1])).build();
+        updatedConfigUri = uri.toString();
+      }
       Process process = ProcessUtil.startCmd(
-        String.format("curl -o hdfs-site.xml %s && mv hdfs-site.xml etc/hadoop/", configUri));
+        String.format("curl -o hdfs-site.xml %s && mv hdfs-site.xml etc/hadoop/", updatedConfigUri));
       //TODO(nicgrayson) check if the config has changed
       int exitCode = process.waitFor();
       if (exitCode == 0) {
@@ -264,7 +273,7 @@ public abstract class AbstractNodeExecutor implements Executor {
       } else {
         log.error("Error reloading hdfs-site.xml.");
       }
-    } catch (InterruptedException | IOException e) {
+    } catch (InterruptedException | IOException | URISyntaxException e) {
       log.error("Caught exception", e);
     }
   }
@@ -273,7 +282,7 @@ public abstract class AbstractNodeExecutor implements Executor {
    * Run a command and wait for it's successful completion.
    */
   protected void runCommand(ExecutorDriver driver, Task task, String command) {
-    reloadConfig();
+    reloadConfig(null);
     try {
       log.info(String.format("About to run command: %s", command));
       Process init = ProcessUtil.startCmd(command);
@@ -308,9 +317,9 @@ public abstract class AbstractNodeExecutor implements Executor {
 
   @Override
   public void frameworkMessage(ExecutorDriver driver, byte[] msg) {
-    reloadConfig();
     String messageStr = new String(msg, Charset.defaultCharset());
     log.info("Executor received framework message: " + messageStr);
+    reloadConfig(messageStr);
   }
 
   @Override
