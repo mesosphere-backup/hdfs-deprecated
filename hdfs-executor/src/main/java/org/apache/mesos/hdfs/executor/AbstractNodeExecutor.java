@@ -260,8 +260,9 @@ public abstract class AbstractNodeExecutor implements Executor {
       log.info(String.format("Reloading hdfs-site.xml from %s", configUri));
       String updatedConfigUri = configUri;
       if (message != null && message.startsWith(HDFSConstants.RELOAD_CONFIG)){
-        String[] hostPort = message.replaceAll(HDFSConstants.RELOAD_CONFIG,"").trim().split(HDFSConstants.HOST_PORT_SEPARATOR);
-        URI uri = new URIBuilder(configUri).setHost(hostPort[0]).setPort(new Integer(hostPort[1])).build();
+        String[] hostPort = message.replaceAll(HDFSConstants.RELOAD_CONFIG, "").trim()
+          .split(HDFSConstants.HOST_PORT_SEPARATOR);
+        URI uri = new URIBuilder(configUri).setHost(hostPort[0]).setPort(Integer.parseInt(hostPort[1])).build();
         updatedConfigUri = uri.toString();
       }
       Process process = ProcessUtil.startCmd(
