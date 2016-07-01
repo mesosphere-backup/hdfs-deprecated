@@ -14,6 +14,7 @@ Prerequisites
 Building HDFS-Mesos
 --------------------------
 1. Customize configuration in `conf/*-site.xml`. All configuration files updated here will be used by the scheduler and also bundled with the executors.
+  * If you are running on a mesos based cluster with [mesos-dns](https://github.com/mesosphere/mesos-dns), the example config for mesosphere/dcos should work `cp example-conf/mesosphere-dcos/* conf/`
 2. `./bin/build-hdfs`
 3. Run `./bin/build-hdfs nocompile` to skip the `gradlew clean package` step and just re-bundle the binaries.
 4. To remove the project build output and downloaded binaries, run `./bin/build-hdfs clean`.
@@ -40,12 +41,12 @@ Starting HDFS-Mesos
 Using HDFS
 --------------------------
 See some of the many HDFS tutorials out there for more details and explore the web UI at <br>`http://<ActiveNameNode>:50070`.</br>
-Note that you can access commands through `hdfs://<mesos.hdfs.framework.name>/` (default: `hdfs://hdfs/`).
+Note that if you are using mesos-dns you can use dns to resolve running tasks.  So for you should be able to access commands through `hdfs://<tasks.framework-name.mesos>/` (default: `hdfs://namenode1.hdfs.mesos/`).
 Also here is a quick sanity check:
 
-1. `hadoop fs -ls hdfs://hdfs/` should show nothing for starters
-2. `hadoop fs -put /path/to/src_file hdfs://hdfs/`
-3. `hadoop fs -ls hdfs://hdfs/` should now list src_file
+1. `hadoop fs -ls hdfs://namenode1.hdfs.mesos:50071/` should show nothing for starters
+2. `hadoop fs -put /path/to/src_file hdfs://namenode1.hdfs.mesos:50071/`
+3. `hadoop fs -ls hdfs://namenode1.hdfs.mesos:50071/` should now list src_file
 
 Resource Reservation Instructions (Optional)
 --------------------------
@@ -74,9 +75,9 @@ Applying mesos slave constraints (Optional)
 </property>
 
 "zone" is type of set with members {"west","east"}.
-"cpu" is type of scalar. 
-"quality" is type of text. 
-"id" may be type of range. 
+"cpu" is type of scalar.
+"quality" is type of text.
+"id" may be type of range.
 ```
 
 System Environment for Configurations
@@ -146,12 +147,12 @@ with the `HdfsSchedulerModule` guice module class and is initialized in the main
 ```
   // this is initializes guice with all the singletons + the passed in module
   Injector injector = Guice.createInjector(new HdfsSchedulerModule());
-  
+
   // if this returns successfully, then the object was "wired" correctly.
   injector.getInstance(ConfigServer.class);
 ```
 
-If you have a singleton, mark it as such.   If you have an interface + implemention class then bind it in the `HdfsSchedulerModule` such as:
+If you have a singleton, mark it as such.   If you have an interface + implementation class then bind it in the `HdfsSchedulerModule` such as:
 
 ```
   // bind(<interface>.class).to(<impl>.class);
