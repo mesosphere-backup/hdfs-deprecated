@@ -1,4 +1,9 @@
-[![Build Status](https://travis-ci.org/mesosphere/hdfs.svg?branch=master)](https://travis-ci.org/mesosphere/hdfs)
+# * * THIS REPOSITORY IS DEPRECATED * *
+
+*The HDFS Universe package for DC/OS is built-from a Mesosphere private repo that will be open sourced later in 2016.  Please submit any bug reports or feature requests for that package to the [DCOS Community JIRA](https://dcosjira.atlassian.net/projects/HDFS).*
+
+
+
 HA HDFS on Apache Mesos
 ======================
 Starts 1 active NameNode (with JournalNode and ZKFC), 1 standby NN (+JN,ZKFC), 1 JN, and everything else is DataNodes.
