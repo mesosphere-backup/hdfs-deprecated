@@ -1,6 +1,6 @@
 # * * THIS REPOSITORY IS DEPRECATED * *
 
-*The HDFS Universe package for DC/OS is built-from a Mesosphere private repo that will be open sourced later in 2016.  Please submit any bug reports or feature requests for that package to the [DCOS Community JIRA](https://dcosjira.atlassian.net/projects/HDFS).*
+*Do not use this HDFS framework for production workloads.  The current HDFS Universe package for DC/OS is built-from a new, experimental Mesosphere private repo that will be open sourced later in 2016.  Please submit any bug reports or feature requests for that package to the [DCOS Community JIRA](https://dcosjira.atlassian.net/projects/HDFS).*
 
 
 
