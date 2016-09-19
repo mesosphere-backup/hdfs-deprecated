@@ -233,6 +233,10 @@ public class HdfsScheduler extends Observable implements org.apache.mesos.Schedu
       .setRole(config.getHdfsRole())
       .setCheckpoint(true);
 
+    if (!"".equals(config.getPrincipal())) {
+      frameworkInfo.setPrincipal(config.getPrincipal());
+    }
+
     try {
       FrameworkID frameworkID = state.getFrameworkId();
       if (frameworkID != null) {
