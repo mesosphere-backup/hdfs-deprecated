@@ -42,6 +42,19 @@ Starting HDFS-Mesos
 2. `./bin/hdfs-mesos`
 3. Check the Mesos web console to wait until all tasks are RUNNING (monitor status in JN sandboxes)
 
+Dockerizing HDFS-Mesos
+--------------------------
+Dockerizing the HDFS-Mesos will let you provide the configure the mesos-site.xml at run time. This is more flexible way of using the same docker image with some fixed configuration and while running, configure it for specific mesos cluster.
+1. `sudo docker build -t hdfs-mesos .`
+2. `sudo docker push hdfs-mesos`
+
+Running the hdfs-mesos docker
+---------------------------
+Example run :- 
+
+1. `sudo docker run -t hdfs-mesos --net=host mesos.hdfs.framework.name=hdfs-test1 mesos.hdfs.zkfc.ha.zookeeper.quorum=localhost:2181 mesos.master.uri=zk://localhost:2181/mesos mesos.hdfs.state.zk=localhost:2181`
+
+
 Using HDFS
 --------------------------
 See some of the many HDFS tutorials out there for more details and explore the web UI at <br>`http://<ActiveNameNode>:50070`.</br>

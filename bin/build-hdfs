@@ -138,6 +138,7 @@ cp -R $BUILD_CACHE_DIR/$HADOOP_DIR/share/hadoop/hdfs/webapps $BUILD_DIR/$DIST/sh
 
 ## hdfs scheduler project needs
 cp $PROJ_DIR/bin/hdfs-mesos $BUILD_DIR/$DIST/bin
+cp $PROJ_DIR/bin/hdfs-start.py $BUILD_DIR/$DIST/bin
 cp $PROJ_DIR/hdfs-scheduler/build/libs/*-uber.jar $BUILD_DIR/$DIST/lib
 cp $BUILD_CACHE_DIR/$EXECUTOR.tgz $BUILD_DIR/$DIST
 cp $PROJ_DIR/conf/*.xml $BUILD_DIR/$DIST/etc/hadoop
