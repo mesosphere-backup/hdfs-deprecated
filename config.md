@@ -6,7 +6,7 @@ The configuration of HDFS and this framework are managed via:
 * mesos-site.xml
 * system env vars and properties
 
-The hdfs-site.xml file is used to configure the hdfs cluster.  The values must match the configuration of the scheduler.  For this 
+The hdfs-site.xml file is used to configure the hdfs cluster.  The values must match the configuration of the scheduler.  For this
 reason the hdfs-site.xml is generally "fetched" or refreshed from the scheduler when a node is started.   The normal configuration of
 the hdfs-site.xml has variables which are replaced by the scheduler when the xml file is fetched by the node.  An example of these
 variables is `${frameworkName}`.   The scheduler code that does the variable replacement is handled by ConfigServer.java.  An
@@ -15,11 +15,11 @@ example of this variable replacement is `model.put("frameworkName", hdfsFramewor
 It is possible to have the HDFS-mesos framework manage hdfs node instances on slaves that are previously provisioned with hdfs.  Under scenario
 there is no way to update the `hdfs-site.xml` file.  This is indicated by setting the property `mesos.hdfs.native-hadoop-binaries` == true in the `mesos-site.xml` file.
 This indicates that binaries exist on the nodes.  Because the values in the `hdfs-site.xml` are not controlled by the HDFS-Mesos framework, it
-is important to make sure that all the xml files are consistent and the framework is started with property values which are consistent with the 
+is important to make sure that all the xml files are consistent and the framework is started with property values which are consistent with the
 preexisting cluster.
 
-The mesos-site.xml file is used to configure the hdfs-mesos framework.  We are working to deprecated this file.  This general establishes 
-values for the scheduler and in many cases these are passed to the executors.  Although the configuration of the scheduler can be handled 
+The mesos-site.xml file is used to configure the hdfs-mesos framework.  We are working to deprecated this file.  This general establishes
+values for the scheduler and in many cases these are passed to the executors.  Although the configuration of the scheduler can be handled
 via XML configuration, we encourage the use of system environment variables for this purpose.
 
 ## Configuration Options
@@ -52,8 +52,7 @@ the executors.
 ## Custom Configurations
 
 ### Mesos-DNS custom configuration
-You can see an example configuration in the `example-conf/dcos` directory. Since Mesos-DNS provides native bindings for master detection, we can simply use those names in our mesos and hdfs configurations. The example configuration assumes your Mesos masters and your zookeeper nodes are colocated. If they aren't you'll need to specify your zookeeper nodes separately. Also, note that if you are using the example in `example-conf/dcos`, the `mesos.hdfs.native-hadoop-binaries` property needs to be set to `false` if your HDFS binaries are not predistributed.
+You can see an example configuration in the `example-conf/dcos` directory. Since Mesos-DNS provides native bindings for master detection, we can simply use those names in our mesos and hdfs configurations. The example configuration assumes your Mesos masters and your zookeeper nodes are collocated. If they aren't you'll need to specify your zookeeper nodes separately. Also, note that if you are using the example in `example-conf/dcos`, the `mesos.hdfs.native-hadoop-binaries` property needs to be set to `false` if your HDFS binaries are not predistributed.
 
 ### If you have Hadoop pre-installed in your cluster
 If you have Hadoop installed across your cluster, you don't need the Mesos scheduler application to distribute the binaries. You can set the `mesos.hdfs.native-hadoop-binaries` configuration parameter in `mesos-site.xml` if you don't want the binaries distributed.
-
