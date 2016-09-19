@@ -69,4 +69,5 @@ public final class HDFSConstants {
   public static final String PROPERTY_VAR_PREFIX = "MESOS_HDFS_";
 
   public static final Integer POLL_DELAY_MS = 1000;
+  public static final String HOST_PORT_SEPARATOR = ":";
 }

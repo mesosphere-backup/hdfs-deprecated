@@ -110,11 +110,18 @@ public class ConfigServer {
 
       Map<String, Object> model = new HashMap<>();
       Iterator<String> iter = nameNodes.iterator();
-      if (iter.hasNext()) {
-        model.put("nn1Hostname", iter.next());
-      }
-      if (iter.hasNext()) {
-        model.put("nn2Hostname", iter.next());
+      if (hdfsFrameworkConfig.usingMesosDns()){
+        model.put("nn1Hostname", String.format("%s.%s.%s", "namenode1", 
+              hdfsFrameworkConfig.getFrameworkName(), hdfsFrameworkConfig.getMesosDnsDomain()));
+        model.put("nn2Hostname", String.format("%s.%s.%s", "namenode2", 
+              hdfsFrameworkConfig.getFrameworkName(), hdfsFrameworkConfig.getMesosDnsDomain()));
+      } else {
+        if (iter.hasNext()) {
+          model.put("nn1Hostname", iter.next());
+        }
+        if (iter.hasNext()) {
+          model.put("nn2Hostname", iter.next());
+        }
       }
 
       String journalNodeString = getJournalNodes(journalNodes);
