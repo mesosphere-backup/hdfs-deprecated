@@ -1,7 +1,10 @@
 # * * THIS REPOSITORY IS DEPRECATED * *
 
-*Do not use this HDFS framework for production workloads.  The current HDFS Universe package for DC/OS is built-from a new, experimental Mesosphere private repo that will be open sourced later in 2016.  Please submit any bug reports or feature requests for that package to the [DCOS Community JIRA](https://dcosjira.atlassian.net/projects/HDFS).*
+*Do not use this HDFS framework for production workloads.*  
 
+*The current HDFS Universe package for DC/OS is built-from a new, experimental Mesosphere private repo that will be open sourced later in 2016.*
+
+*To get started with this new package, [set up a DC/OS cluster](https://dcos.io/get-started/) and then simply run `$ dcos package install hdfs` to install HDFS.  Please submit any bug reports or feature requests for that package to the [DCOS Community JIRA](https://dcosjira.atlassian.net/projects/HDFS), and let us know how it goes in the #data-services channel on the [dcos-community Slack](https://dcos.io/community/)!.*
 
 
 HA HDFS on Apache Mesos
